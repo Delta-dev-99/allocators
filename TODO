@@ -1,0 +1,8 @@
+
+Buddy_Allocator
+Affix_Allocator
+Bitmapped block Allocator
+Cascading allocator (What would this do?)
+Logarithmic Bucketizer
+
+Find a reason to use Bucketizers
