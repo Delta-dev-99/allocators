@@ -4,9 +4,11 @@
 #include <allocators/composite/fallback.hpp>
 #include <allocators/composite/segregator.hpp>
 #include <allocators/composite/timing.hpp>
-#include <allocators/chop.hpp>
-#include <allocators/pool.hpp>
-#include <allocators/stack.hpp>
+#include <allocators/basic/chop.hpp>
+#include <allocators/basic/pool.hpp>
+#include <allocators/basic/stack.hpp>
+#include <allocators/basic/bitmap.hpp>
+#include <allocators/basic/buddy.hpp>
 
 void do_something_with_allocator(dd99::memory::block_allocator::Allocator& alloc)
 {

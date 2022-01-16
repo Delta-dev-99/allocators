@@ -16,34 +16,34 @@ namespace dd99::memory::block_allocator::composite
         memory::Block allocate(std::size_t requested_size)
         {
             if (requested_size <= Threshold)
-                return m_alloc_le::allocate(requested_size);
+                return m_alloc_le.allocate(requested_size);
             else
-                return m_alloc_g::allocate(requested_size);
+                return m_alloc_g.allocate(requested_size);
         }
 
         void deallocate(const memory::Block &memory)
         {
             if (memory.size <= Threshold)
-                m_alloc_le::deallocate(memory);
+                m_alloc_le.deallocate(memory);
             else
-                m_alloc_g::deallocate(memory);
+                m_alloc_g.deallocate(memory);
         }
 
         void deallocate_all()
         {
-            m_alloc_le::deallocate_all();
-            m_alloc_g::deallocate_all();
+            m_alloc_le.deallocate_all();
+            m_alloc_g.deallocate_all();
         }
 
         bool owns(void *memory) const
         {
             // no size information
-            return m_alloc_le::owns(memory) || m_alloc_g::owns(memory);
+            return m_alloc_le.owns(memory) || m_alloc_g.owns(memory);
         }
 
         bool owns(const memory::Block &memory) const
         {
-            return (memory.size <= Threshold) ? m_alloc_le::owns(memory) : m_alloc_g::owns(memory);
+            return (memory.size <= Threshold) ? m_alloc_le.owns(memory) : m_alloc_g.owns(memory);
         }
 
     private:
