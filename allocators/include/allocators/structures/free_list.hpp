@@ -4,7 +4,7 @@
 #include <new>
 
 
-namespace dd99::memory::structures
+namespace dd99::memory::structure
 {
     // singly linked list of free memory blocks that stores
     // nodes on empty blocks

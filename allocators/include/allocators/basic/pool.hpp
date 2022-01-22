@@ -65,7 +65,7 @@ namespace dd99::memory::block_allocator
 
     private:
         memory::Block m_memory;
-        memory::structures::Freelist_Fixed_Sz_Blocks<Block_Size> m_free_list;
+        memory::structure::Freelist_Fixed_Sz_Blocks<Block_Size> m_free_list;
     };
 
 }
