@@ -58,9 +58,14 @@ namespace dd99::memory::structure
             m_base[bit_index / Block_Bits] |= (Block_T(1) << (bit_index % Block_Bits));
         }
 
-        void clear(std::size_t bit_index)
+        void unset(std::size_t bit_index)
         {
             m_base[bit_index / Block_Bits] &= ~(Block_T(1) << (bit_index % Block_Bits));
+        }
+
+        void toggle(std::size_t bit_index)
+        {
+            m_base[bit_index / Block_Bits] ^= Block_T(1) << (bit_index % Block_Bits);
         }
 
         // returns the index of the set bit, or -1 if not found

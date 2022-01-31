@@ -15,25 +15,25 @@ namespace dd99::memory::block_allocator
         Chop(const memory::Block& memory)
             : m_memory(memory)
         {
-            m_free_list.insert(m_memory);
+            m_free_list.push(m_memory);
         }
 
     public:
         memory::Block allocate(std::size_t requested_size)
         {
-            return m_free_list.extract(requested_size);
+            return m_free_list.pop(requested_size);
         }
 
         void deallocate(const memory::Block &memory)
         {
             if (m_memory.contains(memory))
-                m_free_list.insert(memory);
+                m_free_list.push(memory);
         }
 
         void deallocate_all()
         {
             m_free_list.clear();
-            m_free_list.insert(m_memory);
+            m_free_list.push(m_memory);
         }
 
         bool owns(void *memory) const

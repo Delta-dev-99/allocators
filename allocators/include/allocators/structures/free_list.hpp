@@ -2,6 +2,8 @@
 
 #include <cstddef>
 #include <new>
+#include <stdexcept>
+#include <string>
 
 
 namespace dd99::memory::structure
@@ -21,7 +23,10 @@ namespace dd99::memory::structure
     public:
         Freelist_Fixed_Sz_Blocks(std::size_t block_size)
             : m_block_size(block_size)
-        { }
+        {
+            if (sizeof(Free_Block_Header) > block_size)
+                throw std::length_error{"Freelist: block_size (" + std::to_string(block_size) + ") is too short. Min: " + std::to_string(sizeof(Free_Block_Header))};
+        }
 
         Freelist_Fixed_Sz_Blocks(const Freelist_Fixed_Sz_Blocks &) = delete;
         Freelist_Fixed_Sz_Blocks(Freelist_Fixed_Sz_Blocks &&other) = default;
@@ -35,6 +40,7 @@ namespace dd99::memory::structure
         memory::Block pop()
         {
             if (!first) return {};
+            
             auto current = first;
             first = first->next;
             current->~Free_Block_Header();
@@ -57,6 +63,11 @@ namespace dd99::memory::structure
                 current->~Free_Block_Header();
                 current = tmp;
             }
+        }
+
+        bool empty() const
+        {
+            return first == nullptr;
         }
     };
 
@@ -91,7 +102,7 @@ namespace dd99::memory::structure
             clear();
         }
 
-        memory::Block extract(std::size_t min_size)
+        memory::Block pop(std::size_t min_size)
         {
             // smaller allocations not allowed
             if (min_size < sizeof(Free_Sized_Block_Header))
@@ -133,7 +144,7 @@ namespace dd99::memory::structure
         }
 
         // sorted by base address
-        void insert(const memory::Block& memory)
+        void push(const memory::Block& memory)
         {
             // insert into list and get pointer to node previous to inserted one
             // the pointer to the inserted node is do_insert(memory)->next
@@ -161,6 +172,11 @@ namespace dd99::memory::structure
                 current->~Free_Sized_Block_Header();
                 current = tmp;
             }
+        }
+
+        bool empty() const
+        {
+            return first == nullptr;
         }
     
     private:

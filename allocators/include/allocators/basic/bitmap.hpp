@@ -50,7 +50,7 @@ namespace dd99::memory::block_allocator
             
             // mark block as free
             auto index = get_index(memory);
-            m_bitmap.clear(index);
+            m_bitmap.unset(index);
         }
 
         void deallocate_all()
