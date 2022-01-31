@@ -8,19 +8,21 @@ namespace dd99::memory::structure
 {
     // singly linked list of free memory blocks that stores
     // nodes on empty blocks
-    template <std::size_t Block_Size>
     class Freelist_Fixed_Sz_Blocks
     {
     protected:
         // Header for free blocks. The nodes of the freelist
         struct Free_Block_Header { Free_Block_Header *next = nullptr; };
-        static_assert(sizeof(Free_Block_Header) <= Block_Size);
 
     private:
+        std::size_t m_block_size;
         Free_Block_Header *first = nullptr;
 
     public:
-        Freelist_Fixed_Sz_Blocks() = default;
+        Freelist_Fixed_Sz_Blocks(std::size_t block_size)
+            : m_block_size(block_size)
+        { }
+
         Freelist_Fixed_Sz_Blocks(const Freelist_Fixed_Sz_Blocks &) = delete;
         Freelist_Fixed_Sz_Blocks(Freelist_Fixed_Sz_Blocks &&other) = default;
 
@@ -36,7 +38,7 @@ namespace dd99::memory::structure
             auto current = first;
             first = first->next;
             current->~Free_Block_Header();
-            return {.base = current, .size = Block_Size};
+            return {.base = current, .size = m_block_size};
         }
 
         void push(const memory::Block& memory)
