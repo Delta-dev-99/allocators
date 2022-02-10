@@ -20,6 +20,7 @@ namespace dd99::memory::pointer_allocator
         Sub_Alloc_T m_sub_alloc;
     
     public:
+        [[nodiscard]]
         void *allocate(std::size_t requested_size)
         {
             Block allocated_block = m_sub_alloc.allocate(requested_size + sizeof(Block));

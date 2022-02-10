@@ -15,6 +15,7 @@ namespace dd99::memory::block_allocator
         { }
         
     public:
+        [[nodiscard]]
         Block allocate(std::size_t requested_size)
         {
             const auto used_size = reinterpret_cast<std::uintptr_t>(m_current) - reinterpret_cast<std::uintptr_t>(m_memory.base);

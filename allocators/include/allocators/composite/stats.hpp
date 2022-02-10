@@ -12,6 +12,8 @@ namespace dd99::memory::block_allocator::composite
             : Sub_Alloc_T(std::move(sub_allocator))
         { }
 
+    public:
+        [[nodiscard]]
         memory::Block allocate(std::size_t requested_size)
         {
             m_mean_allocation_size = (m_mean_allocation_size * m_number_of_allocations + requested_size) / (m_number_of_allocations + 1);

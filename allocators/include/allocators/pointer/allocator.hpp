@@ -15,7 +15,9 @@ namespace dd99::memory::pointer_allocator
         Allocator(const Allocator &) = delete; // no copy
         Allocator(Allocator &&) = default; // move allowed
 
+        [[nodiscard]]
         virtual void *allocate(std::size_t requested_size) = 0;
+        
         virtual void deallocate(void *memory) = 0;
         virtual void deallocate_all() = 0;
 

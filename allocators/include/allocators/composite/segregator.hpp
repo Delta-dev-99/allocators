@@ -7,12 +7,14 @@ namespace dd99::memory::block_allocator::composite
     template <std::size_t Threshold, class Allocator_LE, class Allocator_G>
     class Segregator_Allocator : public Allocator
     {
+    public:
         Segregator_Allocator(Allocator_LE &&allocator_le, Allocator_G &&allocator_g)
             : m_alloc_le(std::move(allocator_le))
             , m_alloc_g(std::move(allocator_g))
         { }
 
     public:
+        [[nodiscard]]
         memory::Block allocate(std::size_t requested_size)
         {
             if (requested_size <= Threshold)

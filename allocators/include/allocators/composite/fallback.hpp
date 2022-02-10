@@ -37,6 +37,8 @@ namespace dd99::memory::block_allocator::composite
         Fallback_Allocator(const Fallback_Allocator&) = delete;
         Fallback_Allocator(Fallback_Allocator&&) = default;
 
+    public:
+        [[nodiscard]]
         memory::Block allocate(std::size_t requested_size)
         {
             auto r = m_primary.allocate(requested_size);

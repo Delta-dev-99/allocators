@@ -20,6 +20,7 @@ namespace dd99::memory::pointer_allocator
         using Check_Header = int;
     
     public:
+        [[nodiscard]]
         void *allocate(std::size_t requested_size)
         {
             auto const alloc_size = requested_size + sizeof(Block) + 2 * sizeof(Check_Header);

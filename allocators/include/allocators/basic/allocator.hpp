@@ -21,7 +21,9 @@ namespace dd99::memory::block_allocator
         Allocator(const Allocator &) = delete; // no copy
         Allocator(Allocator &&) = default; // move allowed
 
+        [[nodiscard]]
         virtual Block allocate(std::size_t requested_size) = 0;
+        
         virtual void deallocate(const Block &memory) = 0;
         virtual void deallocate_all() = 0;
 

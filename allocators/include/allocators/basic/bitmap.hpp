@@ -29,6 +29,7 @@ namespace dd99::memory::block_allocator
         }
 
     public:
+        [[nodiscard]]
         memory::Block allocate(std::size_t requested_size)
         {
             // larger allocations not supported

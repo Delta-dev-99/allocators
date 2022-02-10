@@ -17,6 +17,8 @@ namespace dd99::memory::block_allocator::composite
             , Sub_Allocator_T(*this)
         { }
 
+    public:
+        [[nodiscard]]
         memory::Block allocate(std::size_t requested_size)
         { return Sub_Allocator_T::allocate(requested_size); }
 

@@ -9,6 +9,7 @@ namespace dd99::memory::block_allocator
     // Allocates memory blocks by dividing a large enough free memory block (chopping the requested size).
     // Uses a free list (linked list with nodes in unused blocks)
     // Requires allocation sizes to be large enough to fit a list node (adjusted if not)
+    // TODO: This is unfinished
     class Chop : public Allocator
     {
     public:
@@ -19,6 +20,7 @@ namespace dd99::memory::block_allocator
         }
 
     public:
+        [[nodiscard]]
         memory::Block allocate(std::size_t requested_size)
         {
             return m_free_list.pop(requested_size);

@@ -11,6 +11,8 @@ namespace dd99::memory::block_allocator::composite
             : Sub_Alloc_T(std::move(sub_allocator))
         { }
 
+    public:
+        [[nodiscard]]
         memory::Block allocate(std::size_t requested_size)
         {
             const auto size_step_floor = requested_size + Step_Size - (requested_size % Step_Size);

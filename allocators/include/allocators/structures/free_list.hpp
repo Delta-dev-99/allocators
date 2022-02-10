@@ -37,6 +37,7 @@ namespace dd99::memory::structure
             clear();
         }
 
+        [[nodiscard]]
         memory::Block pop()
         {
             if (!first) return {};
