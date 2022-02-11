@@ -10,7 +10,7 @@ namespace dd99::memory::structure
 {
     // singly linked list of free memory blocks that stores
     // nodes on empty blocks
-    class Freelist_Fixed_Sz_Blocks
+    class Freelist
     {
     protected:
         // Header for free blocks. The nodes of the freelist
@@ -21,22 +21,24 @@ namespace dd99::memory::structure
         Free_Block_Header *first = nullptr;
 
     public:
-        Freelist_Fixed_Sz_Blocks(std::size_t block_size)
+        Freelist(std::size_t block_size)
             : m_block_size(block_size)
         {
             if (sizeof(Free_Block_Header) > block_size)
                 throw std::length_error{"Freelist: block_size (" + std::to_string(block_size) + ") is too short. Min: " + std::to_string(sizeof(Free_Block_Header))};
         }
 
-        Freelist_Fixed_Sz_Blocks(const Freelist_Fixed_Sz_Blocks &) = delete;
-        Freelist_Fixed_Sz_Blocks(Freelist_Fixed_Sz_Blocks &&other) = default;
+        Freelist(const Freelist &) = delete;
+        Freelist(Freelist &&other) = default;
 
-        ~Freelist_Fixed_Sz_Blocks()
+        ~Freelist()
         {
             // call destructor on created nodes
             clear();
         }
 
+
+    public:
         [[nodiscard]]
         memory::Block pop()
         {
@@ -70,12 +72,13 @@ namespace dd99::memory::structure
         {
             return first == nullptr;
         }
+
     };
 
 
     // singly linked list of free memory blocks that stores
     // nodes on empty blocks of different sizes
-    class Freelist_Sized_Blocks
+    class Freelist_Sized
     {
     protected:
         // header for free blocks
@@ -93,17 +96,17 @@ namespace dd99::memory::structure
         Free_Sized_Block_Header *first = nullptr;
 
     public:
-        Freelist_Sized_Blocks() = default;
-        Freelist_Sized_Blocks(const Freelist_Sized_Blocks &) = delete;
-        Freelist_Sized_Blocks(Freelist_Sized_Blocks &&other) = default;
+        Freelist_Sized() = default;
+        Freelist_Sized(const Freelist_Sized &) = delete;
+        Freelist_Sized(Freelist_Sized &&other) = default;
 
-        ~Freelist_Sized_Blocks()
+        ~Freelist_Sized()
         {
             // call destructor on created nodes
             clear();
         }
 
-        memory::Block pop(std::size_t min_size)
+        memory::Block pop_chop(std::size_t min_size)
         {
             // smaller allocations not allowed
             if (min_size < sizeof(Free_Sized_Block_Header))

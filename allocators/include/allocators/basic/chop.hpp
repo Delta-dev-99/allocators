@@ -23,7 +23,7 @@ namespace dd99::memory::block_allocator
         [[nodiscard]]
         memory::Block allocate(std::size_t requested_size)
         {
-            return m_free_list.pop(requested_size);
+            return m_free_list.pop_chop(requested_size);
         }
 
         void deallocate(const memory::Block &memory)
@@ -50,7 +50,7 @@ namespace dd99::memory::block_allocator
 
     private:
         memory::Block m_memory;
-        memory::structure::Freelist_Sized_Blocks m_free_list;
+        memory::structure::Freelist_Sized m_free_list;
     };
 
 }

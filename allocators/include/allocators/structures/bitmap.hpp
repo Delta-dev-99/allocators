@@ -9,6 +9,7 @@ namespace dd99::memory::structure
     class Bitmap
     {
     public:
+        // TODO: Verify Block_Bits is used in calculations
         constexpr static auto Block_Bits = std::numeric_limits<Block_T>::digits;
         constexpr static auto Block_Size = sizeof(Block_T);
 
@@ -21,7 +22,7 @@ namespace dd99::memory::structure
 
         // The number of Bitmap Blocks used
         // valid for bit_count > 0
-        constexpr static std::size_t size(std::size_t bit_count)
+        constexpr static std::size_t calculate_block_count(std::size_t bit_count)
         {
             return  (bit_count - 1) / Block_Bits + 1;
         }
@@ -31,8 +32,9 @@ namespace dd99::memory::structure
         Bitmap(std::size_t bit_count, void *base)
             : m_base(reinterpret_cast<Block_T *>(base))
             , m_bit_size(bit_count)
+            , m_size(Bitmap::calculate_block_count(bit_count))
         {
-            m_size = Bitmap::size(bit_count);
+            
         }
 
     public:
@@ -41,6 +43,7 @@ namespace dd99::memory::structure
             return fully_mapped(m_bit_size);
         }
 
+        // size in blocks
         std::size_t size() const
         {
             return m_size;
@@ -78,7 +81,7 @@ namespace dd99::memory::structure
             const auto fast_block_ptr_end = reinterpret_cast<Fast_Block *>(m_base) + n_fast_blocks;
             while (fast_block_ptr < fast_block_ptr_end)
             {
-                if (*fast_block_ptr != Fast_Block(-1))
+                if (*fast_block_ptr != -1)
                     break;
 
                 ++fast_block_ptr;
@@ -88,7 +91,7 @@ namespace dd99::memory::structure
             const auto block_ptr_end = m_base + size();
             while (block_ptr < block_ptr_end)
             {
-                if (*block_ptr != Block_T(-1))
+                if (*block_ptr != -1)
                 {
                     for (int bit = 0; bit < Block_Bits; ++bit)
                     {
