@@ -4,7 +4,7 @@
 #include <allocators/composite/fallback.hpp>
 #include <allocators/composite/segregator.hpp>
 #include <allocators/composite/timing.hpp>
-#include <allocators/basic/chop.hpp>
+#include <allocators/basic/slicing.hpp>
 #include <allocators/basic/pool.hpp>
 #include <allocators/basic/stack.hpp>
 #include <allocators/basic/bitmap.hpp>
@@ -29,15 +29,15 @@ void test1()
 {
     namespace allocs = dd99::memory::block_allocator;
 
-    // Chop allocator over 1024b memory block located on the stack
+    // Slicing allocator over 1024b memory block located on the stack
     dd99::memory::Self_Contained_Block<1024> memory_block;
-    auto chop = allocs::Chop(memory_block);
+    auto slicing = allocs::Slicing(memory_block);
     
-    // Two more allocators that relay allocation to chop
-    auto chop_with_stats = allocs::composite::Stats(allocs::composite::Ref(chop));
-    auto chop_with_stats2 = allocs::composite::Stats(allocs::composite::Ref(chop));
+    // Two more allocators that relay allocation to slicing
+    auto chop_with_stats = allocs::composite::Stats(allocs::composite::Ref(slicing));
+    auto chop_with_stats2 = allocs::composite::Stats(allocs::composite::Ref(slicing));
 
-    // auto chop_with_stats = allocs::composite::Stats(allocs::Chop(memory_block));
+    // auto chop_with_stats = allocs::composite::Stats(allocs::Slicing(memory_block));
 
     auto x1 = chop_with_stats.allocate(1);
     auto x2 = chop_with_stats.allocate(30);
