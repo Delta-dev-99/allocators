@@ -12,7 +12,7 @@ target_sources(allocators PUBLIC
     include/allocators/structures/memory_block.hpp
 
     include/allocators/basic/allocator.hpp
-    include/allocators/basic/chop.hpp
+    include/allocators/basic/slicing.hpp
     include/allocators/basic/pool.hpp
     include/allocators/basic/stack.hpp
     include/allocators/basic/bitmap.hpp
