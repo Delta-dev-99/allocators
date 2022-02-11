@@ -37,7 +37,7 @@ namespace dd99::memory::block_allocator
                 return {};
 
             const auto free_index = m_bitmap.set_first_unset();
-            if (free_index != decltype(free_index)(-1))
+            if (free_index != -1)
                 return get_memory_block(free_index);
 
             // no free block found
@@ -74,8 +74,9 @@ namespace dd99::memory::block_allocator
         {
             // worst case block count: bitmap is full unused memory is just below 1 block and 1 new bitmap element
             const auto worst_case_unused = Block_Size + BMP::Block_Size - 1;
+            // TODO: This formula is wrong
             auto block_count = (BMP::Block_Bits * (memory_size - worst_case_unused)) / (BMP::Block_Bits * Block_Size + 1);
-            const auto unused = memory_size - BMP::size(block_count) * BMP::Block_Size - block_count * Block_Size;
+            const auto unused = memory_size - BMP::calculate_block_count(block_count) * BMP::Block_Size - block_count * Block_Size;
             
             if (unused >= Block_Size && !BMP::fully_mapped(block_count))
                 ++block_count;
