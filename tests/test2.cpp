@@ -10,6 +10,9 @@
 #include <allocators/basic/bitmap.hpp>
 #include <allocators/basic/buddy.hpp>
 
+#include <allocators/borrowing/bitmap.hpp>
+#include <allocators/borrowing/buddy.hpp>
+
 #include <iostream>
 
 
@@ -101,15 +104,15 @@ void test3()
 
     allocs::Buddy<16, 3> buddy_alloc(my_memory);
 
-    // constexpr auto x = allocs::Buddy<16, 11>::block_count(1024 << 4);
-    // auto y = allocs::Buddy<16, 11>::block_count(100 * 1024);
+    // constexpr auto x = allocs::Buddy<16, 11>::calculate_block_count(1024 << 4);
+    // auto y = allocs::Buddy<16, 11>::calculate_block_count(100 * 1024);
 
     using Buddy_t = allocs::Buddy<16, 2>;
     
     constexpr std::size_t mem_size = 100;
-    constexpr auto n = Buddy_t::block_count(mem_size);
+    constexpr auto n = Buddy_t::calculate_block_count(mem_size);
     constexpr auto bits = Buddy_t::bitmap_bits(n);
-    constexpr auto bmp = Buddy_t::BMP::size(n) * Buddy_t::BMP::Block_Size;
+    constexpr auto bmp = Buddy_t::BMP::calculate_block_count(n) * Buddy_t::BMP::Block_Size;
     constexpr auto unused = mem_size - bmp - n * Buddy_t::Block_Size;
     constexpr auto ratio = Buddy_t::ratio(n);
 
@@ -117,9 +120,21 @@ void test3()
         std::cout << i << "\t" << Buddy_t::ratio(i) << "\n";
 }
 
+void test4()
+{
+    dd99::memory::Self_Contained_Block<1024> mem;
+    dd99::memory::block_allocator::Buddy<32, 3> alloc(mem);
+
+    auto x1 = alloc.allocate(5);
+    auto x2 = alloc.allocate(32);
+    auto x3 = alloc.allocate(33);
+    auto x4 = alloc.allocate(128);
+    auto x5 = alloc.allocate(129);
+}
+
 int main()
 {
     // test1();
     // test2();   
-    test3();
+    test4();
 }
