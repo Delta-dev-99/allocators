@@ -17,7 +17,7 @@ namespace dd99::memory::block_allocator::borrowing
         class Buddy_Freelist_Impl
         {
         protected:
-            memory::structure::Freelist m_freelists[Levels];
+            memory::structure::Freelist_Double_Link m_freelists[Levels];
 
         public:
             Buddy_Freelist_Impl()
