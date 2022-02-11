@@ -179,10 +179,10 @@ namespace dd99::memory::block_allocator
     // Uses a free list (linked list with nodes in unused blocks)
     // Requires allocation sizes to be large enough to fit a list node (adjusted if not)
     // TODO: This is unfinished
-    class Chop : public Allocator
+    class Slicing : public Allocator
     {
     public:
-        Chop(const memory::Block& memory)
+        Slicing(const memory::Block& memory)
             : m_memory(memory)
         {
             m_free_list.push(m_memory);
