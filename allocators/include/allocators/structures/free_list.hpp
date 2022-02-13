@@ -39,6 +39,7 @@ namespace dd99::memory::structure
 
 
     public:
+        // NOTE: Undefined Behaviour if the freelist is empty. Do check!
         [[nodiscard]]
         memory::Block pop()
         {
@@ -106,6 +107,7 @@ namespace dd99::memory::structure
 
 
     public:
+        // NOTE: Undefined Behaviour if the freelist is empty. Do check!
         [[nodiscard]]
         memory::Block pop()
         {
