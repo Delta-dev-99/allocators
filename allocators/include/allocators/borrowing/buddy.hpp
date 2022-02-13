@@ -54,6 +54,13 @@ namespace dd99::memory::block_allocator::borrowing
         using Freelist_Base = detail::Buddy_Freelist<BLOCK_SIZE, LEVELS>;
         using BMP_Structure = dd99::memory::structure::Bitmap<Bitmap_Element_T>;
 
+        // used to address a block in the buddy system
+        struct Block_Address
+        {
+            int level;
+            std::size_t index;
+        };
+
     public: // static consts
         static constexpr int Levels = LEVELS;
         static constexpr std::size_t Block_Size = BLOCK_SIZE;
@@ -149,10 +156,7 @@ namespace dd99::memory::block_allocator::borrowing
             if (requested_size == 0)
                 return {};
 
-            // ceiling division of requested_size / Block_Size
-            const auto number_of_blocks_required = (requested_size - 1) / Block_Size + 1;
-            const int required_block_level = std::bit_width(number_of_blocks_required) - 1;
-
+            const int required_block_level = get_block_level(requested_size);
             return allocate_from_level(required_block_level);
         }
 
@@ -164,20 +168,31 @@ namespace dd99::memory::block_allocator::borrowing
             if (!owns(memory))
                 return;
 
-            const auto number_of_blocks = memory.size / Block_Size;
-            // NOTE: This can be optimized
-            const int block_level = std::bit_width(number_of_blocks) - 1;
-
+            const int block_level = get_block_level(memory);
+            const auto index = get_block_index_in_lvl(memory, block_level);
             const auto bmp_index = get_bitmap_index(memory, block_level);
-            if (bmp_index != -1)
+            if (bmp_index == -1)
+            {
+                // block has no buddy. add it to freelist
+                Freelist_Base::m_freelists[block_level].push(memory);
+            }
+            else
             {
                 m_bitmap.toggle(bmp_index);
-                if (m_bitmap[bmp_index] == 0)
+                if (m_bitmap[bmp_index])
+                {
+                    // the buddy is allocated.
+                    // just free the block
+                    Freelist_Base::m_freelists[block_level].push(memory);
+                }
+                else
                 {
                     // both blk and its buddy are free.
                     // remove the buddy from freelist
                     // deallocate the joint block
+
                     const auto buddy_blk = get_buddy(memory);
+                    Freelist_Base::m_freelists[block_level].remove(buddy_blk);
 
                     // return deallocate(get_joint_block(memory));
                 }
@@ -186,6 +201,27 @@ namespace dd99::memory::block_allocator::borrowing
         }
 
     private:
+        static constexpr std::size_t get_block_size_in_lvl(int level)
+        {
+            return Block_Size << level;
+        }
+
+        static constexpr int get_block_level(std::size_t requested_size)
+        {
+            // assumed requested_size > 0
+            const auto block_count = (requested_size - 1) / Block_Size + 1;
+            const int level = std::bit_width(block_count) - 1;
+            return level;
+        }
+
+        static constexpr int get_block_level(const memory::Block & blk)
+        {
+            // assumed blk is a block from this allocator type
+            const auto sub_block_count = blk.size / Block_Size;
+            const int level = std::bit_width(sub_block_count) - 1;
+            return level;
+        }
+
         std::size_t get_block_count_in_lvl(int level) const
         {
             return m_block_count / (std::size_t(1) << level);
@@ -193,12 +229,19 @@ namespace dd99::memory::block_allocator::borrowing
 
         std::size_t get_block_index_in_lvl(const memory::Block & blk, int level) const
         {
-            const auto block_size = Block_Size << level;
+            const auto block_size = get_block_size_in_lvl(level);
             const auto block_offset = reinterpret_cast<std::uintptr_t>(blk.base) - reinterpret_cast<std::uintptr_t>(m_memory.base);
             return block_offset / block_size;
         }
 
-        std::size_t get_bitmap_index(const memory::Block & blk, int level) const
+        Block_Address get_block_address(const memory::Block & blk)
+        {
+            const auto level = get_block_level(blk);
+            const auto index = get_block_index_in_lvl(blk, level);
+            return Block_Address{.level = level, .index = index};
+        }
+
+        std::size_t get_bitmap_index(Block_Address blk_address) const
         {
             // Note that there is a single bit per block pair.
             // single blocks (end blocks in levels with an odd number of blocks) do not have bits.
@@ -210,31 +253,34 @@ namespace dd99::memory::block_allocator::borrowing
             // NOTE: This function can be optimized if all blocks have buddies.
             // NOTE: This puts a requirement on allowed (read: usable) memory sizes.
 
-            // step 1: find the index of the block in its level.
-            // NOTE: halving it gives the index of the buddy bit not counting previous level buddies.
-            // step 2: find the number of buddy bits used for previous levels
-            // step 3: calculate the end result
+            // NOTE: halving the index gives the index of the buddy bit in this level.
+            // step 1: find the number of buddy bits used for previous levels
+            // step 2: calculate the end result
 
             // last level? No buddies
-            if (level + 1 >= Levels)
+            if (blk_address.level + 1 >= Levels)
                 return -1;
-
-            const auto index_in_lvl = get_block_index_in_lvl(blk, level);
 
             // check if block has buddy
             // conditions: block is the first in the buddy (otherwise, the buddy exists and is the previous block)
             // conditions: block is the last in the level (otherwise, the buddy exists and is the next block)
             // therefore the buddy cannot exist.
-            if ((index_in_lvl % 2 == 0) && (index_in_lvl == get_block_count_in_lvl(level) - 1))
+            if ((blk_address.index % 2 == 0) && (blk_address.index == get_block_count_in_lvl(blk_address.level) - 1))
                 return -1;
 
             std::size_t previous_levels_buddies = 0;
-            for (int l = 0; l < level; l++)
+            for (int l = 0; l < blk_address.level; l++)
             {
                 previous_levels_buddies += get_block_count_in_lvl(l) / 2;
             }
 
-            return previous_levels_buddies + index_in_lvl / 2;
+            return previous_levels_buddies + blk_address.index / 2;
+        }
+
+        memory::Block get_block(std::size_t index, int level) const
+        {
+            const auto x = reinterpret_cast<std::uintptr_t>(m_memory.base) + index * get_block_size_in_lvl(level);
+            // TODO:
         }
 
         // TODO: Lacking a better name
@@ -247,6 +293,7 @@ namespace dd99::memory::block_allocator::borrowing
         memory::Block get_buddy(const memory::Block & blk) const
         {
             // TODO:
+            
             return {};
         }
 
