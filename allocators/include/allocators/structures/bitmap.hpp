@@ -66,9 +66,15 @@ namespace dd99::memory::structure
             m_base[bit_index / Block_Bits] &= ~(Block_T(1) << (bit_index % Block_Bits));
         }
 
-        void toggle(std::size_t bit_index)
+        bool toggle(std::size_t bit_index)
         {
-            m_base[bit_index / Block_Bits] ^= Block_T(1) << (bit_index % Block_Bits);
+            const auto blk_index = bit_index / Block_Bits;
+            const auto bit_index_in_blk = bit_index % Block_Bits;
+
+            m_base[blk_index] ^= Block_T(1) << bit_index_in_blk;
+
+            // return the new value
+            return m_base[blk_index] & bit_index_in_blk;
         }
 
         // returns the index of the set bit, or -1 if not found
