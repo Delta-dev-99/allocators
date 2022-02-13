@@ -40,6 +40,8 @@ namespace dd99::memory
     template <std::size_t Size>
     struct Self_Contained_Block : Block
     {
+        static_assert(Size > 0);
+
         Self_Contained_Block()
             : Block{.base = m_data, .size = Size}
         { }
