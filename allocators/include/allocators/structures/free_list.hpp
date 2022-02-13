@@ -42,8 +42,6 @@ namespace dd99::memory::structure
         [[nodiscard]]
         memory::Block pop()
         {
-            if (!first) return {};
-            
             auto current = first;
             first = first->next;
             current->~Free_Block_Header();
@@ -111,8 +109,6 @@ namespace dd99::memory::structure
         [[nodiscard]]
         memory::Block pop()
         {
-            if (!first) return {};
-            
             auto block_ptr = first;
             first = first->next;
             first->prev = nullptr;
