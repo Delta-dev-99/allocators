@@ -5,7 +5,7 @@
 
 namespace dd99::memory::block_allocator
 {
-    // Only handles contiguous memory
+    // memory overhead on the controlled block: none
     class Stack : public Allocator
     {
     public:
