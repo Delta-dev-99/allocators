@@ -112,16 +112,18 @@ namespace dd99::memory::structure
         memory::Block pop()
         {
             auto block_ptr = first;
-            first = first->next;
-            first->prev = nullptr;
-            block_ptr->~Free_Block_Header();
-            return {.base = block_ptr, .size = m_block_size};
+            const memory::Block block{.base = block_ptr, .size = m_block_size};
+            remove(block);
+            return block;
         }
 
         void push(const memory::Block& block)
         {
             auto new_header = new (block.base) Free_Block_Header{.next = first};
-            first->prev = new_header;
+
+            if (first)
+                first->prev = new_header;
+
             first = new_header;
         }
 
@@ -131,7 +133,19 @@ namespace dd99::memory::structure
             // UB otherwise.
 
             auto header = reinterpret_cast<Free_Block_Header *>(block.base);
-            header->prev->next = header->next;
+
+            if (header->prev == nullptr) // removing the first block
+            {
+                first = header->next;
+            }
+            else
+            {
+                header->prev->next = header->next;
+            }
+
+            if (header->next)
+                header->next->prev = header->prev;
+
             header->~Free_Block_Header();
         }
 
