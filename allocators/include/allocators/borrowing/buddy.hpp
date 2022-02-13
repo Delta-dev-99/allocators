@@ -71,17 +71,24 @@ namespace dd99::memory::block_allocator::borrowing
         static_assert(Block_Size > 0);
 
     public: // statics
+        static constexpr std::size_t calculate_block_count_in_lvl(std::size_t memory_size, int level)
+        {
+            const auto block_count = memory_size / Block_Size;
+            return block_count / (std::size_t(1) << level);
+        }
+
         static constexpr std::size_t calculate_aux_allocation(std::size_t memory_size)
         {
-            const auto first_level_block_count = memory_size / Block_Size;
+            const auto first_level_block_count = calculate_block_count_in_lvl(memory_size, 0);
+
+            if (first_level_block_count < 2)
+                return 0;
 
             // calculate bitmap bit count
-            // 1 bit per buddy relation
-            // last level does not need bits
             std::size_t bit_count = 0;
-            for (int i = 0; i < Levels - 1; i++)
+            for (int lvl = 1; lvl < Levels; lvl++)
             {
-                bit_count += first_level_block_count >> (std::size_t(1) << (i + 1));
+                bit_count += calculate_block_count_in_lvl(memory_size, lvl);
             }
 
             const auto bmp_blocks = BMP_Structure::calculate_block_count(bit_count);
