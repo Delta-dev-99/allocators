@@ -21,9 +21,9 @@ namespace dd99::memory::structure
         }
 
         // The number of Bitmap Blocks used
-        // valid for bit_count > 0
         constexpr static std::size_t calculate_block_count(std::size_t bit_count)
         {
+            if (bit_count == 0) return 0;
             return  (bit_count - 1) / Block_Bits + 1;
         }
         
@@ -70,11 +70,12 @@ namespace dd99::memory::structure
         {
             const auto blk_index = bit_index / Block_Bits;
             const auto bit_index_in_blk = bit_index % Block_Bits;
+            const auto bit_mask = Block_T(1) << bit_index_in_blk;
 
-            m_base[blk_index] ^= Block_T(1) << bit_index_in_blk;
+            m_base[blk_index] ^= bit_mask;
 
             // return the new value
-            return m_base[blk_index] & bit_index_in_blk;
+            return m_base[blk_index] & bit_mask;
         }
 
         // returns the index of the set bit, or -1 if not found
