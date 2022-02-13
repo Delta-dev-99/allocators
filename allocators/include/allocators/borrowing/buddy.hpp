@@ -118,14 +118,13 @@ namespace dd99::memory::block_allocator::borrowing
 
             // step 1: get the block
             // try to get a block from the freelist for the current level.
-            // if that succeeds, we are done.
             // otherwise, allocate a block from the next level and split it.
-            // if the allocation fails there's nothing else we can do.
             // the first half is put in the freelist of the current level.
             // the other half is what we use.
 
-            Block blk = Freelist_Base::m_freelists[requested_level].pop();
-            if (!blk)
+            Block blk;
+
+            if (Freelist_Base::m_freelists[requested_level].empty())
             {
                 blk = allocate_from_level(requested_level + 1);
                 if (!blk) return {};
@@ -134,15 +133,23 @@ namespace dd99::memory::block_allocator::borrowing
                 Freelist_Base::m_freelists[requested_level].push(blk);
 
                 blk.base = blk.get_end();
+
+                // NOTE: We know blk has a buddy
+                // NOTE: Could optimize based on that
             }
+            else
+                blk = Freelist_Base::m_freelists[requested_level].pop();
 
             // step 2: got a block, toggle the buddy bit.
-            // some blocks do not have a buddy (no bit then).
-            // this is the case for the last block on the level if there is an odd number of them
+            // some blocks do not have a buddy.
 
-            const auto bmp_index = get_bitmap_index(blk, requested_level);
-            if (bmp_index != -1)
+            const auto block_address = get_block_address(blk, requested_level);
+            if (block_has_buddy(block_address))
+            {
+                const auto joint_block_address = get_joint_block_address(block_address);
+                const auto bmp_index = get_bitmap_index(joint_block_address);
                 m_bitmap.toggle(bmp_index);
+            }
 
             return blk;
         }
@@ -168,36 +175,46 @@ namespace dd99::memory::block_allocator::borrowing
             if (!owns(memory))
                 return;
 
-            const int block_level = get_block_level(memory);
-            const auto index = get_block_index_in_lvl(memory, block_level);
-            const auto bmp_index = get_bitmap_index(memory, block_level);
-            if (bmp_index == -1)
-            {
-                // block has no buddy. add it to freelist
-                Freelist_Base::m_freelists[block_level].push(memory);
-            }
-            else
-            {
-                m_bitmap.toggle(bmp_index);
-                if (m_bitmap[bmp_index])
-                {
-                    // the buddy is allocated.
-                    // just free the block
-                    Freelist_Base::m_freelists[block_level].push(memory);
-                }
-                else
-                {
-                    // both blk and its buddy are free.
-                    // remove the buddy from freelist
-                    // deallocate the joint block
+            const auto address = get_block_address(memory);
 
-                    const auto buddy_blk = get_buddy(memory);
-                    Freelist_Base::m_freelists[block_level].remove(buddy_blk);
+            deallocate(memory, address);
+        }
 
-                    // return deallocate(get_joint_block(memory));
-                }
+        void deallocate_all()
+        {
+            m_bitmap.reset();
+
+            for (int l = 0; l < Levels; l++)
+            {
+                Freelist_Base::m_freelists[l].clear();
             }
 
+            // Build freelists
+            // step 1: Add all blocks on the last level to freelist
+            // step 2: Add blocks without buddies to freelist
+
+            for (Block_Address address{.level = Levels - 1, .index = 0}; address.index < get_block_count_in_lvl(Levels - 1); address.index++)
+            {
+                Freelist_Base::m_freelists[Levels - 1].push(get_block(address));
+            }
+
+            for (int lvl = 0; lvl < Levels - 1; lvl++)
+            {
+                const auto block_count = get_block_count_in_lvl(lvl);
+                const Block_Address last_block_addr{.level = lvl, .index = block_count - 1};
+                if (!block_has_buddy(last_block_addr))
+                    Freelist_Base::m_freelists[lvl].push(get_block(last_block_addr));
+            }
+        }
+
+        bool owns(void *memory) const
+        {
+            return m_memory.contains(memory);
+        }
+
+        bool owns(const memory::Block& memory) const
+        {
+            return m_memory.contains(memory);
         }
 
     private:
@@ -234,67 +251,111 @@ namespace dd99::memory::block_allocator::borrowing
             return block_offset / block_size;
         }
 
-        Block_Address get_block_address(const memory::Block & blk)
+        Block_Address get_block_address(const memory::Block & blk, int level) const
         {
-            const auto level = get_block_level(blk);
             const auto index = get_block_index_in_lvl(blk, level);
             return Block_Address{.level = level, .index = index};
         }
 
-        std::size_t get_bitmap_index(Block_Address blk_address) const
+        Block_Address get_block_address(const memory::Block & blk) const
         {
-            // Note that there is a single bit per block pair.
-            // single blocks (end blocks in levels with an odd number of blocks) do not have bits.
-            // blocks in the last level do no have bits either.
-            // the bit represents the state of the buddy relationship, not the blocks on their own.
-            // bit set means the blocks are in different allocation state (one is allocated, the other is not)
-            // bit cleared means both blocks are allocated or free.
+            const auto level = get_block_level(blk);
+            return get_block_address(blk, level);
+        }
+
+        Block_Address get_joint_block_address(Block_Address sub_block_address) const
+        {
+            // NOTE: does not check if the block exists
+            sub_block_address.level++;
+            sub_block_address.index /= 2;
+            return sub_block_address;
+        }
+
+        Block_Address get_buddy_block_address(Block_Address address) const
+        {
+            // NOTE: does not check the buddy exists.
+            address.index ^= 1;
+            return address;
+        }
+
+        std::size_t get_bitmap_index(Block_Address joint_blk_address) const
+        {
+            // BIG NOTE: The input is not one of the buddies, but the joint block they form
+
+            // In the buddy allocation model, 2 blocks that are buddies are joined to form a bigger block (the Joint Block)
+            // Note that there is a single bit per block pair (means: per Joint Block).
+            // Single blocks (end blocks in levels with an odd number of blocks) do not have bits.
+            // That is because single blocks do not join with others to form bigger blocks.
+            // Blocks in the last level do no have bits either. They do not form bigger blocks.
+
+            // The bit represents the state of the buddy relationship, not the blocks on their own.
+            // Bit set means the blocks are in different allocation state (one is allocated, the other is not)
+            // Bit cleared means both blocks are allocated or free.
 
             // NOTE: This function can be optimized if all blocks have buddies.
             // NOTE: This puts a requirement on allowed (read: usable) memory sizes.
 
-            // NOTE: halving the index gives the index of the buddy bit in this level.
-            // step 1: find the number of buddy bits used for previous levels
-            // step 2: calculate the end result
+            // NOTE: Halving the index gives the index of the buddy bit in this level.
+            // NOTE: That index is the same as the index of the joint block in its level.
 
-            // last level? No buddies
-            if (blk_address.level + 1 >= Levels)
-                return -1;
+            // step 1: Find the number of buddy bits used for previous levels
+            // step 2: Calculate the end result
 
-            // check if block has buddy
-            // conditions: block is the first in the buddy (otherwise, the buddy exists and is the previous block)
-            // conditions: block is the last in the level (otherwise, the buddy exists and is the next block)
-            // therefore the buddy cannot exist.
-            if ((blk_address.index % 2 == 0) && (blk_address.index == get_block_count_in_lvl(blk_address.level) - 1))
-                return -1;
-
-            std::size_t previous_levels_buddies = 0;
-            for (int l = 0; l < blk_address.level; l++)
+            std::size_t previous_levels_joints = 0;
+            for (int l = 1; l < joint_blk_address.level; l++)
             {
-                previous_levels_buddies += get_block_count_in_lvl(l) / 2;
+                previous_levels_joints += get_block_count_in_lvl(l);
             }
 
-            return previous_levels_buddies + blk_address.index / 2;
+            return previous_levels_joints + joint_blk_address.index;
         }
 
-        memory::Block get_block(std::size_t index, int level) const
+        memory::Block get_block(Block_Address address) const
         {
-            const auto x = reinterpret_cast<std::uintptr_t>(m_memory.base) + index * get_block_size_in_lvl(level);
-            // TODO:
+            const auto block_size = get_block_size_in_lvl(address.level);
+            const auto block_offset = address.index * block_size;
+            const auto block_base = reinterpret_cast<void *>(reinterpret_cast<std::uintptr_t>(m_memory.base) + block_offset);
+            return {.base = block_base, .size = block_size};
         }
 
-        // TODO: Lacking a better name
-        // This function gets the block that is formed joining blk and it's buddy
-        // memory::Block get_joint_block(const memory::Block & blk) const
-        // {
-
-        // }
-
-        memory::Block get_buddy(const memory::Block & blk) const
+        bool is_address_index_valid(Block_Address address) const
         {
-            // TODO:
+            if (address.index < get_block_count_in_lvl(address.level))
+                return true;
+            return false;
+        }
+
+        bool block_has_buddy(Block_Address block_address) const
+        {
+            // NOTE: assumed block_address is valid
+            const auto buddy_block_address = get_buddy_block_address(block_address);
+            // NOTE: if buddy index is even, it exists; no need to check.
+            return (buddy_block_address.index & 1) ? is_address_index_valid(buddy_block_address) : true;
+        }
+
+        void deallocate(const memory::Block & memory, Block_Address address)
+        {
+            if (block_has_buddy(address));
+            {
+                const auto joint_block_address = get_joint_block_address(address);
+                const auto bmp_index = get_bitmap_index(joint_block_address);
+                const auto bmp_value = m_bitmap.toggle(bmp_index);
+                if (!bmp_value)
+                {   // buddy is free. join the blocks
+                    const auto buddy_block_address = get_buddy_block_address(address);
+                    const auto buddy_block = get_block(buddy_block_address);
+                    Freelist_Base::m_freelists[address.level].remove(buddy_block);
+                    return deallocate(joint_block_address);
+                }
+            }
             
-            return {};
+            Freelist_Base::m_freelists[address.level].push(memory);
+        }
+
+        void deallocate(Block_Address address)
+        {
+            const auto block = get_block(address);
+            deallocate(block, address);
         }
 
     private:
