@@ -25,7 +25,7 @@ namespace dd99::memory::block_allocator
         memory::Block allocate(std::size_t requested_size)
         {
             // larger allocations not supported
-            if (requested_size > Block_Size)
+            if ((requested_size > Block_Size) || m_free_list.empty())
                 return {};
             
             return m_free_list.pop();
