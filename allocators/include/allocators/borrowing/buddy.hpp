@@ -77,20 +77,19 @@ namespace dd99::memory::block_allocator::borrowing
             return block_count / (std::size_t(1) << level);
         }
 
-        static constexpr std::size_t calculate_aux_allocation(std::size_t memory_size)
+        static constexpr std::size_t calculate_bmp_bit_count(std::size_t memory_size)
         {
-            const auto first_level_block_count = calculate_block_count_in_lvl(memory_size, 0);
-
-            if (first_level_block_count < 2)
-                return 0;
-
-            // calculate bitmap bit count
             std::size_t bit_count = 0;
             for (int lvl = 1; lvl < Levels; lvl++)
             {
                 bit_count += calculate_block_count_in_lvl(memory_size, lvl);
             }
+            return bit_count;
+        }
 
+        static constexpr std::size_t calculate_aux_allocation(std::size_t memory_size)
+        {
+            const auto bit_count = calculate_bmp_bit_count(memory_size);
             const auto bmp_blocks = BMP_Structure::calculate_block_count(bit_count);
             const auto bmp_bytes = bmp_blocks * BMP_Structure::Block_Size;
             return bmp_bytes;
@@ -104,15 +103,17 @@ namespace dd99::memory::block_allocator::borrowing
 
         Buddy(const memory::Block & memory, Allocator & aux_allocator)
             : Freelist_Base()
-            , m_memory(memory)
             , m_block_count(memory.size / Block_Size)
             , m_aux_allocator(aux_allocator)
+            , m_memory(memory)
             , m_aux_memory(m_aux_allocator.allocate(calculate_aux_allocation(memory.size)))
-            , m_bitmap(m_block_count, m_aux_memory.base)
+            , m_bitmap(calculate_bmp_bit_count(memory.size), m_aux_memory.base)
         {
             // NOTE: This is safe because the bitmap structure does not operate on the memory during construction
             if (!m_aux_memory)
                 throw std::runtime_error{"Buddy Allocator: Borrowed allocator initialization: Auxiliary allocation failed"};
+
+            deallocate_all();
         }
 
     public:
@@ -366,9 +367,9 @@ namespace dd99::memory::block_allocator::borrowing
         }
 
     private:
-        memory::Block m_memory, m_aux_memory;
         std::size_t m_block_count;
         Allocator & m_aux_allocator;
+        memory::Block m_memory, m_aux_memory;
         BMP_Structure m_bitmap;
     };
 }
