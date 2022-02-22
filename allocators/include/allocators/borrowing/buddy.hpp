@@ -335,6 +335,8 @@ namespace dd99::memory::block_allocator::borrowing
 
         bool block_has_buddy(Block_Address block_address) const
         {
+            if (block_address.level >= Levels - 1)
+                return false;
             // NOTE: assumed block_address is valid
             const auto buddy_block_address = get_buddy_block_address(block_address);
             // NOTE: if buddy index is even, it exists; no need to check.
@@ -343,7 +345,7 @@ namespace dd99::memory::block_allocator::borrowing
 
         void deallocate(const memory::Block & memory, Block_Address address)
         {
-            if (block_has_buddy(address));
+            if (block_has_buddy(address))
             {
                 const auto joint_block_address = get_joint_block_address(address);
                 const auto bmp_index = get_bitmap_index(joint_block_address);
