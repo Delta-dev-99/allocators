@@ -1,9 +1,9 @@
-#include <allocators/composite/stats.hpp>
+#include <allocators/metrics/stats.hpp>
+#include <allocators/metrics/timing.hpp>
 #include <allocators/composite/ref.hpp>
 #include <allocators/composite/bucketizer.hpp>
 #include <allocators/composite/fallback.hpp>
 #include <allocators/composite/segregator.hpp>
-#include <allocators/composite/timing.hpp>
 #include <allocators/basic/slicing.hpp>
 #include <allocators/basic/pool.hpp>
 #include <allocators/basic/stack.hpp>
@@ -40,8 +40,8 @@ void test1()
     auto slicing = allocs::Slicing(memory_block);
     
     // Two more allocators that relay allocation to slicing
-    auto chop_with_stats = allocs::composite::Stats(allocs::composite::Ref(slicing));
-    auto chop_with_stats2 = allocs::composite::Stats(allocs::composite::Ref(slicing));
+    auto chop_with_stats = allocs::metrics::Stats(allocs::composite::Ref(slicing));
+    auto chop_with_stats2 = allocs::metrics::Stats(allocs::composite::Ref(slicing));
 
     // auto chop_with_stats = allocs::composite::Stats(allocs::Slicing(memory_block));
 

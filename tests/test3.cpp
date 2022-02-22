@@ -1,9 +1,9 @@
 
-#include <allocators/basic/chop.hpp>
-#include <allocators/composite/fallback.hpp>
-#include <allocators/composite/stats.hpp>
 #include <allocators/pointer/basic.hpp>
 #include <allocators/pointer/checked.hpp>
+#include <allocators/metrics/stats.hpp>
+#include <allocators/composite/fallback.hpp>
+#include <allocators/basic/slicing.hpp>
 
 
 void test1()
@@ -19,25 +19,25 @@ void test1()
     // Following lines should be noop.
     // Test of correctness of composition definitions
     block_alloc::composite::Fallback_Allocator(
-        block_alloc::Chop(my_memory),
-        block_alloc::Chop(my_memory));
+        block_alloc::Slicing(my_memory),
+        block_alloc::Slicing(my_memory));
     block_alloc::composite::Fallback_Allocator(
-        block_alloc::Chop(my_memory),
-        block_alloc::Chop(my_memory),
-        block_alloc::Chop(my_memory));
-    block_alloc::composite::Fallback_Allocator<block_alloc::Chop, block_alloc::Chop>(my_memory, my_memory);
-    block_alloc::composite::Fallback_Allocator<block_alloc::Chop, block_alloc::Chop, block_alloc::Chop>(my_memory, my_memory, my_memory);
+        block_alloc::Slicing(my_memory),
+        block_alloc::Slicing(my_memory),
+        block_alloc::Slicing(my_memory));
+    block_alloc::composite::Fallback_Allocator<block_alloc::Slicing, block_alloc::Slicing>(my_memory, my_memory);
+    block_alloc::composite::Fallback_Allocator<block_alloc::Slicing, block_alloc::Slicing, block_alloc::Slicing>(my_memory, my_memory, my_memory);
     
 
     
     auto my_ptr_alloc =
         ptr_alloc::Pointer_Checked(
-            block_alloc::composite::Stats(
+            block_alloc::metrics::Stats(
                 block_alloc::composite::Fallback_Allocator(
-                    block_alloc::composite::Stats(
-                        block_alloc::Chop(my_memory)),
-                    block_alloc::composite::Stats(
-                        block_alloc::Chop(my_memory2)))));
+                    block_alloc::metrics::Stats(
+                        block_alloc::Slicing(my_memory)),
+                    block_alloc::metrics::Stats(
+                        block_alloc::Slicing(my_memory2)))));
 
     auto x1 = my_ptr_alloc.allocate(100);
     auto x2 = my_ptr_alloc.allocate(100);

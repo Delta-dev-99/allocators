@@ -4,7 +4,7 @@
 #include <chrono>
 
 
-namespace dd99::memory::block_allocator::composite
+namespace dd99::memory::block_allocator::metrics
 {
     namespace detail
     {

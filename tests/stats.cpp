@@ -1,9 +1,9 @@
-#include <allocators/composite/stats.hpp>
+#include <allocators/metrics/stats.hpp>
+#include <allocators/metrics/timing.hpp>
 #include <allocators/composite/ref.hpp>
 #include <allocators/composite/bucketizer.hpp>
 #include <allocators/composite/fallback.hpp>
 #include <allocators/composite/segregator.hpp>
-#include <allocators/composite/timing.hpp>
 #include <allocators/basic/slicing.hpp>
 #include <allocators/basic/pool.hpp>
 #include <allocators/basic/stack.hpp>
@@ -39,7 +39,7 @@ auto get_repeatable_rng_engine()
 template <class Distribution>
 void stat_allocator(alloc::Allocator & allocator, std::size_t iterations, Distribution allocation_size_distribution, double allocation_probability = 0.65)
 {
-    auto allocator_with_stats = alloc::composite::Stats(alloc::composite::Timing(alloc::composite::Ref(allocator)));
+    auto allocator_with_stats = alloc::metrics::Stats(alloc::metrics::Timing(alloc::composite::Ref(allocator)));
     using alloc_type = decltype(allocator_with_stats);
 
     std::vector<mem::Block> memory_blocks;

@@ -2,7 +2,7 @@
 
 #include <allocators/structures/memory_block.hpp>
 
-namespace dd99::memory::block_allocator::composite
+namespace dd99::memory::block_allocator::metrics
 {
     template <class Sub_Alloc_T>
     class Stats : public Sub_Alloc_T

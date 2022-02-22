@@ -22,8 +22,9 @@ target_sources(allocators PUBLIC
     include/allocators/composite/fallback.hpp
     include/allocators/composite/ref.hpp
     include/allocators/composite/segregator.hpp
-    include/allocators/composite/stats.hpp
-    include/allocators/composite/timing.hpp
+
+    include/allocators/metrics/stats.hpp
+    include/allocators/metrics/timing.hpp
 
     include/allocators/pointer/allocator.hpp
     include/allocators/pointer/basic.hpp
