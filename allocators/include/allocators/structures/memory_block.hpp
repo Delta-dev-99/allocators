@@ -27,7 +27,7 @@ namespace dd99::memory
         }
 
         // check if block is empty
-        operator bool()
+        operator bool() const
         {
             return size;
         }
