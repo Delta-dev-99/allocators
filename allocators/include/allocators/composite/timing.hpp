@@ -1,15 +1,42 @@
 #pragma once
 
+#include <allocators/basic/allocator.hpp>
 #include <chrono>
 
 
 namespace dd99::memory::block_allocator::composite
 {
+    namespace detail
+    {
+        template <bool Keep> struct Last_Time_Points { };
+        template <> struct Last_Time_Points<true>
+        {
+            std::chrono::steady_clock::time_point last_time_point[Allocator::Operation::Operation_Count]{};
+        };
+
+        template <bool Keep> struct Last_Durations { };
+        template <> struct Last_Durations<true>
+        {
+            std::chrono::steady_clock::duration last_duration[Allocator::Operation::Operation_Count]{};
+        };
+
+        template <bool Keep> struct Total_Durations { };
+        template <> struct Total_Durations<true>
+        {
+            std::chrono::steady_clock::duration total_duration[Allocator::Operation::Operation_Count]{};
+        };
+
+        template <bool Keep_Last_Time_Points, bool Keep_Last_Durations, bool Keep_Total_Durations>
+        struct Timing_Data : Last_Time_Points<Keep_Last_Time_Points>, Last_Durations<Keep_Last_Durations>, Total_Durations<Keep_Total_Durations>
+        { };
+    }
+
+
+
     // NOTE: For timing and stats make sure to compose this way:
     //     Stats<Timing<Sub_Alloc_T>>
     // Otherwise you will time the allocation along with the stats computation
-    // TODO: Not finished
-    template <class Sub_Alloc_T>
+    template <class Sub_Alloc_T, bool Keep_Last_Time_Points = true, bool Keep_Last_Durations = true, bool Keep_Total_Durations = true>
     class Timing : public Sub_Alloc_T
     {
     public:
@@ -18,74 +45,77 @@ namespace dd99::memory::block_allocator::composite
         { }
 
     public:
+        using Timing_Data = detail::Timing_Data<Keep_Last_Time_Points, Keep_Last_Durations, Keep_Total_Durations>;
+
+    public:
         [[nodiscard]]
         memory::Block allocate(std::size_t requested_size)
         {
-            const auto start = m_clock.now();
+            const auto start = std::chrono::steady_clock::now();
             auto r = Sub_Alloc_T::allocate(requested_size);
-            const auto end = m_clock.now();
+            const auto end = std::chrono::steady_clock::now();
 
-            const auto timing = end - start;
-
-            m_last_allocation = start;
-            m_last_allocation_duration = timing;
-
-            update_last_operation(start, timing);
+            const auto duration = end - start;
+            
+            update_operation_timings(Allocator::Operation::Allocation, start, duration);
 
             return r;
         }
 
         void deallocate(const memory::Block &memory)
         {
-            const auto start = m_clock.now();
+            const auto start = std::chrono::steady_clock::now();
             Sub_Alloc_T::deallocate(memory);
-            const auto end = m_clock.now();
+            const auto end = std::chrono::steady_clock::now();
 
-            const auto timing = end - start;
-
-            m_last_deallocation_duration = timing;
-
-            update_last_operation(start, timing);
+            const auto duration = end - start;
+            
+            update_operation_timings(Allocator::Operation::Deallocation, start, duration);
         }
 
         void deallocate_all()
         {
-            const auto start = m_clock.now();
+            const auto start = std::chrono::steady_clock::now();
             Sub_Alloc_T::deallocate_all();
-            const auto end = m_clock.now();
+            const auto end = std::chrono::steady_clock::now();
 
-            const auto timing = end - start;
+            const auto duration = end - start;
 
-            m_last_full_deallocation_duration = timing;
-         
-            update_last_operation(start, timing);
+            update_operation_timings(Allocator::Operation::Full_Deallocation, start, duration);
         }
 
         bool owns(void *memory) const { return Sub_Alloc_T::owns(memory); }
         bool owns(const memory::Block &memory) const { return Sub_Alloc_T::owns(memory); }
 
     private:
-        std::chrono::steady_clock m_clock;
+        Timing_Data m_timing_data;
 
-        std::chrono::steady_clock::time_point m_last_allocation;
-        std::chrono::steady_clock::time_point m_last_deallocation;
-        std::chrono::steady_clock::time_point m_last_full_deallocation;
-        
-        std::chrono::steady_clock::duration m_last_allocation_duration;
-        std::chrono::steady_clock::duration m_last_deallocation_duration;
-        std::chrono::steady_clock::duration m_last_full_deallocation_duration;
-        
-        // any operation
-        std::chrono::steady_clock::time_point m_last_operation;
-        std::chrono::steady_clock::duration m_last_operation_duration;
-    
-    private:
-        void update_last_operation(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::duration duration)
+    public:
+        const Timing_Data & get_timing_data() const
         {
-            m_last_operation = start;
-            m_last_operation_duration = duration;
+            return m_timing_data;
+        }
+        
+        void reset_timings()
+        {
+            m_timing_data = {};
         }
 
+    private:
+        void update_operation_timings(Allocator::Operation operation, std::chrono::steady_clock::time_point time_point, std::chrono::steady_clock::duration duration)
+        {
+            if constexpr (Keep_Last_Time_Points)
+                m_timing_data.last_time_point[operation] = time_point;
+
+            if constexpr (Keep_Last_Durations)
+                m_timing_data.last_duration[operation] = duration;
+
+            if constexpr (Keep_Total_Durations)
+                m_timing_data.total_duration[operation] += duration;
+
+            if (operation != Allocator::Operation::Any)
+                update_operation_timings(Allocator::Operation::Any, time_point, duration);
+        }
         
     };
 }
