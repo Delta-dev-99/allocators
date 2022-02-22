@@ -19,6 +19,7 @@
 #include <vector>
 #include <random>
 #include <chrono>
+#include <cmath>
 
 
 
@@ -164,78 +165,230 @@ void test5()
     x2 = allocator.allocate(30);
 }
 
-void test6()
+void allocation_timing(dd99::memory::block_allocator::Allocator & allocator)
 {
-    // Setup allocators
-
     namespace mem = dd99::memory;
-    namespace alloc = mem::block_allocator;
 
-    using allocator_type = alloc::borrowing::Buddy<64, 5>;
-    using aux_allocator_type = alloc::Stack;
-
-    const std::size_t mem_size = 1024 * 1024; // 1Mb
-    const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
-
-
-    mem::Self_Contained_Block<mem_size> memory;
-    mem::Self_Contained_Block<aux_mem_size> aux_memory;
-    aux_allocator_type aux_allocator(aux_memory);
-    allocator_type allocator(memory, aux_allocator);
-
+    std::cout.precision(10);
+    std::cout.fill('0');
 
     // Setup random number generators
 
     std::random_device rdev;
     std::mt19937_64 rng_eng(rdev());
     std::discrete_distribution<> boolean_dist({40, 60});
-    std::uniform_int_distribution<> collection_index_dist(0, 2);
     std::uniform_int_distribution<> alloc_size_dist(1, 300);
     auto bool_gen = [&] () { return boolean_dist(rng_eng); };
-    auto collection_index_gen = [&] () { return collection_index_dist(rng_eng); };
     auto alloc_size_gen = [&] () { return alloc_size_dist(rng_eng); };
-
-
-    // Setup memory block collections
-
-    std::vector<mem::Block> block_collections[3];
-    for (auto & v : block_collections)
-        v.reserve(10000);
-
-
-    // Prepare chronos
-    const auto start_time = std::chrono::steady_clock::now();
 
 
     // Do the test
 
-    const auto N = 100000000;
-    for (int i = 0; i < N; i++)
+    const int NN = 50;
+    const int NF = 100;
+    const int NE = 2;
+    const auto NEF = 0.2;
+    for (int k = 0; k < NN; k++)
     {
-        const auto collection_index = collection_index_gen();
-        auto selected_collection = block_collections[collection_index];
-        const bool allocating = bool_gen();
+        allocator.deallocate_all();
 
-        if (allocating)
-        {
-            const auto alloc_size = alloc_size_gen();
-            selected_collection.push_back(allocator.allocate(alloc_size));
-        }
-        else
-        {
-            if (selected_collection.size() == 0) continue;
+        // Setup memory block collections
 
-            const auto block_index = rng_eng() % selected_collection.size();
-            allocator.deallocate(selected_collection[block_index]);
-            selected_collection.erase(selected_collection.begin() + block_index);
+        std::vector<mem::Block> block_collection;
+        block_collection.reserve(10000);
+
+
+
+        std::chrono::nanoseconds total_duration{0}, total_allocation_duration{0}, total_deallocation_duration{0};
+        int total_allocations{0}, total_deallocations{0}, total_failed_allocations{0}, first_failed_allocation_iteration{-1};
+
+        const int N = NF * std::pow(NE, k * NEF);
+        for (int i = 0; i < N; i++)
+        {
+            const bool allocating = bool_gen();
+
+            if (allocating)
+            {
+                const auto alloc_size = alloc_size_gen();
+
+
+                const auto allocation_start_time = std::chrono::steady_clock::now();
+                const auto block = allocator.allocate(alloc_size);
+                const auto allocation_end_time = std::chrono::steady_clock::now();
+
+                block_collection.push_back(block);
+
+                const auto allocation_duration = allocation_end_time - allocation_start_time;
+                total_duration += allocation_duration;
+                total_allocation_duration += allocation_duration;
+                total_allocations++;
+                if (!block)
+                {
+                    if (!total_failed_allocations) first_failed_allocation_iteration = i;
+                    total_failed_allocations++;
+                }
+            }
+            else
+            {
+                if (block_collection.size() == 0) continue;
+                
+                const auto block_index = std::uniform_int_distribution<>(0, block_collection.size() - 1)(rng_eng);
+                const auto block = block_collection[block_index];
+
+
+                const auto deallocation_start_time = std::chrono::steady_clock::now();
+                allocator.deallocate(block);
+                const auto deallocation_end_time = std::chrono::steady_clock::now();
+
+                block_collection.erase(block_collection.begin() + block_index);
+
+                const auto deallocation_duration = deallocation_end_time - deallocation_start_time;
+                total_duration += deallocation_duration;
+                total_deallocation_duration += deallocation_duration;
+                total_deallocations++;
+            }
         }
+
+        // const auto end_time = std::chrono::steady_clock::now();
+        // total_duration = std::chrono::duration_cast<std::chrono::duration<long double>>(end_time - start_time);
+
+        const auto mean_iteration_duration = std::chrono::duration_cast<std::chrono::duration<long double, std::nano>>(total_duration) / N;
+        const auto mean_allocation_duration = std::chrono::duration_cast<std::chrono::duration<long double, std::nano>>(total_allocation_duration) / total_allocations;
+        const auto mean_deallocation_duration = std::chrono::duration_cast<std::chrono::duration<long double, std::nano>>(total_deallocation_duration) / total_deallocations;
+
+
+        std::cout << k << ": iterations: " << N << "\t"
+                  << "time(total): " << std::chrono::duration_cast<std::chrono::duration<long double, std::nano>>(total_duration).count() << "\t"
+                  << "allocations: " << total_allocations << "\t"
+                  << "allocations(failed): " << total_failed_allocations << "\t"
+                  << "iteration(first-failed): " << first_failed_allocation_iteration << "\t"
+                  << "time(allocation): " << mean_allocation_duration.count() << "\t"
+                  << "de-allocations: " << total_deallocations << "\t"
+                  << "time(de-allocation): " << mean_deallocation_duration.count() << "\t"
+                  << "iteration time: " << mean_iteration_duration.count() << "\n";
+    }
+}
+
+void time_allocators()
+{
+    // Setup allocators
+
+    namespace mem = dd99::memory;
+    namespace alloc = mem::block_allocator;
+
+    {   // buddy<64,5> allocator
+        std::cout << "Allocator: buddy<64,5>\n";
+        using allocator_type = alloc::borrowing::Buddy<64, 5>;
+        using aux_allocator_type = alloc::Stack;
+
+        const std::size_t mem_size = 1024 * 1024; // 1Mb
+        const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
+
+
+        mem::Self_Contained_Block<mem_size> memory;
+        mem::Self_Contained_Block<aux_mem_size> aux_memory;
+        aux_allocator_type aux_allocator(aux_memory);
+        allocator_type allocator(memory, aux_allocator);
+
+        allocation_timing(allocator);
+        std::cout << "\n\n";
     }
 
-    const auto end_time = std::chrono::steady_clock::now();
-    const auto total_duration = std::chrono::duration_cast<std::chrono::duration<long double>>(end_time - start_time);
-    const auto iteration_duration = total_duration / N;
-    std::cout << "total time: " << total_duration.count() << "\n";
-    std::cout << "iteration time: " << iteration_duration.count() << "\n";
+    {   // buddy<64,8> allocator
+        std::cout << "Allocator: buddy<64,8>\n";
+        using allocator_type = alloc::borrowing::Buddy<64, 8>;
+        using aux_allocator_type = alloc::Stack;
+
+        const std::size_t mem_size = 1024 * 1024; // 1Mb
+        const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
+
+
+        mem::Self_Contained_Block<mem_size> memory;
+        mem::Self_Contained_Block<aux_mem_size> aux_memory;
+        aux_allocator_type aux_allocator(aux_memory);
+        allocator_type allocator(memory, aux_allocator);
+
+        allocation_timing(allocator);
+        std::cout << "\n\n";
+    }
+
+    {   // buddy<64,11> allocator
+        std::cout << "Allocator: buddy<64,11>\n";
+        using allocator_type = alloc::borrowing::Buddy<64, 11>;
+        using aux_allocator_type = alloc::Stack;
+
+        const std::size_t mem_size = 1024 * 1024; // 1Mb
+        const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
+
+
+        mem::Self_Contained_Block<mem_size> memory;
+        mem::Self_Contained_Block<aux_mem_size> aux_memory;
+        aux_allocator_type aux_allocator(aux_memory);
+        allocator_type allocator(memory, aux_allocator);
+
+        allocation_timing(allocator);
+        std::cout << "\n\n";
+    }
+
+    {   // buddy<8,11> allocator
+        std::cout << "Allocator: buddy<8,11>\n";
+        using allocator_type = alloc::borrowing::Buddy<16, 6>;
+        using aux_allocator_type = alloc::Stack;
+
+        const std::size_t mem_size = 1024 * 1024; // 1Mb
+        const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
+
+
+        mem::Self_Contained_Block<mem_size> memory;
+        mem::Self_Contained_Block<aux_mem_size> aux_memory;
+        aux_allocator_type aux_allocator(aux_memory);
+        allocator_type allocator(memory, aux_allocator);
+
+        allocation_timing(allocator);
+        std::cout << "\n\n";
+    }
+
+    // {   // slicing allocator
+    //     std::cout << "Allocator: slicing\n";
+    //     using allocator_type = alloc::Slicing;
+
+    //     const std::size_t mem_size = 1024 * 1024; // 1Mb
+
+
+    //     mem::Self_Contained_Block<mem_size> memory;
+    //     allocator_type allocator(memory);
+
+    //     allocation_timing(allocator);
+    //     std::cout << "\n\n";
+    // }
+
+    // {   // stack allocator
+    //     std::cout << "Allocator: stack\n";
+    //     using allocator_type = alloc::Stack;
+
+    //     const std::size_t mem_size = 1024 * 1024; // 1Mb
+
+
+    //     mem::Self_Contained_Block<mem_size> memory;
+    //     allocator_type allocator(memory);
+
+    //     allocation_timing(allocator);
+    //     std::cout << "\n\n";
+    // }
+
+    // {   // pool<300> allocator
+    //     std::cout << "Allocator: pool<300>\n";
+    //     using allocator_type = alloc::Pool<300>;
+
+    //     const std::size_t mem_size = 1024 * 1024; // 1Mb
+
+
+    //     mem::Self_Contained_Block<mem_size> memory;
+    //     allocator_type allocator(memory);
+
+    //     allocation_timing(allocator);
+    //     std::cout << "\n\n";
+    // }
 }
 
 int main()
@@ -244,5 +397,5 @@ int main()
     // test2();   
     // test4();
     // test5();
-    test6();
+    time_allocators();
 }
