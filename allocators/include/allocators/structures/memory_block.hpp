@@ -59,11 +59,15 @@ namespace dd99::memory
     template <std::size_t Size>
     struct Heap_Block : Block
     {
-        Heap_Block()
-            : m_data(std::make_unique<char>(Size))
-            , Block{.base = m_data.get(), .size = Size}
-        { }
+        ~Heap_Block()
+        {
+            ::operator delete(base);
+        }
 
-        std::unique_ptr<char> m_data;
+        Heap_Block()
+        {
+            base = ::operator new(Size);
+            size = Size;
+        }
     };
 }
