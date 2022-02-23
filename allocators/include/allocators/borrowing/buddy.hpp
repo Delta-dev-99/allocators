@@ -2,6 +2,7 @@
 
 #include <allocators/basic/allocator.hpp>
 #include <allocators/structures/bitmap.hpp>
+#include <allocators/structures/free_list.hpp>
 
 
 // borrowing allocators borrow memory from other allocators to place inner state
