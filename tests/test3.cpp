@@ -18,22 +18,22 @@ void test1()
 
     // Following lines should be noop.
     // Test of correctness of composition definitions
-    block_alloc::composite::Fallback_Allocator(
+    block_alloc::composite::Fallback(
         block_alloc::Slicing(my_memory),
         block_alloc::Slicing(my_memory));
-    block_alloc::composite::Fallback_Allocator(
+    block_alloc::composite::Fallback(
         block_alloc::Slicing(my_memory),
         block_alloc::Slicing(my_memory),
         block_alloc::Slicing(my_memory));
-    block_alloc::composite::Fallback_Allocator<block_alloc::Slicing, block_alloc::Slicing>(my_memory, my_memory);
-    block_alloc::composite::Fallback_Allocator<block_alloc::Slicing, block_alloc::Slicing, block_alloc::Slicing>(my_memory, my_memory, my_memory);
+    block_alloc::composite::Fallback<block_alloc::Slicing, block_alloc::Slicing>(my_memory, my_memory);
+    block_alloc::composite::Fallback<block_alloc::Slicing, block_alloc::Slicing, block_alloc::Slicing>(my_memory, my_memory, my_memory);
     
 
     
     auto my_ptr_alloc =
         ptr_alloc::Pointer_Checked(
             block_alloc::metrics::Stats(
-                block_alloc::composite::Fallback_Allocator(
+                block_alloc::composite::Fallback(
                     block_alloc::metrics::Stats(
                         block_alloc::Slicing(my_memory)),
                     block_alloc::metrics::Stats(

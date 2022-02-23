@@ -10,6 +10,10 @@
 #include <allocators/basic/bitmap.hpp>
 #include <allocators/basic/buddy.hpp>
 
+#include <allocators/degenerate/boolean.hpp>
+#include <allocators/degenerate/constant.hpp>
+#include <allocators/degenerate/failed.hpp>
+
 #include <allocators/borrowing/bitmap.hpp>
 #include <allocators/borrowing/buddy.hpp>
 
@@ -279,7 +283,7 @@ void time_allocators()
     {   // buddy<64,5> allocator
         std::cout << "Allocator: buddy<64,5>\n";
         using allocator_type = alloc::borrowing::Buddy<64, 5>;
-        using aux_allocator_type = alloc::Stack;
+        using aux_allocator_type = alloc::Failed;
 
         const std::size_t mem_size = 1024 * 1024; // 1Mb
         const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
@@ -294,59 +298,61 @@ void time_allocators()
         std::cout << "\n\n";
     }
 
-    {   // buddy<64,8> allocator
-        std::cout << "Allocator: buddy<64,8>\n";
-        using allocator_type = alloc::borrowing::Buddy<64, 8>;
-        using aux_allocator_type = alloc::Stack;
+    // {   // buddy<64,8> allocator
+    //     std::cout << "Allocator: buddy<64,8>\n";
+    //     using allocator_type = alloc::borrowing::Buddy<64, 8>;
+    //     using aux_allocator_type = alloc::Stack;
 
-        const std::size_t mem_size = 1024 * 1024; // 1Mb
-        const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
-
-
-        mem::Self_Contained_Block<mem_size> memory;
-        mem::Self_Contained_Block<aux_mem_size> aux_memory;
-        aux_allocator_type aux_allocator(aux_memory);
-        allocator_type allocator(memory, aux_allocator);
-
-        allocation_timing(allocator);
-        std::cout << "\n\n";
-    }
-
-    {   // buddy<64,11> allocator
-        std::cout << "Allocator: buddy<64,11>\n";
-        using allocator_type = alloc::borrowing::Buddy<64, 11>;
-        using aux_allocator_type = alloc::Stack;
-
-        const std::size_t mem_size = 1024 * 1024; // 1Mb
-        const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
+    //     const std::size_t mem_size = 1024 * 1024; // 1Mb
+    //     const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
 
 
-        mem::Self_Contained_Block<mem_size> memory;
-        mem::Self_Contained_Block<aux_mem_size> aux_memory;
-        aux_allocator_type aux_allocator(aux_memory);
-        allocator_type allocator(memory, aux_allocator);
+    //     mem::Self_Contained_Block<mem_size> memory;
+    //     mem::Self_Contained_Block<aux_mem_size> aux_memory;
+    //     aux_allocator_type aux_allocator(aux_memory);
+    //     allocator_type allocator(memory, aux_allocator);
 
-        allocation_timing(allocator);
-        std::cout << "\n\n";
-    }
+    //     allocation_timing(allocator);
+    //     std::cout << "\n\n";
+    // }
 
-    {   // buddy<8,11> allocator
-        std::cout << "Allocator: buddy<8,11>\n";
-        using allocator_type = alloc::borrowing::Buddy<16, 6>;
-        using aux_allocator_type = alloc::Stack;
+    // {   // buddy<64,11> allocator
+    //     std::cout << "Allocator: buddy<64,11>\n";
+    //     using allocator_type = alloc::borrowing::Buddy<64, 11>;
+    //     using aux_allocator_type = alloc::Constant;
 
-        const std::size_t mem_size = 1024 * 1024; // 1Mb
-        const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
+    //     const std::size_t mem_size = 1024 * 1024; // 1Mb
+    //     const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
 
 
-        mem::Self_Contained_Block<mem_size> memory;
-        mem::Self_Contained_Block<aux_mem_size> aux_memory;
-        aux_allocator_type aux_allocator(aux_memory);
-        allocator_type allocator(memory, aux_allocator);
+    //     mem::Self_Contained_Block<mem_size> memory;
+    //     mem::Self_Contained_Block<aux_mem_size> aux_memory;
+    //     aux_allocator_type aux_allocator(aux_memory);
+    //     allocator_type allocator(memory, aux_allocator);
 
-        allocation_timing(allocator);
-        std::cout << "\n\n";
-    }
+    //     allocation_timing(allocator);
+    //     std::cout << "\n\n";
+    // }
+
+    // {   // buddy<8,11> allocator
+    //     std::cout << "Allocator: buddy<8,11>\n";
+    //     using allocator_type = alloc::borrowing::Buddy<16, 6>;
+    //     using aux_allocator_type = alloc::Stack;
+
+    //     const std::size_t mem_size = 1024 * 1024; // 1Mb
+    //     const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
+
+
+    //     mem::Self_Contained_Block<mem_size> memory;
+    //     mem::Self_Contained_Block<aux_mem_size> aux_memory;
+    //     aux_allocator_type aux_allocator(aux_memory);
+    //     allocator_type allocator(memory, aux_allocator);
+
+    //     allocation_timing(allocator);
+    //     std::cout << "\n\n";
+    // }
+
+
 
     // {   // slicing allocator
     //     std::cout << "Allocator: slicing\n";
