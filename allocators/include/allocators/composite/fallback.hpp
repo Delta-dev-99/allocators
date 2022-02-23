@@ -8,15 +8,15 @@ namespace dd99::memory::block_allocator::composite
     // Tries to allocate from a fallback allocator if primary fails.
     // And so on...
     template <class Primary_T, class Fallback_T, class... More_Fallbacks_T>
-    class Fallback_Allocator
-        : public Fallback_Allocator<Fallback_Allocator<Primary_T, Fallback_T>, More_Fallbacks_T...>
+    class Fallback
+        : public Fallback<Fallback<Primary_T, Fallback_T>, More_Fallbacks_T...>
     {
-        using Base = Fallback_Allocator<Fallback_Allocator<Primary_T, Fallback_T>, More_Fallbacks_T...>;
+        using Base = Fallback<Fallback<Primary_T, Fallback_T>, More_Fallbacks_T...>;
 
     public:
-        Fallback_Allocator(Primary_T &&primary, Fallback_T &&fallback, More_Fallbacks_T &&... more_fallbacks)
+        Fallback(Primary_T &&primary, Fallback_T &&fallback, More_Fallbacks_T &&... more_fallbacks)
             : Base(
-                Fallback_Allocator<Primary_T, Fallback_T>(
+                Fallback<Primary_T, Fallback_T>(
                     std::move(primary),
                     std::move(fallback)),
                 std::move(more_fallbacks)...)
@@ -26,16 +26,16 @@ namespace dd99::memory::block_allocator::composite
 
     // Specialization for end case of recursion
     template <class Primary_T, class Fallback_T>
-    class Fallback_Allocator<Primary_T, Fallback_T> : public Allocator
+    class Fallback<Primary_T, Fallback_T> : public Allocator
     {
     public:
-        Fallback_Allocator(Primary_T &&primary, Fallback_T &&fallback)
+        Fallback(Primary_T &&primary, Fallback_T &&fallback)
             : m_primary(std::move(primary))
             , m_fallback(std::move(fallback))
         { }
 
-        Fallback_Allocator(const Fallback_Allocator&) = delete;
-        Fallback_Allocator(Fallback_Allocator&&) = default;
+        Fallback(const Fallback&) = delete;
+        Fallback(Fallback&&) = default;
 
     public:
         [[nodiscard]]
