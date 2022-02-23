@@ -13,20 +13,24 @@ namespace dd99::memory
         void *base = nullptr;
         std::size_t size = 0;
 
+        constexpr
         auto get_end() const { return reinterpret_cast<void *>(reinterpret_cast<std::uintptr_t>(base) + size); }
         
+        constexpr
         bool contains(const Block &other) const
         {
             const auto base_offset = reinterpret_cast<std::intptr_t>(other.base) - reinterpret_cast<std::intptr_t>(base);
             return (base_offset >= 0) && (other.size + base_offset <= size);
         }
 
+        constexpr
         bool contains(void * ptr) const
         {
             return (base <= ptr) && (get_end() >= ptr);
         }
 
         // check if block is empty
+        constexpr
         operator bool() const
         {
             return size;
@@ -42,6 +46,7 @@ namespace dd99::memory
     {
         static_assert(Size > 0);
 
+        constexpr
         Self_Contained_Block()
             : Block{.base = m_data, .size = Size}
         { }
