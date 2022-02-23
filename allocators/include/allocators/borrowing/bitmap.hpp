@@ -18,7 +18,7 @@ namespace dd99::memory::block_allocator::borrowing
             // block count is also the required number of bits
             // one bit per block
             const auto block_count = memory_size / Block_Size;
-            return BMP_Structure::Block_Size * BMP_Structure::Size(block_count);
+            return BMP_Structure::Block_Size * BMP_Structure::calculate_block_count(block_count);
         }
 
     public: // constructors
@@ -28,15 +28,15 @@ namespace dd99::memory::block_allocator::borrowing
         }
 
         Bitmap(const memory::Block & memory, Allocator & aux_allocator)
-            : m_memory(memory)
-            , m_block_count(memory.size / Block_Size)
+            : m_block_count(memory.size / Block_Size)
             , m_aux_allocator(aux_allocator)
+            , m_memory(memory)
             , m_aux_memory(m_aux_allocator.allocate(calculate_aux_allocation(memory.size)))
             , m_bitmap(m_block_count, m_aux_memory.base)
         {
             // NOTE: This is safe because the bitmap structure does not operate on the memory during construction
             if (!m_aux_memory)
-                throw std::runtime_error{"Bitmap Allocator: Borrowed allocator initialization: Auxiliary allocation failed"};
+                throw std::runtime_error{"Borrowed Bitmap Allocator initialization: Auxiliary allocation failed"};
         }
     public: // allocator interface
         [[nodiscard]]
@@ -96,9 +96,9 @@ namespace dd99::memory::block_allocator::borrowing
         }
 
     private:
-        memory::Block m_memory, m_aux_memory;
         std::size_t m_block_count;
         Allocator & m_aux_allocator;
+        memory::Block m_memory, m_aux_memory;
         BMP_Structure m_bitmap;
     };
 }
