@@ -1,7 +1,7 @@
 #pragma once
 
 #include <allocators/basic/allocator.hpp>
-#include <allocators/structures/free_list.hpp>
+#include <allocators/internal_structures/free_list.hpp>
 
 
 namespace dd99::memory::block_allocator

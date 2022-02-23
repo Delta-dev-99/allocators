@@ -1,8 +1,8 @@
 #pragma once
 
 #include <allocators/basic/allocator.hpp>
-#include <allocators/structures/bitmap.hpp>
-#include <allocators/structures/free_list.hpp>
+#include <allocators/internal_structures/bitmap.hpp>
+#include <allocators/internal_structures/free_list.hpp>
 
 #include <cstdint>
 #include <tuple>

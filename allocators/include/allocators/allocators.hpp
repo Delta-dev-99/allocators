@@ -6,13 +6,13 @@
 #include <allocators/basic/slicing.hpp>
 #include <allocators/basic/stack.hpp>
 
+#include <allocators/utility/ref.hpp>
+
 #include <allocators/borrowing/bitmap.hpp>
 #include <allocators/borrowing/buddy.hpp>
 
 #include <allocators/composite/bucketizer.hpp>
 #include <allocators/composite/fallback.hpp>
-#include <allocators/composite/owner.hpp>
-#include <allocators/composite/ref.hpp>
 #include <allocators/composite/segregator.hpp>
 #include <allocators/composite/throwing.hpp>
 
