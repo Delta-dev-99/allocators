@@ -1,5 +1,6 @@
 
 add_library(allocators)
+add_library(DD99::Allocators ALIAS allocators)
 target_compile_features(allocators PUBLIC cxx_std_20)
 target_include_directories(allocators PUBLIC include)
 
