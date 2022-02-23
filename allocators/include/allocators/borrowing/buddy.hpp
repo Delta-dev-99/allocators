@@ -112,7 +112,7 @@ namespace dd99::memory::block_allocator::borrowing
         {
             // NOTE: This is safe because the bitmap structure does not operate on the memory during construction
             if (!m_aux_memory)
-                throw std::runtime_error{"Buddy Allocator: Borrowed allocator initialization: Auxiliary allocation failed"};
+                throw std::runtime_error{"Borrowing Buddy Allocator initialization: Auxiliary allocation failed"};
 
             deallocate_all();
         }
