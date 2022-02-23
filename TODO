@@ -5,6 +5,10 @@ Bitmapped block Allocator
 Cascading allocator (What would this do?)
 Logarithmic Bucketizer
 
+Add caching allocators.
+    These would ask another allocator for memory and hold an internal memory cache.
+    Allows splitting memory from large block allocators to satisfy small allocations.
+
 Find a reason to use Bucketizers
 
 Throwing version of allocate
