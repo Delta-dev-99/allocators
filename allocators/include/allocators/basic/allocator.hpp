@@ -29,15 +29,6 @@ namespace dd99::memory::block_allocator
 
         virtual bool owns(void *memory) const = 0;
         virtual bool owns(const Block &memory) const = 0;
-
-        // Some types for metaprogramming follow
-        enum Operation
-        {
-            Allocation,
-            Deallocation,
-            Full_Deallocation,
-            Any,
-            Operation_Count,
-        };
+        
     };
 }
