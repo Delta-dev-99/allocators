@@ -4,7 +4,7 @@
 
 
 
-namespace dd99::memory::block_allocator
+namespace dd99::memory::block_allocator::degenerate
 {
     // TODO: Find better name
     // A Failed allocator ALWAYS fails.

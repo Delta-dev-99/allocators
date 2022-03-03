@@ -4,7 +4,7 @@
 
 
 
-namespace dd99::memory::block_allocator
+namespace dd99::memory::block_allocator::degenerate
 {
     // TODO: Find better name
     // A Constant allocator has a constant state.
@@ -21,22 +21,22 @@ namespace dd99::memory::block_allocator
     public:
         constexpr
         memory::Block
-        allocate(std::size_t requested_size) const
+        allocate(std::size_t /* requested_size */) const
         { return m_memory; }
         
         constexpr
         memory::Block
-        allocate(std::size_t requested_size)
+        allocate(std::size_t /* requested_size */)
         { return m_memory; }
 
 
         constexpr
         void
-        deallocate(const memory::Block &memory) const { }
+        deallocate(const memory::Block &/* memory */) const { }
 
         constexpr
         void
-        deallocate(const memory::Block &memory) { }
+        deallocate(const memory::Block &/* memory */) { }
 
 
         constexpr

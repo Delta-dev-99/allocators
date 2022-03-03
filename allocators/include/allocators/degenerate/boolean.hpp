@@ -4,7 +4,7 @@
 
 
 
-namespace dd99::memory::block_allocator
+namespace dd99::memory::block_allocator::degenerate
 {
     // TOOD: Find better name
     // An allocator that manages a single full block.
@@ -18,7 +18,7 @@ namespace dd99::memory::block_allocator
 
     public:
         [[nodiscard]]
-        memory::Block allocate(std::size_t requested_size)
+        memory::Block allocate(std::size_t /* requested_size */)
         {
             if (m_allocated) return {};
 
