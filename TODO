@@ -11,4 +11,10 @@ Add caching allocators.
 
 Find a reason to use Bucketizers
 
-Throwing version of allocate
+Add allocator types for multithreading
+    - Thread-local allocator
+    - Thread-caching allocator
+    - Cpu-arena allocator
+    - Queueing allocator (this one would queue requests that can't be satisfied at the moment they arrive)
+
+Add fragmentation and ussage stats computation functions for allocators.
