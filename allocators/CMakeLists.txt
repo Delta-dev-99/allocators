@@ -3,14 +3,15 @@ add_library(allocators)
 add_library(DD99::Allocators ALIAS allocators)
 target_compile_features(allocators PUBLIC cxx_std_20)
 target_include_directories(allocators PUBLIC include)
+set_target_warnings(allocators WARNINGS_AS_ERRORS PRIVATE)
 
 target_sources(allocators PRIVATE
     src/allocators.cpp
 )
 
 target_sources(allocators PUBLIC
-    include/allocators/structures/free_list.hpp
-    include/allocators/structures/memory_block.hpp
+    include/allocators/internal_structures/free_list.hpp
+    include/allocators/internal_structures/memory_block.hpp
 
     include/allocators/basic/allocator.hpp
     include/allocators/basic/slicing.hpp
@@ -19,9 +20,10 @@ target_sources(allocators PUBLIC
     include/allocators/basic/bitmap.hpp
     include/allocators/basic/buddy.hpp
     
+    include/allocators/utility/ref.hpp
+
     include/allocators/composite/bucketizer.hpp
     include/allocators/composite/fallback.hpp
-    include/allocators/composite/ref.hpp
     include/allocators/composite/segregator.hpp
 
     include/allocators/metrics/stats.hpp
