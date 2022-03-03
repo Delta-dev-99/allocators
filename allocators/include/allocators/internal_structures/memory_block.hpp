@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <memory>
+#include <utility>
+#include <cstddef>
 
 
 namespace dd99::memory
@@ -10,17 +12,19 @@ namespace dd99::memory
     // Described by base address and size in bytes.
     struct Block
     {
-        void *base = nullptr;
+        std::byte * base = nullptr;
         std::size_t size = 0;
 
         constexpr
-        auto get_end() const { return reinterpret_cast<void *>(reinterpret_cast<std::uintptr_t>(base) + size); }
+        std::byte *
+        get_end() const { return base + size; }
         
         constexpr
-        bool contains(const Block &other) const
+        bool
+        contains(const Block & other) const
         {
-            const auto base_offset = reinterpret_cast<std::intptr_t>(other.base) - reinterpret_cast<std::intptr_t>(base);
-            return (base_offset >= 0) && (other.size + base_offset <= size);
+            const auto base_offset = other.base - base;
+            return (base_offset >= 0) && (base + base_offset + other.size <= get_end());
         }
 
         constexpr
@@ -54,7 +58,7 @@ namespace dd99::memory
         Self_Contained_Block(const Self_Contained_Block& other) = delete;
         Self_Contained_Block(Self_Contained_Block&& other) = delete;
 
-        char m_data[Size];
+        std::byte m_data[Size];
     };
 
     // Facilitates acquiring memory from the Heap.
@@ -66,12 +70,15 @@ namespace dd99::memory
     {
         ~Heap_Block()
         {
-            ::operator delete(base);
+            delete[] base;
+            // free(base);
         }
 
         Heap_Block()
         {
-            base = ::operator new(Size);
+            base = new std::byte[Size];
+            // base = malloc(Size);
+            if (!base) throw std::bad_alloc{};
             size = Size;
         }
     };
