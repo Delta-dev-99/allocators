@@ -1,2 +1,3 @@
-Using moved-from allocators is UB (Don't)
-    My compiler just treats it as a copy
+Moved-from allocators are in an invalid state.
+Anything but destruction or assignment is UB (Don't).
+All standard allocator operations (allocate, deallocate, ...) require a valid state.
