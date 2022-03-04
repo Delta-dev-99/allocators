@@ -24,14 +24,11 @@ namespace dd99::memory::block_allocator
                 std::size_t size;
 
                 // get corresponding memory block
-                auto get_memory_block() { return memory::Block{.base = this, .size = size}; }
+                memory::Block get_memory_block()
+                { return {.base = reinterpret_cast<std::byte *>(this), .size = size}; }
             };
 
         public:
-            Slicing_Freelist() = default;
-            Slicing_Freelist(const Slicing_Freelist &) = delete;
-            Slicing_Freelist(Slicing_Freelist &&other) = default;
-
             ~Slicing_Freelist()
             {
                 // call destructor on created nodes
@@ -52,12 +49,12 @@ namespace dd99::memory::block_allocator
                     if (current->size >= min_size)
                     {
                         // found a suitable block.
-                        if (current->size - min_size >= sizeof(Free_Sized_Block_Header))
+                        if (current->size >= sizeof(Free_Sized_Block_Header) + min_size)
                         {
                             // Remaining space is large enough to fit a free list header.
                             // Divide the block.
                             current->size -= min_size;
-                            return {.base = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(current) + current->size), .size = min_size};
+                            return {.base = reinterpret_cast<std::byte *>(current) + current->size, .size = min_size};
                         }
                         else
                         {
@@ -131,17 +128,18 @@ namespace dd99::memory::block_allocator
                     return nullptr;
                 }
 
-                if (first > memory.base)
+                if (reinterpret_cast<std::byte *>(first) > memory.base)
                 {
                     auto new_header = new (memory.base) Free_Sized_Block_Header{.next = first, .size = memory.size};
                     first = new_header;
                     return nullptr; // node before the new node does not exist
                 }
 
+                // NOTE: PROFILING: This loop is a performance bottleneck
                 auto place = first;
-                while(place->next)
+                while(place->next != nullptr)
                 {
-                    if (place->next > memory.base)
+                    if (reinterpret_cast<std::byte *>(place->next) > memory.base)
                     {
                         auto new_header = new (memory.base) Free_Sized_Block_Header{.next = place->next, .size = memory.size};
                         place->next = new_header;
@@ -158,7 +156,7 @@ namespace dd99::memory::block_allocator
             // merge a block with the next one if adjacent
             bool try_merge(Free_Sized_Block_Header *prev_ptr)
             {
-                if (prev_ptr->get_memory_block().get_end() == prev_ptr->next)
+                if (prev_ptr->get_memory_block().get_end() == reinterpret_cast<std::byte *>(prev_ptr->next))
                 {
                     prev_ptr->size += prev_ptr->next->size;
                     prev_ptr->next = prev_ptr->next->next;
@@ -184,6 +182,7 @@ namespace dd99::memory::block_allocator
     public:
         Slicing(const memory::Block& memory)
             : m_memory(memory)
+            , m_free_list()
         {
             m_free_list.push(m_memory);
         }
