@@ -18,3 +18,5 @@ Add allocator types for multithreading
     - Queueing allocator (this one would queue requests that can't be satisfied at the moment they arrive)
 
 Add fragmentation and ussage stats computation functions for allocators.
+
+Add hash specialization for memory Block structure
