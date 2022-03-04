@@ -8,22 +8,35 @@ namespace dd99::memory::block_allocator::metrics
 {
     namespace detail
     {
+        // NOTE: Timings do not subsume between them.
+        // NOTE: Example: Timing for allocation does not include timing for failed allocations
+        enum Timed_Operation
+        {
+            Allocation,
+            Failed_Allocation,
+            Deallocation,
+            Deallocation_Miss,
+            Full_Deallocation,
+            Any,
+            Operation_Count
+        };
+
         template <bool Keep> struct Last_Time_Points { };
         template <> struct Last_Time_Points<true>
         {
-            std::chrono::steady_clock::time_point last_time_point[Allocator::Operation::Operation_Count]{};
+            std::chrono::steady_clock::time_point last_time_point[Timed_Operation::Operation_Count]{};
         };
 
         template <bool Keep> struct Last_Durations { };
         template <> struct Last_Durations<true>
         {
-            std::chrono::steady_clock::duration last_duration[Allocator::Operation::Operation_Count]{};
+            std::chrono::steady_clock::duration last_duration[Timed_Operation::Operation_Count]{};
         };
 
         template <bool Keep> struct Total_Durations { };
         template <> struct Total_Durations<true>
         {
-            std::chrono::steady_clock::duration total_duration[Allocator::Operation::Operation_Count]{};
+            std::chrono::steady_clock::duration total_duration[Timed_Operation::Operation_Count]{};
         };
 
         template <bool Keep_Last_Time_Points, bool Keep_Last_Durations, bool Keep_Total_Durations>
@@ -39,6 +52,9 @@ namespace dd99::memory::block_allocator::metrics
     template <class Sub_Alloc_T, bool Keep_Last_Time_Points = true, bool Keep_Last_Durations = true, bool Keep_Total_Durations = true>
     class Timing : public Sub_Alloc_T
     {
+    public:
+        using Timed_Operation = detail::Timed_Operation;
+
     public:
         Timing(Sub_Alloc_T &&sub_allocator)
             : Sub_Alloc_T(std::move(sub_allocator))
@@ -57,7 +73,10 @@ namespace dd99::memory::block_allocator::metrics
 
             const auto duration = end - start;
             
-            update_operation_timings(Allocator::Operation::Allocation, start, duration);
+            if (r)
+                update_operation_timings(Timed_Operation::Allocation, start, duration);
+            else
+                update_operation_timings(Timed_Operation::Failed_Allocation, start, duration);
 
             return r;
         }
@@ -70,7 +89,10 @@ namespace dd99::memory::block_allocator::metrics
 
             const auto duration = end - start;
             
-            update_operation_timings(Allocator::Operation::Deallocation, start, duration);
+            if (owns(memory))
+                update_operation_timings(Timed_Operation::Deallocation, start, duration);
+            else
+                update_operation_timings(Timed_Operation::Deallocation_Miss, start, duration);
         }
 
         void deallocate_all()
@@ -81,7 +103,7 @@ namespace dd99::memory::block_allocator::metrics
 
             const auto duration = end - start;
 
-            update_operation_timings(Allocator::Operation::Full_Deallocation, start, duration);
+            update_operation_timings(Timed_Operation::Full_Deallocation, start, duration);
         }
 
         bool owns(void *memory) const { return Sub_Alloc_T::owns(memory); }
@@ -102,7 +124,7 @@ namespace dd99::memory::block_allocator::metrics
         }
 
     private:
-        void update_operation_timings(Allocator::Operation operation, std::chrono::steady_clock::time_point time_point, std::chrono::steady_clock::duration duration)
+        void update_operation_timings(Timed_Operation operation, std::chrono::steady_clock::time_point time_point, std::chrono::steady_clock::duration duration)
         {
             if constexpr (Keep_Last_Time_Points)
                 m_timing_data.last_time_point[operation] = time_point;
@@ -113,8 +135,8 @@ namespace dd99::memory::block_allocator::metrics
             if constexpr (Keep_Total_Durations)
                 m_timing_data.total_duration[operation] += duration;
 
-            if (operation != Allocator::Operation::Any)
-                update_operation_timings(Allocator::Operation::Any, time_point, duration);
+            if (operation != Timed_Operation::Any)
+                update_operation_timings(Timed_Operation::Any, time_point, duration);
         }
         
     };
