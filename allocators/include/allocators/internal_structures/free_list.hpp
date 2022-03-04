@@ -21,6 +21,12 @@ namespace dd99::memory::structure
         Free_Block_Header *first = nullptr;
 
     public:
+        ~Freelist()
+        {
+            // call destructor on created nodes
+            clear();
+        }
+
         Freelist(std::size_t block_size)
             : m_block_size(block_size)
         {
@@ -31,11 +37,8 @@ namespace dd99::memory::structure
         Freelist(const Freelist &) = delete;
         Freelist(Freelist &&other) = default;
 
-        ~Freelist()
-        {
-            // call destructor on created nodes
-            clear();
-        }
+        Freelist & operator=(const Freelist &) = delete;
+        Freelist & operator=(Freelist &&) = default;
 
 
     public:
@@ -46,7 +49,7 @@ namespace dd99::memory::structure
             auto current = first;
             first = first->next;
             current->~Free_Block_Header();
-            return {.base = current, .size = m_block_size};
+            return {.base = reinterpret_cast<std::byte *>(current), .size = m_block_size};
         }
 
         void push(const memory::Block& memory)
@@ -89,6 +92,12 @@ namespace dd99::memory::structure
         Free_Block_Header *first = nullptr;
 
     public:
+        ~Freelist_Double_Link()
+        {
+            // call destructor on created nodes
+            clear();
+        }
+
         Freelist_Double_Link(std::size_t block_size)
             : m_block_size(block_size)
         {
@@ -99,12 +108,8 @@ namespace dd99::memory::structure
         Freelist_Double_Link(const Freelist_Double_Link &) = delete;
         Freelist_Double_Link(Freelist_Double_Link &&other) = default;
 
-        ~Freelist_Double_Link()
-        {
-            // call destructor on created nodes
-            clear();
-        }
-
+        Freelist_Double_Link & operator=(const Freelist_Double_Link &) = delete;
+        Freelist_Double_Link & operator=(Freelist_Double_Link &&) = default;
 
     public:
         // NOTE: Undefined Behaviour if the freelist is empty. Do check!
@@ -112,7 +117,7 @@ namespace dd99::memory::structure
         memory::Block pop()
         {
             auto block_ptr = first;
-            const memory::Block block{.base = block_ptr, .size = m_block_size};
+            const memory::Block block{.base = reinterpret_cast<std::byte *>(block_ptr), .size = m_block_size};
             remove(block);
             return block;
         }
