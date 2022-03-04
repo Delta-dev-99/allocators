@@ -1,0 +1,2 @@
+Using moved-from allocators is UB (Don't)
+    My compiler just treats it as a copy
