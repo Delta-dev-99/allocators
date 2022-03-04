@@ -13,12 +13,15 @@ namespace dd99::memory::block_allocator::borrowing
         using BMP_Structure = dd99::memory::structure::Bitmap<Bitmap_Element_T>;
 
     public: // statics
-        static constexpr std::size_t calculate_aux_allocation(std::size_t memory_size)
+        static constexpr std::size_t calculate_aux_allocation(std::size_t block_count)
         {
-            // block count is also the required number of bits
-            // one bit per block
-            const auto block_count = memory_size / Block_Size;
+            // A bitmap with one bit per block
             return BMP_Structure::Block_Size * BMP_Structure::calculate_block_count(block_count);
+        }
+
+        static constexpr std::size_t calculate_aux_allocation(const memory::Block & memory)
+        {
+            return calculate_aux_allocation(memory.size / Block_Size);
         }
 
     public: // constructors
@@ -31,7 +34,7 @@ namespace dd99::memory::block_allocator::borrowing
             : m_block_count(memory.size / Block_Size)
             , m_aux_allocator(aux_allocator)
             , m_memory(memory)
-            , m_aux_memory(m_aux_allocator.allocate(calculate_aux_allocation(memory.size)))
+            , m_aux_memory(m_aux_allocator.allocate(calculate_aux_allocation(memory)))
             , m_bitmap(m_block_count, m_aux_memory.base)
         {
             // NOTE: This is safe because the bitmap structure does not operate on the memory during construction
@@ -47,7 +50,7 @@ namespace dd99::memory::block_allocator::borrowing
                 return {};
 
             const auto free_index = m_bitmap.set_first_unset();
-            if (free_index != -1)
+            if (free_index != std::size_t(-1))
                 return get_memory_block(free_index);
 
             // no free block found
@@ -84,14 +87,14 @@ namespace dd99::memory::block_allocator::borrowing
         Block get_memory_block(std::size_t index) const
         {
             const auto block_offset = index * Block_Size;
-            const auto block_base = reinterpret_cast<void *>(reinterpret_cast<std::uintptr_t>(m_memory.base) + block_offset);
+            const auto block_base = m_memory.base + block_offset;
             return {.base = block_base, .size = Block_Size};
         }
 
         // traduce memory block to bitmap index
         std::size_t get_index(const memory::Block& blk) const
         {
-            const auto block_offset = reinterpret_cast<std::uintptr_t>(blk.base) - reinterpret_cast<std::uintptr_t>(m_memory.base);
+            const auto block_offset = blk.base - m_memory.base;
             return block_offset / Block_Size;
         }
 
