@@ -11,18 +11,24 @@ namespace dd99::memory::block_allocator
     public:
         Stack(const Block &memory)
             : m_memory(memory)
-            , m_current(reinterpret_cast<std::uintptr_t>(memory.base))
+            , m_current(memory.base)
         { }
+
+        Stack(const Stack &) = delete;
+        Stack(Stack &&) = default;
+
+        Stack & operator=(const Stack &) = delete;
+        Stack & operator=(Stack &&) = default;
         
     public:
         [[nodiscard]]
         Block allocate(std::size_t requested_size)
         {
-            const auto used_size = reinterpret_cast<std::uintptr_t>(m_current) - reinterpret_cast<std::uintptr_t>(m_memory.base);
+            const auto used_size = std::size_t(m_current - m_memory.base);
             const auto remaining_size = m_memory.size - used_size;
             if (remaining_size >= requested_size)
             {
-                Block current{.base = reinterpret_cast<void *>(m_current), .size = requested_size};
+                Block current{.base = m_current, .size = requested_size};
                 m_current += requested_size;
                 return current;
             }
@@ -33,7 +39,7 @@ namespace dd99::memory::block_allocator
         // Can only free the last allocated block
         void deallocate(const Block &memory)
         {
-            if (reinterpret_cast<std::uintptr_t>(memory.get_end()) == m_current)
+            if (memory.get_end() == m_current)
             {
                 m_current -= memory.size;
             }
@@ -41,7 +47,7 @@ namespace dd99::memory::block_allocator
 
         void deallocate_all()
         {
-            m_current = reinterpret_cast<std::uintptr_t>(m_memory.base);
+            m_current = m_memory.base;
         }
 
         bool owns(void *memory) const
@@ -56,6 +62,6 @@ namespace dd99::memory::block_allocator
 
     private:
         Block m_memory;
-        std::uintptr_t m_current;
+        std::byte * m_current;
     };
 }
