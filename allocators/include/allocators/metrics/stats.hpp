@@ -20,7 +20,7 @@ namespace dd99::memory::block_allocator::metrics
                 Allocation,
                 Failed_Allocation,
                 Deallocation,
-                Missed_Deallocation, // when you try to deallocate memory that does not belong to the allocator
+                Deallocation_Miss, // when you try to deallocate memory that does not belong to the allocator
                 Full_Deallocation,
                 Allocated_Size,
                 Deallocated_Size,
@@ -56,7 +56,7 @@ namespace dd99::memory::block_allocator::metrics
 
             if (!Sub_Alloc_T::owns(memory))
             {
-                ++m_stats_data.total[Stats_Data::Missed_Deallocation];
+                ++m_stats_data.total[Stats_Data::Deallocation_Miss];
                 return;
             }
 
