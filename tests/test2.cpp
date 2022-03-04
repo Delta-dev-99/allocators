@@ -118,16 +118,16 @@ void test3()
     // auto y = allocs::Buddy<16, 11>::calculate_block_count(100 * 1024);
 
     using Buddy_t = allocs::Buddy<16, 2>;
+    using Buddy_Bitmap_t = dd99::memory::structure::Bitmap<>;
     
     constexpr std::size_t mem_size = 100;
-    constexpr auto n = Buddy_t::calculate_block_count(mem_size);
-    constexpr auto bits = Buddy_t::bitmap_bits(n);
-    constexpr auto bmp = Buddy_t::BMP::calculate_block_count(n) * Buddy_t::BMP::Block_Size;
-    constexpr auto unused = mem_size - bmp - n * Buddy_t::Block_Size;
-    constexpr auto ratio = Buddy_t::ratio(n);
+    constexpr auto block_count = Buddy_t::calculate_basic_block_count(mem_size);
+    constexpr auto bits = Buddy_t::calculate_bmp_bit_count(block_count);
+    constexpr auto bmp = Buddy_Bitmap_t::calculate_block_count(bits) * Buddy_Bitmap_t::Block_Size;
+    constexpr auto unused = mem_size - bmp - block_count * Buddy_t::Block_Size;
+    constexpr auto unused_ratio = double(unused)/mem_size;
 
-    for (int i = 0; i < 100; i++)
-        std::cout << i << "\t" << Buddy_t::ratio(i) << "\n";
+    std::cout << "unused ratio: " << unused_ratio << "\n";
 }
 
 void test4()
@@ -283,7 +283,7 @@ void time_allocators()
     {   // buddy<64,5> allocator
         std::cout << "Allocator: buddy<64,5>\n";
         using allocator_type = alloc::borrowing::Buddy<64, 5>;
-        using aux_allocator_type = alloc::Failed;
+        using aux_allocator_type = alloc::degenerate::Failed;
 
         const std::size_t mem_size = 1024 * 1024; // 1Mb
         const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
@@ -403,5 +403,33 @@ int main()
     // test2();   
     // test4();
     // test5();
-    time_allocators();
+    // time_allocators();
+
+    constexpr auto mem_size = 256;
+    dd99::memory::Self_Contained_Block<mem_size> my_memory, my_memory2;
+
+    using alloc_t = dd99::memory::block_allocator::borrowing::Buddy<32>;
+
+    constexpr auto aux_mem_size = alloc_t::calculate_aux_allocation(alloc_t::calculate_basic_block_count(mem_size));
+    dd99::memory::Self_Contained_Block<aux_mem_size> aux_memory, aux_memory2;
+    dd99::memory::block_allocator::degenerate::Constant aux_alloc(aux_memory), aux_alloc2(aux_memory2);
+
+    alloc_t my_alloc(my_memory, aux_alloc);
+    // auto copy_constructed = my_alloc;
+    auto move_constructed = std::move(my_alloc);
+
+    {
+        alloc_t copied_to(my_memory2, aux_alloc2);
+        // copied_to = my_alloc;
+    }
+
+    {
+        alloc_t moved_to(my_memory2, aux_alloc2);
+        // moved_to = std::move(my_alloc);
+
+        // auto x = my_alloc.allocate(30);
+        // auto y = moved_to.allocate(30);
+        // my_alloc.deallocate(x);
+        // moved_to.deallocate(y);
+    }
 }
