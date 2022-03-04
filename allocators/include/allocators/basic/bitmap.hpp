@@ -22,7 +22,7 @@ namespace dd99::memory::block_allocator
             : m_memory(memory)
             , m_block_count(block_count(memory.size))
             , m_bitmap(m_block_count, memory.base)
-            , m_blocks_base(reinterpret_cast<void *>(reinterpret_cast<std::uintptr_t>(m_memory.get_end()) - m_block_count * Block_Size))
+            , m_blocks_base(m_memory.get_end() - m_block_count * Block_Size)
         {
             // mark all blocks as free
             deallocate_all();
@@ -88,7 +88,7 @@ namespace dd99::memory::block_allocator
         memory::Block m_memory;
         std::size_t m_block_count;
         // std::size_t m_bitmap_size; // number of elements in bitmap
-        void *m_blocks_base;
+        std::byte *m_blocks_base;
         // static constexpr auto n_bits = std::numeric_limits<BMP_t>::digits;
 
         BMP m_bitmap;
@@ -98,14 +98,14 @@ namespace dd99::memory::block_allocator
         // traduce index to memory block
         Block get_memory_block(std::size_t index)
         {
-            const auto ptr = reinterpret_cast<void *>(reinterpret_cast<std::uintptr_t>(m_blocks_base) + Block_Size * index);
+            const auto ptr = m_blocks_base + Block_Size * index;
             return {.base = ptr, .size = Block_Size};
         }
 
         // traduce memory block to bitmap index
         std::size_t get_index(const memory::Block& memory)
         {
-            return (reinterpret_cast<std::uintptr_t>(memory.base) - reinterpret_cast<std::uintptr_t>(m_blocks_base)) / Block_Size;
+            return (memory.base - m_blocks_base) / Block_Size;
         }
     };
 }

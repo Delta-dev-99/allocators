@@ -61,7 +61,7 @@ namespace dd99::memory::block_allocator
             {
                 m_free_list.push(current);
                 // advance
-                current.base = reinterpret_cast<void *>(reinterpret_cast<std::uintptr_t>(current.base) + Block_Size);
+                current.base = current.base + Block_Size;
             }
         }
 

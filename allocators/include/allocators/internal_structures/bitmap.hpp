@@ -29,12 +29,11 @@ namespace dd99::memory::structure
         
     public:
         // Create the bitmap in-place
-        Bitmap(std::size_t bit_count, void *base)
+        Bitmap(std::size_t bit_count, std::byte *base)
             : m_base(reinterpret_cast<Block_T *>(base))
             , m_bit_size(bit_count)
             , m_size(Bitmap::calculate_block_count(bit_count))
         {
-            
         }
 
     public:
@@ -88,7 +87,7 @@ namespace dd99::memory::structure
             const auto fast_block_ptr_end = reinterpret_cast<Fast_Block *>(m_base) + n_fast_blocks;
             while (fast_block_ptr < fast_block_ptr_end)
             {
-                if (*fast_block_ptr != -1)
+                if (*fast_block_ptr != Fast_Block(-1))
                     break;
 
                 ++fast_block_ptr;
@@ -100,14 +99,14 @@ namespace dd99::memory::structure
             {
                 if (*block_ptr != -1)
                 {
-                    for (int bit = 0; bit < Block_Bits; ++bit)
+                    for (unsigned bit = 0; bit < Block_Bits; ++bit)
                     {
                         const auto mask = Block_T(1) << bit;
 
                         if ((*block_ptr & mask) == 0)
                         {
                             *block_ptr |= mask;
-                            return (block_ptr - m_base) * Block_Bits + bit;
+                            return std::size_t(block_ptr - m_base) * Block_Bits + bit;
                         }
                     }
                 }
@@ -115,7 +114,7 @@ namespace dd99::memory::structure
                 ++block_ptr;
             }
 
-            return -1;
+            return std::size_t(-1);
         }
 
         // clear all mapped bits, set all unmapped bits

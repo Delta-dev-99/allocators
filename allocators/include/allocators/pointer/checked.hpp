@@ -5,6 +5,11 @@
 namespace dd99::memory::pointer_allocator
 {
     // A variant that adds a small check to avoid errors with pointers
+    // Allocated Block layout:
+    // ----------------------------------------
+    // | Block | Checksum | memory | Checksum |
+    // ----------------------------------------
+    // The returned pointer points to the start of `memory`.
     template <class Sub_Alloc_T>
     class Pointer_Checked : public Allocator
     {
@@ -21,7 +26,7 @@ namespace dd99::memory::pointer_allocator
     
     public:
         [[nodiscard]]
-        void *allocate(std::size_t requested_size)
+        std::byte *allocate(std::size_t requested_size)
         {
             auto const alloc_size = requested_size + sizeof(Block) + 2 * sizeof(Check_Header);
             Block allocated_block = m_sub_alloc.allocate(alloc_size);
@@ -36,7 +41,7 @@ namespace dd99::memory::pointer_allocator
         }
 
         // assumed pointer is valid. If it causes segmentation fault, blame whoever gave it.
-        void deallocate(void *memory)
+        void deallocate(std::byte *memory)
         {
             if (owns(memory))
             {
@@ -47,7 +52,7 @@ namespace dd99::memory::pointer_allocator
                 if ((check != *get_start_check_ptr(allocated_block)) || (check != *get_end_check_ptr(allocated_block)))
                 {
                     // TODO: Throw some apropiate exception type
-                    throw "Memory check on deallocation failed! Overriden not owned memory!";
+                    throw std::bad_alloc{"Memory integrity check on deallocation failed! Heap may have been corrupted!"};
                 }
 
                 // probably not necesary to make a copy
@@ -59,7 +64,7 @@ namespace dd99::memory::pointer_allocator
 
         void deallocate_all() { m_sub_alloc.deallocate_all(); }
 
-        bool owns(void *memory) const
+        bool owns(std::byte *memory) const
         { return m_sub_alloc.owns(memory); }
 
         bool owns(const Block &memory) const
@@ -68,32 +73,29 @@ namespace dd99::memory::pointer_allocator
     private:
         static Check_Header *get_start_check_ptr(const Block &memory)
         {
-            return reinterpret_cast<Check_Header *>
-                (reinterpret_cast<std::uintptr_t>(memory.base) + sizeof(Block));
+            return reinterpret_cast<Check_Header *>(memory.base + sizeof(Block));
         }
 
         static Check_Header *get_end_check_ptr(const Block &memory)
         {
-            return reinterpret_cast<Check_Header *>
-                (reinterpret_cast<std::uintptr_t>(memory.base) + memory.size - sizeof(Check_Header));
+            return reinterpret_cast<Check_Header *>(memory.get_end() - sizeof(Check_Header));
         }
 
         static Check_Header compute_check(const Block &memory)
         {
+            // hash the memory block structure
             // anything should do
-            return reinterpret_cast<std::uintptr_t>(memory.base) ^ memory.size;
+            return std::rotl(reinterpret_cast<std::uintptr_t>(memory.base), 15) ^ memory.size;
         }
 
-        static void *memory_block_to_ptr(const Block &memory)
+        static std::byte *memory_block_to_ptr(const Block &memory)
         {
-            return reinterpret_cast<void *>
-                (reinterpret_cast<std::uintptr_t>(memory.base) + sizeof(Block) + sizeof(Check_Header));
+            return memory.base + sizeof(Block) + sizeof(Check_Header);
         }
 
-        static Block &ptr_to_memory_block_ref(void *memory)
+        static Block &ptr_to_memory_block_ref(std::byte *memory)
         {
-            return *reinterpret_cast<Block *>
-                (reinterpret_cast<std::uintptr_t>(memory) - sizeof(Block) - sizeof(Check_Header));
+            return *reinterpret_cast<Block *>(memory - sizeof(Block) - sizeof(Check_Header));
         }
     };
 }
