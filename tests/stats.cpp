@@ -70,13 +70,13 @@ void stat_allocator(alloc::Allocator & allocator, std::size_t iterations, Distri
     // total allocation duration / number of allocations
     const auto mean_allocation_duration =
         std::chrono::duration_cast<std::chrono::duration<long double, std::nano>>(
-            allocator_with_stats.get_timing_data().total_duration[alloc::Allocator::Operation::Allocation])
+            allocator_with_stats.get_timing_data().total_duration[alloc_type::Timed_Operation::Allocation])
         / allocator_with_stats.get_stats().total[alloc_type::Stats_Data::Allocation];
 
     // total deallocation duration / number of deallocations
     const auto mean_deallocation_duration =
         std::chrono::duration_cast<std::chrono::duration<long double, std::nano>>(
-            allocator_with_stats.get_timing_data().total_duration[alloc::Allocator::Operation::Deallocation])
+            allocator_with_stats.get_timing_data().total_duration[alloc_type::Timed_Operation::Deallocation])
         / allocator_with_stats.get_stats().total[alloc_type::Stats_Data::Deallocation];
 
     const auto currently_allocated_size =
