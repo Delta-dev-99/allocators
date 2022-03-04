@@ -2,78 +2,29 @@
 
 #include <allocators/basic/allocator.hpp>
 #include <allocators/internal_structures/bitmap.hpp>
-#include <allocators/internal_structures/free_list.hpp>
+#include <allocators/internal_structures/buddy_freelist_array.hpp>
 
-#include <cstdint>
-#include <tuple>
-#include <ranges>
 
 namespace dd99::memory::block_allocator
 {
 
-    // namespace detail
-    // {
-    //     template <std::size_t... Sizes>
-    //     struct freelist_collection_complete
-    //     {
-    //         using type = std::tuple<memory::structure::Freelist<Sizes>...>;
-    //     };
-
-    //     template <std::size_t BLOCK_SIZE, int Levels, std::size_t... Sizes>
-    //     struct freelist_collection : freelist_collection<BLOCK_SIZE * 2, Levels - 1, Sizes..., BLOCK_SIZE>
-    //     { };
-
-    //     template <std::size_t BLOCK_SIZE, std::size_t... Sizes>
-    //     struct freelist_collection<BLOCK_SIZE, 0, Sizes...> : freelist_collection_complete<Sizes...>
-    //     { };
-    // }
-
-
-    namespace detail
-    {
-        // TODO: Make constexpr
-        // Purpose: Initialize the freelists with apropiate sizes
-        template <int Levels, std::size_t... Sizes>
-        class Buddy_Freelist_Impl
-        {
-        protected:
-            memory::structure::Freelist m_freelists[Levels];
-
-        public:
-            Buddy_Freelist_Impl()
-                : m_freelists{Sizes...}
-            { }
-        };
-
-
-
-        template <std::size_t BLOCK_SIZE,
-                  int Levels,
-                  std::size_t Current_BLOCK_SIZE = BLOCK_SIZE,
-                  std::size_t Remaining_Levels = Levels,
-                  std::size_t... Sizes>
-        class Buddy_Freelist : public Buddy_Freelist<BLOCK_SIZE, Levels, Current_BLOCK_SIZE * 2, Remaining_Levels - 1, Sizes..., Current_BLOCK_SIZE>
-        { };
-
-        template <std::size_t BLOCK_SIZE,
-                  int Levels,
-                  std::size_t Current_BLOCK_SIZE,
-                  std::size_t... Sizes>
-        class Buddy_Freelist<BLOCK_SIZE, Levels, Current_BLOCK_SIZE, 0, Sizes...> : public Buddy_Freelist_Impl<Levels, Sizes...>
-        { };
-    }
-
-
     // NOTE: Max_Block_Size is an inclussive upper bound
     template <std::size_t BLOCK_SIZE = (1 << 12),
-              int LEVELS = 11,
+              unsigned LEVELS = 11,
               class Bitmap_Element_T = std::uint8_t>
-    class Buddy : public Allocator, public detail::Buddy_Freelist<BLOCK_SIZE, LEVELS>
+    class Buddy : public Allocator, public dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>
     {
-        using Freelist_Base = detail::Buddy_Freelist<BLOCK_SIZE, LEVELS>;
+        using Freelist_array_base = dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>;
+        using BMP_Structure = dd99::memory::structure::Bitmap<Bitmap_Element_T>;
+
+        struct Block_Address
+        {
+            unsigned level;
+            std::size_t index;
+        };
 
     public:
-        static constexpr int Levels = LEVELS;
+        static constexpr unsigned Levels = LEVELS;
         static constexpr std::size_t Block_Size = BLOCK_SIZE;
         static constexpr std::size_t Max_Block_Size = Block_Size << (Levels - 1);
 
@@ -81,97 +32,103 @@ namespace dd99::memory::block_allocator
         static_assert(Levels < std::numeric_limits<std::size_t>::digits); // Just in case...
         static_assert(Block_Size > 0);
 
-        using BMP = dd99::memory::structure::Bitmap<Bitmap_Element_T>;
-
-    public:
-        // NOTE: bitmap_bits calculates 2 times
-        // NOTE: first time inside calculate_block_count
-        Buddy(const memory::Block &memory)
-            : Freelist_Base()
-            , m_memory(memory)
-            , m_block_count(calculate_block_count(memory.size))
-            , m_bitmap(bitmap_bits(m_block_count), memory.base)
-        {
-            m_blocks_base = reinterpret_cast<void *>(reinterpret_cast<std::uintptr_t>(memory.get_end()) - m_block_count * Block_Size);
-            deallocate_all();
-        }
-
     public: // statics
-        constexpr static std::size_t bitmap_bits(std::size_t block_count)
+        static constexpr std::size_t calculate_block_count_in_lvl(std::size_t basic_block_count, unsigned level)
         {
-            // One bit per pair. Last level does not need bits
-            // return ((std::size_t(1) << (Levels - 1) - 1) * block_count) / (std::size_t(1) << (Levels - 1));
-            std::size_t bits = 0;
-            for (int i = 0; i < Levels - 1; i++)
-            {
-                bits += block_count >> (i + 1);
-            }
-            return bits;
+            // return basic_block_count / (std::size_t(1) << level);
+            return basic_block_count >> level;
         }
 
-        // get the number of blocks in the specified level
-        static constexpr std::size_t calculate_block_count(std::size_t memory_size, int level = 0)
+        static constexpr std::size_t calculate_bmp_bit_count(std::size_t basic_block_count)
         {
-            if (level > 0) return calculate_block_count(memory_size) / (1 << level);
+            std::size_t bit_count = 0;
+            for (unsigned lvl = 1; lvl < Levels; lvl++)
+            {
+                bit_count += calculate_block_count_in_lvl(basic_block_count, lvl);
+            }
+            return bit_count;
+        }
 
-            // Not enough memory to make a block
-            if (memory_size < BMP::Block_Size + Block_Size)
+        static constexpr std::size_t calculate_basic_block_count(std::size_t memory_size)
+        {
+            if (memory_size < BMP_Structure::Block_Size + Block_Size)
                 return 0;
 
-            std::size_t n = memory_size / Block_Size;
-
+            std::size_t block_count = memory_size / Block_Size;
+            
             // Iteratively aproach block count
             while (true)
             {
-                const auto bmp_bits = bitmap_bits(n);
-                const auto bmp_size = BMP::calculate_block_count(bmp_bits) * BMP::Block_Size;
-                const auto next_n = (memory_size - bmp_size) / Block_Size;
-                if (next_n - n <= BMP::calculate_block_count(Levels))
+                const auto bmp_bits = calculate_bmp_bit_count(block_count);
+                const auto bmp_size = BMP_Structure::calculate_block_count(bmp_bits) * BMP_Structure::Block_Size;
+                const auto next_block_count = (memory_size - bmp_size) / Block_Size;
+                if (next_block_count - block_count <= BMP_Structure::calculate_block_count(Levels))
                     break;
 
-                n = next_n;
+                block_count = next_block_count;
             }
 
-            return n;
+            return block_count;
         }
 
-        static constexpr double ratio(std::size_t n_blocks)
+        // static constexpr double ratio(std::size_t n_blocks)
+        // {
+        //     return double(n_blocks * Block_Size)/(BMP_Structure::calculate_block_count(bitmap_bits(n_blocks)) * BMP_Structure::Block_Size);
+        // }
+
+    public:
+        Buddy(const memory::Block &memory)
+            : Freelist_array_base()
+            , m_block_count(calculate_basic_block_count(memory.size))
+            , m_memory(memory)
+            , m_bitmap(calculate_bmp_bit_count(m_block_count), memory.base)
         {
-            return double(n_blocks * Block_Size)/(BMP::calculate_block_count(bitmap_bits(n_blocks)) * BMP::Block_Size);
+            m_blocks_base = memory.get_end() - m_block_count * Block_Size;
+            deallocate_all();
         }
 
     public:
         [[nodiscard]]
-        memory::Block allocate_from_level(int requested_level)
+        memory::Block allocate_from_level(unsigned requested_level)
         {
-            // allocation too large
+            // allocation too large?
             if (requested_level >= Levels)
                 return {};
 
-            // try get block
-            auto blk = Freelist_Base::m_freelists[requested_level].pop();
+            // step 1: get the block
+            // try to get a block from the freelist for the current level.
+            // otherwise, allocate a block from the next level and split it.
+            // the first half is put in the freelist of the current level.
+            // the other half is what we use.
 
-            // failed? Split larger block
-            if (!blk)
+            Block blk;
+
+            if (Freelist_array_base::m_freelists[requested_level].empty())
             {
-                // allocate larger block
                 blk = allocate_from_level(requested_level + 1);
-                // failed? Nothing else we can do
-                if (!blk)
-                    return {};
-                
-                // one half is free
+                if (!blk) return {};
+
                 blk.size /= 2;
-                Freelist_Base::m_freelists[requested_level].push(blk);
+                Freelist_array_base::m_freelists[requested_level].push(blk);
 
-                // we use the other
                 blk.base = blk.get_end();
-            }
 
-            // toggle the corresponding bit
-            const auto index = get_bitmap_index(blk, requested_level);
-            if (index != -1)
-                m_bitmap.toggle(index);
+                // NOTE: We know blk has a buddy
+                // NOTE: Could optimize based on that
+            }
+            else
+                blk = Freelist_array_base::m_freelists[requested_level].pop();
+
+            // step 2: got a block, toggle the buddy bit.
+            // some blocks do not have a buddy.
+
+            const auto block_address = get_block_address(blk, requested_level);
+            if (block_has_buddy(block_address))
+            {
+                const auto joint_block_address = get_joint_block_address(block_address);
+                const auto bmp_index = get_bitmap_index(joint_block_address);
+                m_bitmap.toggle(bmp_index);
+            }
 
             return blk;
         }
@@ -179,74 +136,53 @@ namespace dd99::memory::block_allocator
         [[nodiscard]]
         memory::Block allocate(std::size_t requested_size)
         {
+            // Find out what level the allocation requires
+            // relay to the function that allocates from levels
+
             if (requested_size == 0)
                 return {};
 
-            const auto n_blocks = (requested_size - 1) / Block_Size + 1;
-            const auto requested_level = std::bit_width(n_blocks) - 1;
-
-            return allocate_from_level(requested_level);
+            const auto required_block_level = get_block_level(requested_size);
+            return allocate_from_level(required_block_level);
         }
 
-        void deallocate(const memory::Block &memory)
+        void deallocate(const memory::Block & memory)
         {
+            // NOTE: it is assumed the memory block was not modified.
+            // NOTE: the block size is assumed to be exactly the size of blocks from some level.
+
             if (!owns(memory))
                 return;
 
-            // assumed size of b is exact multiple of Block_Size
-            // n_blocks: size in blocks (the smallest ones)
-            const auto n_blocks = memory.size / Block_Size;
-            const int block_level = std::bit_width(n_blocks) - 1;
+            const auto address = get_block_address(memory);
 
-            const auto bmp_index = get_bitmap_index(memory, block_level);
-            // check if there is a buddy.
-            // TODO: This is a bug. do no return here.
-            if (bmp_index == -1)
-                return;
-
-            // there is a buddy. Toggle the corresponding bit
-            m_bitmap.toggle(bmp_index);
-
-            // Join buddies
-            if (m_bitmap[bmp_index] == 0)
-                deallocate(get_block(get_block_index_in_lvl(memory, block_level) / 2, block_level + 1));
-            else
-                Freelist_Base::m_freelists[block_level].push(memory);
+            deallocate(memory, address);
         }
 
         void deallocate_all()
         {
             m_bitmap.reset();
 
-            for (int i = 0; i < Levels; i++)
+            for (unsigned l = 0; l < Levels; l++)
             {
-                Freelist_Base::m_freelists[i].clear();
+                Freelist_array_base::m_freelists[l].clear();
             }
-
 
             // Build freelists
+            // step 1: Add all blocks on the last level to freelist
+            // step 2: Add blocks without buddies to freelist
 
-            // first add all blocks in the last level to freelist
-            // NOTE: iterating through blocks in the last level
-            // for (std::size_t i = 0; i < block_count(Levels - 1); i++)
-            // {
-            //     Freelist_Base::m_freelists[Levels - 1].push(get_block(i, Levels - 1));
-            // }
-
-            for (int i = block_count(Levels - 1) - 1; i >= 0 ; i--)
+            for (Block_Address address{.level = Levels - 1, .index = 0}; address.index < get_block_count_in_lvl(Levels - 1); address.index++)
             {
-                Freelist_Base::m_freelists[Levels - 1].push(get_block(i, Levels - 1));
+                Freelist_array_base::m_freelists[Levels - 1].push(get_block(address));
             }
 
-            // next add blocks without buddies to corresponding freelists
-            // NOTE: iterating through levels (except the last one)
-            for (int l = 0; l < Levels - 1; l++)
+            for (unsigned lvl = 0; lvl < Levels - 1; lvl++)
             {
-                // check if the last block in the level has buddy.
-                // add it to freelist if it doesn't have one.
-                const auto nb = block_count(l);
-                if (nb % 2 != 0)
-                    Freelist_Base::m_freelists[l].push(get_block(block_count(l) - 1, l));
+                const auto block_count = get_block_count_in_lvl(lvl);
+                const Block_Address last_block_addr{.level = lvl, .index = block_count - 1};
+                if (!block_has_buddy(last_block_addr))
+                    Freelist_array_base::m_freelists[lvl].push(get_block(last_block_addr));
             }
         }
 
@@ -260,64 +196,154 @@ namespace dd99::memory::block_allocator
             return m_memory.contains(memory);
         }
 
-    public:
-        std::size_t block_count(int level = 0) const
+    private:
+        static constexpr std::size_t get_block_size_in_lvl(unsigned level)
+        {
+            return Block_Size << level;
+        }
+
+        static constexpr unsigned get_block_level(std::size_t requested_size)
+        {
+            // assumed requested_size > 0
+            const auto block_count = (requested_size - 1) / Block_Size + 1;
+            const auto level = unsigned(std::bit_width(block_count) - 1);
+            return level;
+        }
+
+        static constexpr unsigned get_block_level(const memory::Block & blk)
+        {
+            // assumed blk is a block from this allocator type
+            const auto sub_block_count = blk.size / Block_Size;
+            const auto level = unsigned(std::bit_width(sub_block_count) - 1);
+            return level;
+        }
+
+        std::size_t get_block_count_in_lvl(unsigned level) const
         {
             return m_block_count / (std::size_t(1) << level);
         }
 
-    private:
-        std::size_t get_block_index_in_lvl(const Block &b, int level) const
+        std::size_t get_block_index_in_lvl(const memory::Block & blk, unsigned level) const
         {
-            // size of blocks on this level
-            const auto block_size = Block_Size << level;
-            // offset from blocks base
-            const auto block_offset = reinterpret_cast<std::uintptr_t>(b.base) - reinterpret_cast<std::uintptr_t>(m_blocks_base);
-            // the index of the block on the level
+            const auto block_size = get_block_size_in_lvl(level);
+            const auto block_offset = blk.base - m_blocks_base;
             return block_offset / block_size;
         }
 
-        std::size_t get_bitmap_index(const Block &blk, int level) const
+        Block_Address get_block_address(const memory::Block & blk, unsigned level) const
         {
-            // blocks in the last level do not have buddies
-            // (nor bits)
-            if (level + 1 == Levels)
-                return -1;
-
-            const auto index_in_lvl = get_block_index_in_lvl(blk, level);
-            // check if block has buddy
-            // conditions: block is the first in the buddy (otherwise, the buddy exists and is the previous block)
-            // conditions: block is the last in the level (otherwise, the buddy exists and is the next block)
-            // therefore the buddy cannot exist.
-            if ((index_in_lvl % 2 == 0) && (index_in_lvl == block_count(level) - 1))
-                return -1;
-
-            // calculate the total number of block pairs in previous levels
-            // const auto a = std::size_t(1) << (level - 1) - 1;
-            // const auto b = std::size_t(1) << (level - 1);
-            // const auto n_prev = (a * m_block_count) / b;
-
-            std::size_t n_prev = 0;
-            for(int l = 0; l < level; l++)
-            {
-                n_prev += block_count(l) / 2;
-            }
-
-            return n_prev + index_in_lvl / 2;
+            const auto index = get_block_index_in_lvl(blk, level);
+            return Block_Address{.level = level, .index = index};
         }
 
-        Block get_block(std::size_t index_in_lvl, int level) const
+        Block_Address get_block_address(const memory::Block & blk) const
         {
-            const auto block_size = Block_Size << level;
-            const auto base = reinterpret_cast<void *>(reinterpret_cast<std::uintptr_t>(m_blocks_base) + Block_Size * index_in_lvl);
-            return Block{.base = base, .size = block_size};
+            const auto level = get_block_level(blk);
+            return get_block_address(blk, level);
+        }
+
+        Block_Address get_joint_block_address(Block_Address sub_block_address) const
+        {
+            // NOTE: does not check if the block exists
+            sub_block_address.level++;
+            sub_block_address.index /= 2;
+            return sub_block_address;
+        }
+
+        Block_Address get_buddy_block_address(Block_Address address) const
+        {
+            // NOTE: does not check the buddy exists.
+            address.index ^= 1;
+            return address;
+        }
+
+        std::size_t get_bitmap_index(Block_Address joint_blk_address) const
+        {
+            // BIG NOTE: The input is not one of the buddies, but the joint block they form
+
+            // In the buddy allocation model, 2 blocks that are buddies are joined to form a bigger block (the Joint Block)
+            // Note that there is a single bit per block pair (means: per Joint Block).
+            // Single blocks (end blocks in levels with an odd number of blocks) do not have bits.
+            // That is because single blocks do not join with others to form bigger blocks.
+            // Blocks in the last level do no have bits either. They do not form bigger blocks.
+
+            // The bit represents the state of the buddy relationship, not the blocks on their own.
+            // Bit set means the blocks are in different allocation state (one is allocated, the other is not)
+            // Bit cleared means both blocks are allocated or free.
+
+            // NOTE: This function can be optimized if all blocks have buddies.
+            // NOTE: This puts a requirement on allowed (read: usable) memory sizes.
+
+            // NOTE: Halving the index gives the index of the buddy bit in this level.
+            // NOTE: That index is the same as the index of the joint block in its level.
+
+            // step 1: Find the number of buddy bits used for previous levels
+            // step 2: Calculate the end result
+
+            std::size_t previous_levels_joints = 0;
+            for (unsigned l = 1; l < joint_blk_address.level; l++)
+            {
+                previous_levels_joints += get_block_count_in_lvl(l);
+            }
+
+            return previous_levels_joints + joint_blk_address.index;
+        }
+
+        memory::Block get_block(Block_Address address) const
+        {
+            const auto block_size = get_block_size_in_lvl(address.level);
+            const auto block_offset = address.index * block_size;
+            const auto block_base = m_blocks_base + block_offset;
+            return {.base = block_base, .size = block_size};
+        }
+
+        bool is_address_index_valid(Block_Address address) const
+        {
+            if (address.index < get_block_count_in_lvl(address.level))
+                return true;
+            return false;
+        }
+
+        bool block_has_buddy(Block_Address block_address) const
+        {
+            if (block_address.level >= Levels - 1)
+                return false;
+            // NOTE: assumed block_address is valid
+            const auto buddy_block_address = get_buddy_block_address(block_address);
+            // NOTE: if buddy index is even, it exists; no need to check.
+            return (buddy_block_address.index & 1) ? is_address_index_valid(buddy_block_address) : true;
+        }
+
+        void deallocate(const memory::Block & memory, Block_Address address)
+        {
+            if (block_has_buddy(address))
+            {
+                const auto joint_block_address = get_joint_block_address(address);
+                const auto bmp_index = get_bitmap_index(joint_block_address);
+                const auto bmp_value = m_bitmap.toggle(bmp_index);
+                if (!bmp_value)
+                {   // buddy is free. join the blocks
+                    const auto buddy_block_address = get_buddy_block_address(address);
+                    const auto buddy_block = get_block(buddy_block_address);
+                    Freelist_array_base::m_freelists[address.level].remove(buddy_block);
+                    return deallocate(joint_block_address);
+                }
+            }
+            
+            Freelist_array_base::m_freelists[address.level].push(memory);
+        }
+
+        void deallocate(Block_Address address)
+        {
+            const auto block = get_block(address);
+            deallocate(block, address);
         }
 
     private:
-        memory::Block m_memory;
         std::size_t m_block_count;
-        void *m_blocks_base;
-        BMP m_bitmap;
+        memory::Block m_memory;
+        std::byte * m_blocks_base;
+        BMP_Structure m_bitmap;
         // typename detail::freelist_collection<Block_Size, Levels>::type m_freelists;
     };
 }
