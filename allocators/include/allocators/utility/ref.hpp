@@ -6,8 +6,8 @@ namespace dd99::memory::block_allocator::composite
 {
     // An allocator that wraps a reference to another allocator.
     // Requires an existing and persisting allocator instance.
-    // This allows the use of the same allocator as an underlying allocator of
-    // 2 or more composite allocators.
+    // This allows the use of the same allocator as an underlying
+    // allocator of 2 or more composite allocators.
     template <class Sub_Alloc_T>
     class Ref : public Allocator
     {
@@ -27,7 +27,7 @@ namespace dd99::memory::block_allocator::composite
         void deallocate_all()
         { m_alloc_ref.deallocate_all(); }
 
-        bool owns(void *memory) const
+        bool owns(std::byte *memory) const
         { return m_alloc_ref.owns(memory); }
 
         bool owns(const memory::Block &memory) const

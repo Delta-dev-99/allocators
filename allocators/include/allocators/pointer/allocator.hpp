@@ -16,12 +16,12 @@ namespace dd99::memory::pointer_allocator
         Allocator(Allocator &&) = default; // move allowed
 
         [[nodiscard]]
-        virtual void *allocate(std::size_t requested_size) = 0;
+        virtual std::byte *allocate(std::size_t requested_size) = 0;
         
-        virtual void deallocate(void *memory) = 0;
+        virtual void deallocate(std::byte *memory) = 0;
         virtual void deallocate_all() = 0;
 
-        virtual bool owns(void *memory) const = 0;
+        virtual bool owns(std::byte *memory) const = 0;
         virtual bool owns(const Block &memory) const = 0;
     };
 

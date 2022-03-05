@@ -10,7 +10,7 @@ namespace dd99::memory::block_allocator::degenerate
     // A Constant allocator has a constant state.
     // Allocations always return the same memory.
     // Everything else is noop.
-    class Constant final : public Allocator
+    class Constant : public Allocator
     {
     public:
         constexpr
@@ -50,7 +50,7 @@ namespace dd99::memory::block_allocator::degenerate
 
         constexpr
         bool
-        owns(void *memory) const
+        owns(std::byte *memory) const
         { return m_memory.contains(memory); }
 
         constexpr

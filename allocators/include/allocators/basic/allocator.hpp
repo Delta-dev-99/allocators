@@ -30,7 +30,7 @@ namespace dd99::memory::block_allocator
         virtual void deallocate(const Block &memory) = 0;
         virtual void deallocate_all() = 0;
 
-        virtual bool owns(void *memory) const = 0;
+        virtual bool owns(std::byte *memory) const = 0;
         virtual bool owns(const Block &memory) const = 0;
         
     };

@@ -21,8 +21,8 @@ namespace dd99::memory::block_allocator
         Bitmap(const memory::Block &memory)
             : m_memory(memory)
             , m_block_count(block_count(memory.size))
-            , m_bitmap(m_block_count, memory.base)
             , m_blocks_base(m_memory.get_end() - m_block_count * Block_Size)
+            , m_bitmap(m_block_count, memory.base)
         {
             // mark all blocks as free
             deallocate_all();
@@ -37,7 +37,7 @@ namespace dd99::memory::block_allocator
                 return {};
 
             const auto free_index = m_bitmap.set_first_unset();
-            if (free_index != -1)
+            if (free_index != std::size_t(-1))
                 return get_memory_block(free_index);
 
             // no free block found
@@ -64,7 +64,7 @@ namespace dd99::memory::block_allocator
             return m_memory.contains(memory);
         }
 
-        bool owns(void *memory) const
+        bool owns(std::byte *memory) const
         {
             return m_memory.contains(memory);
         }
@@ -105,7 +105,7 @@ namespace dd99::memory::block_allocator
         // traduce memory block to bitmap index
         std::size_t get_index(const memory::Block& memory)
         {
-            return (memory.base - m_blocks_base) / Block_Size;
+            return std::size_t(memory.base - m_blocks_base) / Block_Size;
         }
     };
 }

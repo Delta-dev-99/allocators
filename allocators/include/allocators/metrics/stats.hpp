@@ -17,13 +17,17 @@ namespace dd99::memory::block_allocator::metrics
         {
             enum Counted_Field
             {
+                // The operations (total and failed)
                 Allocation,
                 Failed_Allocation,
                 Deallocation,
-                Deallocation_Miss, // when you try to deallocate memory that does not belong to the allocator
+                Deallocation_Miss, // when deallocating memory now owned by the allocator
                 Full_Deallocation,
+                // sizes
                 Allocated_Size,
                 Deallocated_Size,
+
+                // the total number of counted fields
                 Field_Count,
             };
 
@@ -35,8 +39,8 @@ namespace dd99::memory::block_allocator::metrics
         [[nodiscard]]
         memory::Block allocate(std::size_t requested_size)
         {
-            const auto total_previous_requested_size = m_stats_data.mean_allocation_request_size * m_stats_data.total[Stats_Data::Allocation];
-            m_stats_data.mean_allocation_request_size = (total_previous_requested_size + requested_size) / (m_stats_data.total[Stats_Data::Allocation] + 1);
+            const auto total_previous_requested_size = m_stats_data.mean_allocation_request_size * double(m_stats_data.total[Stats_Data::Allocation]);
+            m_stats_data.mean_allocation_request_size = (total_previous_requested_size + double(requested_size)) / double(m_stats_data.total[Stats_Data::Allocation] + 1);
 
             ++m_stats_data.total[Stats_Data::Allocation];
 
@@ -75,7 +79,7 @@ namespace dd99::memory::block_allocator::metrics
             ++m_stats_data.total[Stats_Data::Full_Deallocation];
         }
 
-        bool owns(void *memory) const { return Sub_Alloc_T::owns(memory); }
+        bool owns(std::byte *memory) const { return Sub_Alloc_T::owns(memory); }
         bool owns(const memory::Block &memory) const { return Sub_Alloc_T::owns(memory); }
 
     private:

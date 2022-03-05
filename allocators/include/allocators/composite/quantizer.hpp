@@ -4,10 +4,10 @@
 namespace dd99::memory::block_allocator::composite
 {
     template <std::size_t Step_Size, class Sub_Alloc_T>
-    class Bucketizer : public Sub_Alloc_T
+    class Quantizer : public Sub_Alloc_T
     {
     public:
-        Bucketizer(Sub_Alloc_T &&sub_allocator)
+        Quantizer(Sub_Alloc_T &&sub_allocator)
             : Sub_Alloc_T(std::move(sub_allocator))
         { }
 
@@ -23,7 +23,7 @@ namespace dd99::memory::block_allocator::composite
 
         void deallocate_all() { Sub_Alloc_T::deallocate_all(); }
 
-        bool owns(void *memory) const { return Sub_Alloc_T::contains(memory); }
+        bool owns(std::byte *memory) const { return Sub_Alloc_T::contains(memory); }
 
         bool owns(const memory::Block &memory) const { return Sub_Alloc_T::owns(memory); }
     };

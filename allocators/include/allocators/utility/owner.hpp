@@ -23,12 +23,12 @@ namespace dd99::memory::block_allocator::composite
         { return Sub_Allocator_T::allocate(requested_size); }
 
         void deallocate(const memory::Block &memory)
-        { Sub_Allocator_T::deallocate(); }
+        { Sub_Allocator_T::deallocate(memory); }
 
         void deallocate_all()
         { Sub_Allocator_T::deallocate_all(); }
 
-        bool owns(void *memory) const
+        bool owns(std::byte *memory) const
         { return Sub_Allocator_T::owns(memory); }
 
         bool owns(const memory::Block &memory) const

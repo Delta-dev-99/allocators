@@ -186,7 +186,7 @@ namespace dd99::memory::block_allocator
             }
         }
 
-        bool owns(void *memory) const
+        bool owns(std::byte *memory) const
         {
             return m_memory.contains(memory);
         }

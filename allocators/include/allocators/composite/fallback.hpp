@@ -65,7 +65,7 @@ namespace dd99::memory::block_allocator::composite
             m_fallback.deallocate_all();
         }
 
-        bool owns(void *memory) const
+        bool owns(std::byte *memory) const
         {
             return m_primary.owns(memory) || m_fallback.owns(memory);
         }

@@ -12,9 +12,9 @@ namespace dd99::memory::block_allocator::metrics
         // NOTE: Example: Timing for allocation does not include timing for failed allocations
         enum Timed_Operation
         {
-            Allocation,
+            Successful_Allocation,
             Failed_Allocation,
-            Deallocation,
+            Successful_Deallocation,
             Deallocation_Miss,
             Full_Deallocation,
             Any,
@@ -74,7 +74,7 @@ namespace dd99::memory::block_allocator::metrics
             const auto duration = end - start;
             
             if (r)
-                update_operation_timings(Timed_Operation::Allocation, start, duration);
+                update_operation_timings(Timed_Operation::Successful_Allocation, start, duration);
             else
                 update_operation_timings(Timed_Operation::Failed_Allocation, start, duration);
 
@@ -90,7 +90,7 @@ namespace dd99::memory::block_allocator::metrics
             const auto duration = end - start;
             
             if (owns(memory))
-                update_operation_timings(Timed_Operation::Deallocation, start, duration);
+                update_operation_timings(Timed_Operation::Successful_Deallocation, start, duration);
             else
                 update_operation_timings(Timed_Operation::Deallocation_Miss, start, duration);
         }
@@ -106,7 +106,7 @@ namespace dd99::memory::block_allocator::metrics
             update_operation_timings(Timed_Operation::Full_Deallocation, start, duration);
         }
 
-        bool owns(void *memory) const { return Sub_Alloc_T::owns(memory); }
+        bool owns(std::byte *memory) const { return Sub_Alloc_T::owns(memory); }
         bool owns(const memory::Block &memory) const { return Sub_Alloc_T::owns(memory); }
 
     private:

@@ -1,6 +1,9 @@
 #pragma once
 
 #include <allocators/basic/allocator.hpp>
+#include <allocators/degenerate/constant.hpp>
+#include <allocators/utility/throwing.hpp>
+#include <allocators/utility/unique_block.hpp>
 #include <allocators/internal_structures/bitmap.hpp>
 #include <allocators/internal_structures/buddy_freelist_array.hpp>
 
@@ -9,13 +12,19 @@
 namespace dd99::memory::block_allocator::borrowing
 {
 
-    template <std::size_t BLOCK_SIZE = (1 << 12),
-              unsigned LEVELS = 11,
+    template <std::size_t BLOCK_SIZE/*  = (1 << 12) */,
+              unsigned LEVELS/*  = 11 */,
+              class Sub_Alloc_T = dd99::memory::block_allocator::degenerate::Constant,
               class Bitmap_Element_T = std::uint8_t>
     class Buddy : public Allocator, public dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>
     {
         using Freelist_array_base = dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>;
         using BMP_Structure = dd99::memory::structure::Bitmap<Bitmap_Element_T>;
+        // The allocator used for auxiliary memory
+        using Aux_Allocator = 
+            dd99::memory::block_allocator::composite::Unique_Block_Allocator<
+                dd99::memory::block_allocator::composite::Throwing<Sub_Alloc_T>>;
+        using Aux_Block = typename Aux_Allocator::Block_Type;
 
         // used to address a block in the buddy system
         struct Block_Address
@@ -69,32 +78,22 @@ namespace dd99::memory::block_allocator::borrowing
         }
 
     public:
-        ~Buddy()
-        {
-            m_aux_allocator.deallocate(m_aux_memory);
-        }
-
-        Buddy(const memory::Block & memory, Allocator & aux_allocator)
+        Buddy(const memory::Block & memory, Sub_Alloc_T && aux_allocator)
             : Freelist_array_base()
             , m_block_count(calculate_basic_block_count(memory.size))
-            , m_aux_allocator(aux_allocator)
+            , m_aux_allocator(std::move(aux_allocator))
             , m_memory(memory)
             , m_aux_memory(m_aux_allocator.allocate(calculate_aux_allocation(m_block_count)))
             , m_bitmap(calculate_bmp_bit_count(m_block_count), m_aux_memory.base)
         {
-            // NOTE: This is safe because the bitmap does not touch the memory on construction
-            if (!m_aux_memory)
-                throw std::runtime_error{"Borrowing Buddy Allocator initialization: Auxiliary allocation failed"};
-
             deallocate_all();
         }
 
         Buddy(const Buddy &) = delete;
-        Buddy(Buddy &&) = default;
-        
         Buddy & operator=(const Buddy &) = delete;
-        // has member reference. Cannot be assigned, only initialized.
-        Buddy & operator=(Buddy &&) = delete;
+        
+        Buddy(Buddy && other) = default;
+        Buddy & operator=(Buddy &&) = default;
 
     public:
         [[nodiscard]]
@@ -195,7 +194,7 @@ namespace dd99::memory::block_allocator::borrowing
             }
         }
 
-        bool owns(void *memory) const
+        bool owns(std::byte *memory) const
         {
             return m_memory.contains(memory);
         }
@@ -235,7 +234,7 @@ namespace dd99::memory::block_allocator::borrowing
         std::size_t get_block_index_in_lvl(const memory::Block & blk, unsigned level) const
         {
             const auto block_size = get_block_size_in_lvl(level);
-            const auto block_offset = blk.base - m_memory.base;
+            const auto block_offset = std::size_t(blk.base - m_memory.base);
             return block_offset / block_size;
         }
 
@@ -350,8 +349,9 @@ namespace dd99::memory::block_allocator::borrowing
 
     private:
         std::size_t m_block_count;
-        Allocator & m_aux_allocator;
-        memory::Block m_memory, m_aux_memory;
+        Aux_Allocator m_aux_allocator;
+        memory::Block m_memory;
+        Aux_Block m_aux_memory;
         BMP_Structure m_bitmap;
     };
 }

@@ -97,7 +97,7 @@ namespace dd99::memory::structure
             const auto block_ptr_end = m_base + size();
             while (block_ptr < block_ptr_end)
             {
-                if (*block_ptr != -1)
+                if (*block_ptr != Block_T(-1))
                 {
                     for (unsigned bit = 0; bit < Block_Bits; ++bit)
                     {

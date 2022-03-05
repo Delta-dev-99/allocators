@@ -89,7 +89,7 @@ namespace dd99::memory::structure
 
     private:
         std::size_t m_block_size;
-        Free_Block_Header *first = nullptr;
+        Free_Block_Header *m_first = nullptr;
 
     public:
         ~Freelist_Double_Link()
@@ -106,17 +106,28 @@ namespace dd99::memory::structure
         }
 
         Freelist_Double_Link(const Freelist_Double_Link &) = delete;
-        Freelist_Double_Link(Freelist_Double_Link &&other) = default;
+        Freelist_Double_Link(Freelist_Double_Link && other)
+            : m_block_size(std::move(other.m_block_size))
+            , m_first(std::move(other.m_first))
+        {
+            other.m_first = nullptr;
+        }
 
         Freelist_Double_Link & operator=(const Freelist_Double_Link &) = delete;
-        Freelist_Double_Link & operator=(Freelist_Double_Link &&) = default;
+        Freelist_Double_Link & operator=(Freelist_Double_Link && other)
+        {
+            clear();
+            m_first = other.m_first;
+            m_block_size = other.m_block_size;
+            return *this;
+        }
 
     public:
         // NOTE: Undefined Behaviour if the freelist is empty. Do check!
         [[nodiscard]]
         memory::Block pop()
         {
-            auto block_ptr = first;
+            auto block_ptr = m_first;
             const memory::Block block{.base = reinterpret_cast<std::byte *>(block_ptr), .size = m_block_size};
             remove(block);
             return block;
@@ -124,12 +135,12 @@ namespace dd99::memory::structure
 
         void push(const memory::Block& block)
         {
-            auto new_header = new (block.base) Free_Block_Header{.next = first};
+            auto new_header = new (block.base) Free_Block_Header{.next = m_first};
 
-            if (first)
-                first->prev = new_header;
+            if (m_first)
+                m_first->prev = new_header;
 
-            first = new_header;
+            m_first = new_header;
         }
 
         void remove(const memory::Block & block)
@@ -141,7 +152,7 @@ namespace dd99::memory::structure
 
             if (header->prev == nullptr) // removing the first block
             {
-                first = header->next;
+                m_first = header->next;
             }
             else
             {
@@ -157,11 +168,11 @@ namespace dd99::memory::structure
         void clear()
         {
             // NOTE: If the destruction of the block header is trivial,
-            // this function reduces to setting `first` to `nullptr`
+            // this function reduces to setting `m_first` to `nullptr`
             // NOTE: I know destruction IS trivial, but compiler should know too.
 
-            auto current = first;
-            first = nullptr;
+            auto current = m_first;
+            m_first = nullptr;
             while (current)
             {
                 const auto tmp = current->next;
@@ -172,7 +183,7 @@ namespace dd99::memory::structure
 
         bool empty() const
         {
-            return first == nullptr;
+            return m_first == nullptr;
         }
 
     };

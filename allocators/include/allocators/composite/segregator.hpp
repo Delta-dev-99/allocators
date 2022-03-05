@@ -37,7 +37,7 @@ namespace dd99::memory::block_allocator::composite
             m_alloc_g.deallocate_all();
         }
 
-        bool owns(void *memory) const
+        bool owns(std::byte *memory) const
         {
             // no size information
             return m_alloc_le.owns(memory) || m_alloc_g.owns(memory);
