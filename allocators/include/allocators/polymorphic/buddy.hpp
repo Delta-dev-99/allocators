@@ -83,7 +83,9 @@ namespace dd99::memory::block_allocator::pmrph
                 , m_memory(memory)
                 , m_bitmap(calculate_buddy_bit_count(m_block_count), bitmap_base)
             {
-                deallocate_all();
+                // NOTE: Cannot call deallocate here because the base does not provide full functionality.
+                // NOTE: Derived class may need to do something on deallocation.
+                // deallocate_all();
             }
 
             // Buddy_Base(const Buddy_Base &) = delete;
@@ -118,7 +120,7 @@ namespace dd99::memory::block_allocator::pmrph
             {
                 // TODO: Test this
                 // TODO: Test performance of this
-                return std::bit_width(block_size) - std::bit_width(Block_Size);
+                return unsigned(std::bit_width(block_size) - std::bit_width(Block_Size));
             }
 
 
@@ -127,7 +129,7 @@ namespace dd99::memory::block_allocator::pmrph
             {
                 return calculate_block_count_in_lvl(m_block_count, level);
             }
-            
+
             std::size_t
             get_block_index(std::byte * block_base, unsigned level) const
             {
@@ -396,7 +398,7 @@ namespace dd99::memory::block_allocator::pmrph
     // to infer Bitmap_Block_Type as std::byte
     // when not specified.
 
-    
+
 
     // specialization for basic buddy
     template <std::size_t BLOCK_SIZE,
@@ -422,7 +424,7 @@ namespace dd99::memory::block_allocator::pmrph
                 return 0;
 
             std::size_t block_count = memory_size / Block_Size;
-            
+
             // Iteratively aproach block count
             while (true)
             {
@@ -437,12 +439,14 @@ namespace dd99::memory::block_allocator::pmrph
 
             return block_count;
         }
-    
+
     private: // internal constructors
         Buddy(memory::Block memory, std::size_t block_count, std::byte * blocks_base)
             : Buddy_Base(memory, block_count, memory.base)
             , m_blocks_base(blocks_base)
-        { }
+        {
+            deallocate_all();
+        }
 
         Buddy(memory::Block memory, std::size_t block_count)
             : Buddy(memory, block_count, memory.get_end() - block_count * Block_Size)
@@ -452,6 +456,12 @@ namespace dd99::memory::block_allocator::pmrph
         Buddy(memory::Block memory)
             : Buddy(memory, calculate_block_count(memory.size))
         { }
+
+    public: // allocator interface implementation
+        using Buddy_Base::allocate;
+        using Buddy_Base::deallocate;
+        using Buddy_Base::deallocate_all;
+        using Buddy_Base::owns;
 
     protected:
         constexpr
@@ -488,7 +498,7 @@ namespace dd99::memory::block_allocator::pmrph
         using Buddy_Base::Levels;
         using Buddy_Base::Block_Size;
         using Buddy_Base::Max_Block_Size;
-        
+
     public: // static functions
         static constexpr
         std::size_t calculate_block_count(std::size_t memory_size)
@@ -512,7 +522,7 @@ namespace dd99::memory::block_allocator::pmrph
             const auto block_count = calculate_block_count(memory_size);
             return calculate_aux_allocation_from_block_count(block_count);
         }
-    
+
     private: // internal constructors
         Buddy(memory::Block memory,
               Aux_Allocator && aux_allocator,
@@ -521,7 +531,9 @@ namespace dd99::memory::block_allocator::pmrph
             : Buddy_Base(memory, block_count, aux_block.base)
             , m_aux_allocator(std::move(aux_allocator))
             , m_aux_memory(std::move(aux_block))
-        { }
+        {
+            deallocate_all();
+        }
 
         Buddy(memory::Block memory,
               Aux_Allocator && aux_allocator,
@@ -554,5 +566,18 @@ namespace dd99::memory::block_allocator::pmrph
         Aux_Allocator m_aux_allocator;
         Aux_Block m_aux_memory;
     };
+
+
+
+    template <std::size_t BLOCK_SIZE,
+              unsigned LEVELS,
+              class Bitmap_Block_Type = std::byte>
+    using Buddy_Basic = Buddy<Pmrph_Mode::Basic, BLOCK_SIZE, LEVELS, Bitmap_Block_Type>;
+
+    template <std::size_t BLOCK_SIZE,
+              unsigned LEVELS,
+              class Sub_Alloc_T = dd99::memory::block_allocator::degenerate::Constant,
+              class Bitmap_Block_Type = std::byte>
+    using Buddy_Borrowing = Buddy<Pmrph_Mode::Borrowing, BLOCK_SIZE, LEVELS, Sub_Alloc_T, Bitmap_Block_Type>;
 
 }
