@@ -27,4 +27,6 @@
 #include <allocators/utility/throwing.hpp>
 #include <allocators/utility/unique_block.hpp>
 
+#include <allocators/polymorphic/buddy.hpp>
+
 // #include <allocators/multiblock
