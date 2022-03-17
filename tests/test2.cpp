@@ -1,21 +1,4 @@
-#include <allocators/metrics/stats.hpp>
-#include <allocators/metrics/timing.hpp>
-#include <allocators/utility/ref.hpp>
-#include <allocators/composite/bucketizer.hpp>
-#include <allocators/composite/fallback.hpp>
-#include <allocators/composite/segregator.hpp>
-#include <allocators/basic/slicing.hpp>
-#include <allocators/basic/pool.hpp>
-#include <allocators/basic/stack.hpp>
-#include <allocators/basic/bitmap.hpp>
-#include <allocators/basic/buddy.hpp>
-
-#include <allocators/degenerate/boolean.hpp>
-#include <allocators/degenerate/constant.hpp>
-#include <allocators/degenerate/failed.hpp>
-
-#include <allocators/borrowing/bitmap.hpp>
-#include <allocators/borrowing/buddy.hpp>
+#include <allocators/allocators.hpp>
 
 
 
@@ -460,6 +443,12 @@ int main()
     // test5();
     // time_allocators();
 
-    instantiation_compilation_test1();
-    instantiation_compilation_test2();
+    // instantiation_compilation_test1();
+    // instantiation_compilation_test2();
+
+    namespace pmrph = dd99::memory::block_allocator::pmrph;
+
+    constexpr auto mem_size = 256;
+    dd99::memory::Self_Contained_Block<mem_size> my_memory, aux_memory;
+    pmrph::Buddy<pmrph::Pmrph_Mode::Borrowing, 32, 4, dd99::memory::block_allocator::degenerate::Constant, std::byte> my_alloc(my_memory, aux_memory);
 }
