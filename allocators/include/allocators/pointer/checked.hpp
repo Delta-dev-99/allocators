@@ -85,7 +85,7 @@ namespace dd99::memory::pointer_allocator
         {
             // hash the memory block structure
             // anything should do
-            return std::rotl(reinterpret_cast<std::uintptr_t>(memory.base), 15) ^ memory.size;
+            return Check_Header(std::rotl(reinterpret_cast<std::uintptr_t>(memory.base), 15) ^ memory.size);
         }
 
         static std::byte *memory_block_to_ptr(const Block &memory)
