@@ -10,8 +10,13 @@ target_sources(allocators PRIVATE
 )
 
 target_sources(allocators PUBLIC
-    include/allocators/internal_structures/free_list.hpp
-    include/allocators/internal_structures/memory_block.hpp
+    include/allocators/internal/structures/bitmap.hpp
+    include/allocators/internal/structures/buddy_freelist_array.hpp
+    include/allocators/internal/structures/free_list.hpp
+
+    include/allocators/internal/bases/buddy.hpp
+
+    include/allocators/structures/memory_block.hpp
 
     include/allocators/basic/allocator.hpp
     include/allocators/basic/bitmap.hpp

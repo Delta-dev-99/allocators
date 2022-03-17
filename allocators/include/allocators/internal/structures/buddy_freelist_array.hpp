@@ -1,6 +1,6 @@
 #pragma once
 
-#include <allocators/internal_structures/free_list.hpp>
+#include <allocators/internal/structures/free_list.hpp>
 
 namespace dd99::memory::structure::detail
 {

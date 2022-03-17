@@ -1,7 +1,7 @@
 #pragma once
 
 #include <allocators/basic/allocator.hpp>
-#include <allocators/internal_structures/bitmap.hpp>
+#include <allocators/internal/structures/bitmap.hpp>
 
 #include <limits>
 #include <bit>

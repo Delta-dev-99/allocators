@@ -4,7 +4,7 @@
 #include <allocators/degenerate/constant.hpp>
 #include <allocators/utility/throwing.hpp>
 #include <allocators/utility/unique_block.hpp>
-#include <allocators/internal_structures/bitmap.hpp>
+#include <allocators/internal/structures/bitmap.hpp>
 
 
 // borrowing allocators borrow memory from other allocators to place inner state

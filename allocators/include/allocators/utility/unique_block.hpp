@@ -1,6 +1,6 @@
 #pragma once
 
-#include <allocators/internal_structures/memory_block.hpp>
+#include <allocators/structures/memory_block.hpp>
 #include <allocators/basic/stack.hpp>
 
 namespace dd99::memory::block_allocator::composite

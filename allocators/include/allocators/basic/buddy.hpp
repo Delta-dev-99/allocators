@@ -1,8 +1,8 @@
 #pragma once
 
 #include <allocators/basic/allocator.hpp>
-#include <allocators/internal_structures/bitmap.hpp>
-#include <allocators/internal_structures/buddy_freelist_array.hpp>
+#include <allocators/internal/structures/bitmap.hpp>
+#include <allocators/internal/structures/buddy_freelist_array.hpp>
 
 
 namespace dd99::memory::block_allocator
