@@ -10,8 +10,8 @@ namespace dd99::memory::structure
     {
     public:
         // TODO: Verify Block_Bits is used in calculations
-        constexpr static auto Block_Bits = std::numeric_limits<Block_T>::digits;
         constexpr static auto Block_Size = sizeof(Block_T);
+        constexpr static auto Block_Bits = Block_Size * CHAR_BIT;
 
     public: // statics
         // All blocks are fully used?
@@ -74,7 +74,7 @@ namespace dd99::memory::structure
             m_base[blk_index] ^= bit_mask;
 
             // return the new value
-            return m_base[blk_index] & bit_mask;
+            return bool(m_base[blk_index] & bit_mask);
         }
 
         // returns the index of the set bit, or -1 if not found
@@ -82,7 +82,8 @@ namespace dd99::memory::structure
         {
             // optimization using larger type for iteration
             using Fast_Block = std::uint_fast32_t;
-            const auto n_fast_blocks = bit_size() / std::numeric_limits<Fast_Block>::digits;
+            const auto Fast_Block_Bits = sizeof(Fast_Block) * CHAR_BIT;
+            const auto n_fast_blocks = bit_size() / Fast_Block_Bits;
             /* volatile */ auto fast_block_ptr = reinterpret_cast<Fast_Block *>(m_base);
             const auto fast_block_ptr_end = reinterpret_cast<Fast_Block *>(m_base) + n_fast_blocks;
             while (fast_block_ptr < fast_block_ptr_end)
@@ -122,7 +123,8 @@ namespace dd99::memory::structure
         {
             // optimization using larger type for iteration
             using Fast_Block = std::uint_fast32_t;
-            const auto n_fast_blocks = bit_size() / std::numeric_limits<Fast_Block>::digits;
+            const auto Fast_Block_Bits = sizeof(Fast_Block) * CHAR_BIT;
+            const auto n_fast_blocks = bit_size() / Fast_Block_Bits;
             /* volatile */ auto fast_block_ptr = reinterpret_cast<Fast_Block *>(m_base);
             const auto fast_block_ptr_end = reinterpret_cast<Fast_Block *>(m_base) + n_fast_blocks;
             while (fast_block_ptr < fast_block_ptr_end)
@@ -135,7 +137,7 @@ namespace dd99::memory::structure
             const auto block_ptr_end = m_base + size();
             while (block_ptr < block_ptr_end)
             {
-                *block_ptr++ = 0;
+                *block_ptr++ = Block_T{0};
             }
 
             // mark unmapped bits as used
@@ -145,7 +147,7 @@ namespace dd99::memory::structure
                 const auto n_used_bits = bit_size() % Block_Bits;
                 const auto n_unused_bits = Block_Bits - n_used_bits;
 
-                m_base[size() - 1] |= ((Block_T(1) << n_unused_bits) - 1) << n_used_bits;
+                m_base[size() - 1] |= Block_T((std::make_unsigned_t<Block_T>(1) << n_unused_bits) - 1) << n_used_bits;
             }
         }
 
