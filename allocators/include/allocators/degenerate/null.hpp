@@ -11,7 +11,7 @@ namespace dd99::memory::block_allocator::degenerate
     // It is perfect in the sense that it
     // always fails successfully.
     // NOTE: Is stateless
-    class Null final : public Allocator
+    class Null : public Allocator
     {
     public:
         constexpr

@@ -10,7 +10,7 @@ namespace dd99::memory::block_allocator::degenerate
     // An allocator that manages a single full block.
     // Allocates and deallocates all at once.
     // Has only 2 states: all allocated and all deallocated
-    class Boolean final : public Allocator
+    class Boolean : public Allocator
     {
     public:
         Boolean(const memory::Block & memory)
