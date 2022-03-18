@@ -1,6 +1,6 @@
 #pragma once
 
-#include <allocators/basic/allocator.hpp>
+#include <allocators/internal/bases/allocator.hpp>
 
 
 namespace dd99::memory::block_allocator
@@ -25,8 +25,8 @@ namespace dd99::memory::block_allocator
         Block allocate(std::size_t requested_size)
         {
             const auto used_size = std::size_t(m_current - m_memory.base);
-            const auto remaining_size = m_memory.size - used_size;
-            if (remaining_size >= requested_size)
+            const auto available_size = m_memory.size - used_size;
+            if (available_size >= requested_size)
             {
                 Block current{.base = m_current, .size = requested_size};
                 m_current += requested_size;

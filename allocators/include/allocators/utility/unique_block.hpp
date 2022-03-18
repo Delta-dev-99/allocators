@@ -35,15 +35,12 @@ namespace dd99::memory::block_allocator::composite
     public:
         ~Unique_Block_Allocator()
         {
-            auto self_ptr_ptr = reinterpret_cast<Unique_Block_Allocator **>(m_self_ptr_block.base);
-            if (self_ptr_ptr)
-                *self_ptr_ptr = nullptr;
-            m_sub_alloc.deallocate(m_self_ptr_block);
+            cleanup();
         }
 
         Unique_Block_Allocator(Sub_Alloc_T && sub_allocator)
             : m_sub_alloc(std::move(sub_allocator))
-            , m_self_ptr_block(m_sub_alloc.allocate(sizeof(this)))
+            , m_self_ptr_block(m_sub_alloc.allocate(get_memory_overhead()))
         {
             auto ptr = new (m_self_ptr_block.base) Unique_Block_Allocator *;
             *ptr = this;
@@ -55,6 +52,27 @@ namespace dd99::memory::block_allocator::composite
         {
             *reinterpret_cast<Unique_Block_Allocator **>(m_self_ptr_block.base) = this;
             other.m_self_ptr_block = {};
+        }
+
+
+        Unique_Block_Allocator & operator=(Unique_Block_Allocator && other)
+        {
+            cleanup();
+
+            m_sub_alloc = std::move(other.m_sub_alloc);
+            m_self_ptr_block = std::move(other.m_self_ptr_block);
+
+            *reinterpret_cast<Unique_Block_Allocator **>(m_self_ptr_block.base) = this;
+            other.m_self_ptr_block = {};
+
+            return *this;
+        }
+
+    public:
+        static constexpr
+        std::size_t get_memory_overhead()
+        {
+            return sizeof(Unique_Block_Allocator *);
         }
 
     public:
@@ -78,6 +96,15 @@ namespace dd99::memory::block_allocator::composite
         bool owns(std::byte *memory) const { return m_sub_alloc.contains(memory); }
 
         bool owns(const memory::Block &memory) const { return m_sub_alloc.owns(memory); }
+
+    protected:
+        void cleanup()
+        {
+            auto self_ptr_ptr = reinterpret_cast<Unique_Block_Allocator **>(m_self_ptr_block.base);
+            if (self_ptr_ptr)
+                *self_ptr_ptr = nullptr;
+            m_sub_alloc.deallocate(m_self_ptr_block);
+        }
     
     private:
         Sub_Alloc_T m_sub_alloc;

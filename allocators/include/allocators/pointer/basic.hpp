@@ -1,6 +1,6 @@
 #pragma once
 
-#include <allocators/pointer/allocator.hpp>
+#include <allocators/internal/bases/pointer.hpp>
 
 namespace dd99::memory::pointer_allocator
 {

@@ -14,11 +14,12 @@ target_sources(allocators PUBLIC
     include/allocators/internal/structures/buddy_freelist_array.hpp
     include/allocators/internal/structures/free_list.hpp
 
+    include/allocators/internal/bases/allocator.hpp
     include/allocators/internal/bases/buddy.hpp
+    include/allocators/internal/bases/pointer.hpp
 
     include/allocators/structures/memory_block.hpp
 
-    include/allocators/basic/allocator.hpp
     include/allocators/basic/bitmap.hpp
     include/allocators/basic/buddy.hpp
     include/allocators/basic/pool.hpp
@@ -39,7 +40,6 @@ target_sources(allocators PUBLIC
     include/allocators/metrics/stats.hpp
     include/allocators/metrics/timing.hpp
 
-    include/allocators/pointer/allocator.hpp
     include/allocators/pointer/basic.hpp
     include/allocators/pointer/checked.hpp
 

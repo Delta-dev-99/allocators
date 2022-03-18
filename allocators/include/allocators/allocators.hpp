@@ -1,3 +1,6 @@
+#pragma once
+
+#include <allocators/internal/bases/buddy.hpp>
 
 #include <allocators/basic/bitmap.hpp>
 #include <allocators/basic/buddy.hpp>
@@ -26,7 +29,5 @@
 #include <allocators/utility/ref.hpp>
 #include <allocators/utility/throwing.hpp>
 #include <allocators/utility/unique_block.hpp>
-
-#include <allocators/polymorphic/buddy.hpp>
 
 // #include <allocators/multiblock

@@ -113,17 +113,17 @@
 //     std::cout << "unused ratio: " << unused_ratio << "\n";
 // }
 
-// void test4()
-// {
-//     dd99::memory::Self_Contained_Block<1024> mem;
-//     dd99::memory::block_allocator::Buddy<32, 3> alloc(mem);
+void test4()
+{
+    dd99::memory::Self_Contained_Block<1024> mem;
+    dd99::memory::block_allocator::Buddy<32, 3> alloc(mem);
 
-//     auto x1 = alloc.allocate(5);
-//     auto x2 = alloc.allocate(32);
-//     auto x3 = alloc.allocate(33);
-//     auto x4 = alloc.allocate(128);
-//     auto x5 = alloc.allocate(129);
-// }
+    auto x1 = alloc.allocate(5);
+    auto x2 = alloc.allocate(32);
+    auto x3 = alloc.allocate(33);
+    auto x4 = alloc.allocate(128);
+    auto x5 = alloc.allocate(129);
+}
 
 // void test5()
 // {
@@ -389,7 +389,7 @@ void instantiation_compilation_test1()
     using aux_alloc_t = dd99::memory::block_allocator::Stack;
     using alloc_t = dd99::memory::block_allocator::borrowing::Buddy<32, 6, aux_alloc_t>;
 
-    constexpr auto aux_mem_size = alloc_t::calculate_aux_allocation(alloc_t::calculate_basic_block_count(mem_size));
+    constexpr auto aux_mem_size = alloc_t::calculate_aux_mem_size(mem_size);
     dd99::memory::Self_Contained_Block<aux_mem_size> aux_memory, aux_memory2;
 
     {
@@ -439,16 +439,10 @@ int main()
 {
     // test1();
     // test2();   
-    // test4();
+    test4();
     // test5();
     // time_allocators();
 
-    // instantiation_compilation_test1();
-    // instantiation_compilation_test2();
-
-    namespace pmrph = dd99::memory::block_allocator::pmrph;
-
-    constexpr auto mem_size = 256;
-    dd99::memory::Self_Contained_Block<mem_size> my_memory, aux_memory;
-    pmrph::Buddy<pmrph::Pmrph_Mode::Borrowing, 32, 4, dd99::memory::block_allocator::degenerate::Constant, std::byte> my_alloc(my_memory, aux_memory);
+    instantiation_compilation_test1();
+    instantiation_compilation_test2();
 }
