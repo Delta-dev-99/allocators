@@ -14,6 +14,8 @@ namespace dd99::memory::block_allocator::utility
     //  - Sub allocators are "Allocators"
     //  - Functor can be evaluated on requests
     //  - Functor returns an index into the list of allocators
+    //  - Request type must provide member function `get_request()`
+    //      used to get request to pass down to sub allocators
     // Template args:
     //  - AV a parameter pack where each parameter is a pair of an Allocator type
     //    and a compile-time constant value
@@ -36,12 +38,15 @@ namespace dd99::memory::block_allocator::utility
         template <class Request, std::size_t... Indices>
         memory::Block allocate(Request request, std::index_sequence<Indices...>)
         {
+            using ret_type = std::common_type_t<
+                decltype(std::get<Indices>(m_allocators).allocate(request.get_request()))...>;
+
             const auto i = m_functor(request);
-            memory::Block ret{};
+            ret_type ret{};
             static_cast<void>(std::initializer_list<std::size_t>
                 { (i == Indices ?
                     (ret = std::get<Indices>(m_allocators).allocate(
-                        request.get_size())), 0U : 0U)... });
+                        request.get_request())), 0U : 0U)... });
             return ret;
         }
 
@@ -57,8 +62,8 @@ namespace dd99::memory::block_allocator::utility
         template <std::size_t... Indices>
         void deallocate_all(std::index_sequence<Indices...>)
         {
-            std::initializer_list<std::size_t>
-                { (std::get<Indices>(m_allocators).deallocate_all(), 0U)... };
+            static_cast<void>(std::initializer_list<std::size_t>
+                { (std::get<Indices>(m_allocators).deallocate_all(), 0U)... });
         }
 
         template <class T, std::size_t... Indices>
