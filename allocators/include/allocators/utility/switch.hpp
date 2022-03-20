@@ -19,12 +19,11 @@ namespace dd99::memory::block_allocator::utility
     //    and a compile-time constant value
     // Ussage:
     // Switch my_switch(func, alloc1, alloc2, ...)
-    template <class Request, class Functor, class... Allocators>
+    template <class Functor, class... Allocators>
     class Switch
     {
         using count_type = decltype(sizeof...(Allocators));
         static constexpr count_type allocator_count = sizeof...(Allocators);
-        using functor_ret_type = decltype(std::declval<Functor>()(std::declval<Request>()));
         using index_sequence = std::make_index_sequence<allocator_count>;
 
     public:
@@ -34,15 +33,15 @@ namespace dd99::memory::block_allocator::utility
         { }
 
     private: // implementation details
-        template <std::size_t... Indices>
+        template <class Request, std::size_t... Indices>
         memory::Block allocate(Request request, std::index_sequence<Indices...>)
         {
             const auto i = m_functor(request);
             memory::Block ret{};
-            std::initializer_list<std::size_t>
+            static_cast<void>(std::initializer_list<std::size_t>
                 { (i == Indices ?
                     (ret = std::get<Indices>(m_allocators).allocate(
-                        request.get_size())), 0U : 0U)... };
+                        request.get_size())), 0U : 0U)... });
             return ret;
         }
 
@@ -69,6 +68,7 @@ namespace dd99::memory::block_allocator::utility
         }
 
     public:
+        template <class Request>
         [[nodiscard]]
         memory::Block allocate(Request request)
         {
@@ -82,8 +82,7 @@ namespace dd99::memory::block_allocator::utility
 
         void deallocate_all()
         {
-
-            // m_sub_allocator.deallocate_all();
+            return deallocate_all(index_sequence{});
         }
 
         bool owns(std::byte *memory) const
