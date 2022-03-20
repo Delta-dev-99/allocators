@@ -1,6 +1,6 @@
 #include <allocators/metrics/stats.hpp>
 #include <allocators/metrics/timing.hpp>
-#include <allocators/utility/ref.hpp>
+#include <allocators/composite/ref.hpp>
 #include <allocators/composite/quantizer.hpp>
 #include <allocators/composite/fallback.hpp>
 #include <allocators/composite/segregator.hpp>

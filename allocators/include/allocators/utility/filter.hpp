@@ -12,7 +12,7 @@ namespace dd99::memory::block_allocator::utility
     //      *** memory size is still needed. It will be
     //      *** extracted via `get_size()` method from the request.
     //      *** Request type needs to provide `get_size()` member func
-    template <class Predicate, class Request, class Sub_Allocator>
+    template <class Request, class Predicate, class Sub_Allocator>
     class Filter : public Allocator
     {
     public:

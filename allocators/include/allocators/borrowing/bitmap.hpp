@@ -2,7 +2,7 @@
 
 #include <allocators/internal/bases/allocator.hpp>
 #include <allocators/degenerate/constant.hpp>
-#include <allocators/utility/throwing.hpp>
+#include <allocators/composite/throwing.hpp>
 #include <allocators/utility/unique_block.hpp>
 #include <allocators/internal/structures/bitmap.hpp>
 
@@ -18,7 +18,7 @@ namespace dd99::memory::block_allocator::borrowing
         using BMP_Structure = dd99::memory::structure::Bitmap<Bitmap_Element_T>;
 
         using Aux_Allocator = 
-            dd99::memory::block_allocator::composite::Unique_Block_Allocator<
+            dd99::memory::block_allocator::utility::Unique_Block_Allocator<
                 dd99::memory::block_allocator::composite::Throwing<Sub_Alloc_T>>;
         using Aux_Block = typename Aux_Allocator::Block_Type;
 

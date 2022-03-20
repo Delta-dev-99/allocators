@@ -20,7 +20,7 @@ namespace dd99::memory::block_allocator::borrowing
         using typename Buddy_Base::BMP;
 
         using Aux_Allocator =
-            dd99::memory::block_allocator::composite::Unique_Block_Allocator<
+            dd99::memory::block_allocator::utility::Unique_Block_Allocator<
                 dd99::memory::block_allocator::composite::Throwing<Sub_Alloc_T>>;
         using Aux_Block = typename Aux_Allocator::Block_Type;
 

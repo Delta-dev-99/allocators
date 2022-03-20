@@ -32,6 +32,8 @@ target_sources(allocators PUBLIC
     include/allocators/composite/quantizer.hpp
     include/allocators/composite/fallback.hpp
     include/allocators/composite/segregator.hpp
+    include/allocators/composite/ref.hpp
+    include/allocators/composite/throwing.hpp
 
     include/allocators/degenerate/boolean.hpp
     include/allocators/degenerate/constant.hpp
@@ -44,7 +46,5 @@ target_sources(allocators PUBLIC
     include/allocators/pointer/checked.hpp
 
     include/allocators/utility/owner.hpp
-    include/allocators/utility/ref.hpp
-    include/allocators/utility/throwing.hpp
     include/allocators/utility/unique_block.hpp
 )
