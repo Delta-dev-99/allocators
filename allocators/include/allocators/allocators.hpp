@@ -14,6 +14,7 @@
 #include <allocators/composite/fallback.hpp>
 #include <allocators/composite/quantizer.hpp>
 #include <allocators/composite/segregator.hpp>
+#include <allocators/composite/filter.hpp>
 
 #include <allocators/degenerate/boolean.hpp>
 #include <allocators/degenerate/constant.hpp>
