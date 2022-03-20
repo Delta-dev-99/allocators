@@ -3,7 +3,7 @@
 #include <allocators/structures/memory_block.hpp>
 #include <allocators/basic/stack.hpp>
 
-namespace dd99::memory::block_allocator::composite
+namespace dd99::memory::block_allocator::utility
 {
 
     // NOTE: This class does NOT inherit from Allocator base class.

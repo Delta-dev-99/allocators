@@ -5,7 +5,7 @@
 namespace dd99::memory::block_allocator::composite
 {
     // An allocator adaptor that throws when allocation fails
-    template <class Sub_Alloc_T>
+    template <class Sub_Alloc_T, bool Throwing_Deallocation = false>
     class Throwing : public Sub_Alloc_T
     {
     public:
@@ -25,7 +25,12 @@ namespace dd99::memory::block_allocator::composite
 
         void deallocate(const memory::Block &memory) 
         {
-            if (!owns(memory)) return;
+            if (!owns(memory))
+            {
+                if constexpr (Throwing_Deallocation)
+                    throw std::runtime_error{"Attempt to deallocate memory not allocated with this allocator"};
+                else return;
+            }
             return Sub_Alloc_T::deallocate(memory);
         }
 
