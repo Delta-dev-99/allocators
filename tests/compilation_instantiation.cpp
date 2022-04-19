@@ -9,7 +9,7 @@ struct Memory_Request
     int priority; // lower number means higher priority. 0 is max.
     std::size_t size;
 
-    std::size_t get_size() { return size; }
+    std::size_t get_request() { return size; }
 };
 
 
