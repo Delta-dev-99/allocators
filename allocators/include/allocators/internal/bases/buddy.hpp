@@ -4,6 +4,8 @@
 #include <allocators/internal/structures/buddy_freelist_array.hpp>
 #include <allocators/internal/structures/bitmap.hpp>
 
+#include <limits>
+
 namespace dd99::memory::block_allocator::internal::base
 {
     struct Buddy_Block_Address
