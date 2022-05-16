@@ -1,6 +1,6 @@
 #pragma once
 
-#include <exception>
+#include <allocators/exception.hpp>
 
 namespace dd99::memory::block_allocator::composite
 {
@@ -19,7 +19,7 @@ namespace dd99::memory::block_allocator::composite
         {
             const auto r = Sub_Alloc_T::allocate(requested_size);
             // TODO: Add exception description?
-            if (!r) throw std::bad_alloc{};
+            if (!r) throw dd99::memory::failed_allocation_exception{};
             return r;
         }
 
@@ -28,7 +28,7 @@ namespace dd99::memory::block_allocator::composite
             if (!owns(memory))
             {
                 if constexpr (Throwing_Deallocation)
-                    throw std::runtime_error{"Attempt to deallocate memory not allocated with this allocator"};
+                    throw dd99::memory::memory_not_owned_exception{};
                 else return;
             }
             return Sub_Alloc_T::deallocate(memory);

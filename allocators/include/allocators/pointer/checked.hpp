@@ -51,8 +51,7 @@ namespace dd99::memory::pointer_allocator
                 auto check = compute_check(allocated_block);
                 if ((check != *get_start_check_ptr(allocated_block)) || (check != *get_end_check_ptr(allocated_block)))
                 {
-                    // TODO: Throw some apropiate exception type
-                    throw std::runtime_error{"Memory integrity check on deallocation failed! Heap may have been corrupted!"};
+                    throw dd99::memory::memory_corrupted{};
                 }
 
                 // probably not necesary to make a copy

@@ -1,9 +1,10 @@
 #pragma once
 
+#include <allocators/exception.hpp>
 #include <cstddef>
 #include <new>
-#include <stdexcept>
-#include <string>
+// #include <stdexcept>
+// #include <string>
 
 
 namespace dd99::memory::structure
@@ -31,7 +32,8 @@ namespace dd99::memory::structure
             : m_block_size(block_size)
         {
             if (sizeof(Free_Block_Header) > block_size)
-                throw std::length_error{"Freelist: block_size (" + std::to_string(block_size) + ") is too short. Min: " + std::to_string(sizeof(Free_Block_Header))};
+                throw dd99::memory::invalid_block_size{};
+                // throw std::length_error{"Frelist: block_size (" + std::to_string(block_size) + ") is too short. Min: " + std::to_string(sizeof(Free_Block_Header))};
         }
 
         Freelist(const Freelist &) = delete;
@@ -102,7 +104,8 @@ namespace dd99::memory::structure
             : m_block_size(block_size)
         {
             if (sizeof(Free_Block_Header) > block_size)
-                throw std::length_error{"Freelist_Double_Link: block_size (" + std::to_string(block_size) + ") is too short. Min: " + std::to_string(sizeof(Free_Block_Header))};
+                throw dd99::memory::invalid_block_size{};
+                // throw std::length_error{"Freelist_Double_Link: block_size (" + std::to_string(block_size) + ") is too short. Min: " + std::to_string(sizeof(Free_Block_Header))};
         }
 
         Freelist_Double_Link(const Freelist_Double_Link &) = delete;
