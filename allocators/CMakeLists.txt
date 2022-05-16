@@ -48,3 +48,6 @@ target_sources(allocators PUBLIC
     include/allocators/utility/owner.hpp
     include/allocators/utility/unique_block.hpp
 )
+
+
+target_link_libraries(allocators PUBLIC dd99xx::freestanding)

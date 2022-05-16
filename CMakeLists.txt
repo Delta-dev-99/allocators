@@ -5,3 +5,6 @@ include(cmake/CompilerWarnings.cmake)
 
 add_subdirectory(allocators)
 add_subdirectory(tests)
+
+
+add_subdirectory(lib/dd99xx)
