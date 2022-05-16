@@ -5,6 +5,7 @@
 #include <allocators/internal/structures/bitmap.hpp>
 
 #include <limits>
+#include <bit>
 
 namespace dd99::memory::block_allocator::internal::base
 {

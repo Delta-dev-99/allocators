@@ -1,5 +1,6 @@
 #pragma once
 
+#include <allocators/acquire_memory/self_contained_block.hpp>
 #include <allocators/basic/bitmap.hpp>
 #include <allocators/basic/buddy.hpp>
 #include <allocators/basic/pool.hpp>
@@ -18,12 +19,14 @@
 #include <allocators/degenerate/null.hpp>
 #include <allocators/internal/bases/buddy.hpp>
 #include <allocators/metrics/stats.hpp>
-#include <allocators/metrics/timing.hpp>
+// #include <allocators/metrics/timing.hpp> // disabled (freestanding)
 #include <allocators/pointer/basic.hpp>
 #include <allocators/pointer/checked.hpp>
 #include <allocators/utility/filter.hpp>
 #include <allocators/utility/owner.hpp>
-#include <allocators/utility/switch.hpp>
+// #include <allocators/utility/switch.hpp> // disabled temporarily (requires <tuple>)
 #include <allocators/utility/unique_block.hpp>
+#include <allocators/exception.hpp>
 
-// #include <allocators/multiblock
+
+// NOTE: timing allocator uses <chrono>, which is not part of the current freestanding library implementation.
