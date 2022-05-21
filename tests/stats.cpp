@@ -13,6 +13,8 @@
 #include <allocators/borrowing/bitmap.hpp>
 #include <allocators/borrowing/buddy.hpp>
 
+#include <allocators/acquire_memory/self_contained_block.hpp>
+
 
 
 #include <iostream>

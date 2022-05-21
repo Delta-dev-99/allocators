@@ -1,5 +1,6 @@
 
 #include <allocators/allocators.hpp>
+#include <allocators/utility/switch.hpp>
 #include <allocators/acquire_memory/self_contained_block.hpp>
 #include <iomanip>
 #include <iostream>
@@ -32,7 +33,7 @@ void print_mem(dd99::memory::Block mem)
 
 int main()
 {
-    auto memories = new dd99::memory::self_contained_block<1024>[3];
+    auto memories = new dd99::memory::Self_Contained_Block<1024>[3];
     // dd99::memory::Heap_Block<1024> memories[3];
 
     dd99::memory::block_allocator::utility::Switch my_switch(mem_req_switch_func,
