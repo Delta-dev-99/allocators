@@ -1,6 +1,6 @@
 
 add_library(allocators)
-add_library(DD99::Allocators ALIAS allocators)
+add_library(dd99::allocators ALIAS allocators)
 target_compile_features(allocators PUBLIC cxx_std_20)
 target_include_directories(allocators PUBLIC include)
 set_target_warnings(allocators WARNINGS_AS_ERRORS PRIVATE)
@@ -48,6 +48,3 @@ target_sources(allocators PUBLIC
     include/allocators/utility/owner.hpp
     include/allocators/utility/unique_block.hpp
 )
-
-
-target_link_libraries(allocators PUBLIC dd99xx::freestanding)
