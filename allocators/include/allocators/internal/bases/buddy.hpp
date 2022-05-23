@@ -333,9 +333,8 @@ namespace dd99::memory::block_allocator::internal::base
             // - Add all blocks on the last level to freelist
             // - Add blocks without buddies to freelist
 
-            for (std::size_t index = 0;
-                    index < calculate_block_count_in_lvl(m_block_count, Last_Level);
-                    ++index)
+            const auto last_level_block_count = calculate_block_count_in_lvl(m_block_count, Last_Level);
+            for (std::size_t index = 0; index < last_level_block_count; ++index)
             {
                 const auto current_block = get_block({.level = Last_Level, .index = index});
                 Freelist_Array_Base::m_freelists[Last_Level].push(current_block);
