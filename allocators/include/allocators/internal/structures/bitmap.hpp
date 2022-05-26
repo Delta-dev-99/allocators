@@ -69,7 +69,7 @@ namespace dd99::memory::structure
         {
             const auto blk_index = bit_index / Block_Bits;
             const auto bit_index_in_blk = bit_index % Block_Bits;
-            const auto bit_mask = Block_T(1) << bit_index_in_blk;
+            const auto bit_mask = static_cast<Block_T>(Block_T(1) << bit_index_in_blk);
 
             m_base[blk_index] ^= bit_mask;
 
@@ -147,7 +147,7 @@ namespace dd99::memory::structure
                 const auto n_used_bits = bit_size() % Block_Bits;
                 const auto n_unused_bits = Block_Bits - n_used_bits;
 
-                m_base[size() - 1] |= Block_T((std::make_unsigned_t<Block_T>(1) << n_unused_bits) - 1) << n_used_bits;
+                m_base[size() - 1] |= static_cast<Block_T>(((std::make_unsigned_t<Block_T>(1) << n_unused_bits) - 1) << n_used_bits);
             }
         }
 
