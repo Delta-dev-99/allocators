@@ -1,6 +1,6 @@
 #pragma once
 
-#include <allocators/internal/bases/allocator.hpp>
+#include <allocators/allocator.hpp>
 
 
 namespace dd99::memory::block_allocator

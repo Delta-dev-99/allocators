@@ -1,6 +1,6 @@
 #pragma once
 
-#include <allocators/internal/bases/allocator.hpp>
+#include <allocators/allocator.hpp>
 #include <allocators/internal/structures/buddy_freelist_array.hpp>
 #include <allocators/internal/structures/bitmap.hpp>
 

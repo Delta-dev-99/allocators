@@ -1,6 +1,6 @@
 #pragma once
 
-#include <allocators/internal/bases/allocator.hpp>
+#include <allocators/allocator.hpp>
 #include <allocators/degenerate/constant.hpp>
 #include <allocators/composite/throwing.hpp>
 #include <allocators/utility/unique_block.hpp>
