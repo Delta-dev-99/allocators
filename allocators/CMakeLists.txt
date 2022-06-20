@@ -1,15 +1,15 @@
 
-add_library(allocators)
+add_library(allocators INTERFACE)
 add_library(dd99::allocators ALIAS allocators)
-target_compile_features(allocators PUBLIC cxx_std_20)
-target_include_directories(allocators PUBLIC include)
-set_target_warnings(allocators WARNINGS_AS_ERRORS PRIVATE)
+target_compile_features(allocators INTERFACE cxx_std_20)
+target_include_directories(allocators INTERFACE include)
+# set_target_warnings(allocators WARNINGS_AS_ERRORS PRIVATE)
 
-target_sources(allocators PRIVATE
-    src/allocators.cpp
-)
+# target_sources(allocators PRIVATE
+#     src/allocators.cpp
+# )
 
-target_sources(allocators PUBLIC
+target_sources(allocators INTERFACE
     include/allocators/internal/structures/bitmap.hpp
     include/allocators/internal/structures/buddy_freelist_array.hpp
     include/allocators/internal/structures/free_list.hpp
