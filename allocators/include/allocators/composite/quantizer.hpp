@@ -15,8 +15,8 @@ namespace dd99::memory::block_allocator::composite
         [[nodiscard]]
         memory::Block allocate(std::size_t requested_size)
         {
-            const auto size_step_floor = requested_size + Step_Size - (requested_size % Step_Size);
-            return Sub_Alloc_T::allocate(size_step_floor);
+            const auto size_step_ceiling = requested_size + Step_Size - (requested_size % Step_Size);
+            return Sub_Alloc_T::allocate(size_step_ceiling);
         }
 
         void deallocate(const memory::Block &memory) { return Sub_Alloc_T::deallocate(memory); }
