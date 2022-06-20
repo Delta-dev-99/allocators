@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22.0)
-project(allocators VERSION 1.0.0)
+project(allocators VERSION 1.1.0)
 
 include(cmake/CompilerWarnings.cmake)
 
@@ -7,6 +7,3 @@ add_subdirectory(allocators)
 if (PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
     add_subdirectory(tests)
 endif ()
-
-
-# add_subdirectory(lib/dd99xx)
