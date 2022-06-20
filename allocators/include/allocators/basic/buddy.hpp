@@ -62,6 +62,9 @@ namespace dd99::memory::block_allocator
             : Buddy(memory, calculate_block_count(memory.size))
         { }
 
+        Buddy(const Buddy &) = delete;
+        void operator=(const Buddy &) = delete;
+
     public: // allocator interface implementation
         using Buddy_Base::allocate;
         using Buddy_Base::deallocate;
