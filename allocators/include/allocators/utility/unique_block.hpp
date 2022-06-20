@@ -1,7 +1,6 @@
 #pragma once
 
 #include <allocators/structures/unique_block.hpp>
-#include <allocators/basic/stack.hpp>
 
 namespace dd99::memory::block_allocator::utility
 {
@@ -11,7 +10,7 @@ namespace dd99::memory::block_allocator::utility
     // returns Unique_Block on allocation.
     // Blocks are deallocated automatically on destruction.
     // NOTE: The sub allocator cannot be degenerate.
-    template <class Sub_Alloc_T = dd99::memory::block_allocator::Stack>
+    template <class Sub_Alloc_T>
     class Unique_Block_Allocator
     {
     public:
@@ -71,9 +70,7 @@ namespace dd99::memory::block_allocator::utility
     public:
         static constexpr
         std::size_t get_memory_overhead()
-        {
-            return sizeof(Unique_Block_Allocator *);
-        }
+        { return sizeof(Unique_Block_Allocator *); }
 
     public:
         [[nodiscard]]
