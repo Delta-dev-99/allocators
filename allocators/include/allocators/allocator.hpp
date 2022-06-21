@@ -8,6 +8,19 @@
 #include <allocators/structures/memory_block.hpp>
 
 
+namespace dd99::memory
+{
+    template <class T>
+    concept Block_Allocator = requires(T t, std::size_t s, Block B, std::byte * b_ptr)
+    {
+        { t.allocate(s) } -> std::same_as<Block>;
+        { t.deallocate(B) } -> std::same_as<void>;
+        { t.deallocate_all() } -> std::same_as<void>;
+        { t.owns(B) } -> std::same_as<bool>;
+        { t.owns(b_ptr) } -> std::same_as<bool>;
+    };
+}
+
 namespace dd99::memory::block_allocator
 {
     // abstract base class
