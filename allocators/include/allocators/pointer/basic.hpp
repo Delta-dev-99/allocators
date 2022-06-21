@@ -1,6 +1,7 @@
 #pragma once
 
-#include <allocators/internal/bases/pointer.hpp>
+#include <allocators/pointer/allocator.hpp>
+#include <new>
 
 namespace dd99::memory::pointer_allocator
 {
@@ -9,10 +10,10 @@ namespace dd99::memory::pointer_allocator
     // NOTE that this is not a composable allocator,
     // nor compatible with the rest of allocators on this library.
     template <class Sub_Alloc_T>
-    class Pointer : public Allocator
+    class Basic : public Allocator
     {
     public:
-        Pointer(Sub_Alloc_T&& sub_allocator)
+        Basic(Sub_Alloc_T&& sub_allocator)
             : m_sub_alloc(std::move(sub_allocator))
         { }
 
@@ -52,5 +53,8 @@ namespace dd99::memory::pointer_allocator
         bool owns(const Block &memory) const
         { return m_sub_alloc.owns(memory); }
     };
+
+    template <class Sub_Alloc_T>
+    Basic(Sub_Alloc_T &&) -> Basic<Sub_Alloc_T>;
 
 }
