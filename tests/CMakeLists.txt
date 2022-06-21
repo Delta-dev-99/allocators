@@ -14,3 +14,7 @@ target_link_libraries(stats allocators)
 add_executable(compilation_instantiation compilation_instantiation.cpp)
 # set_target_properties(compilation_instantiation PROPERTIES EXCLUDE_FROM_ALL TRUE)
 target_link_libraries(compilation_instantiation allocators)
+
+add_executable(new_syntax new_syntax.cpp)
+# set_target_properties(compilation_instantiation PROPERTIES EXCLUDE_FROM_ALL TRUE)
+target_link_libraries(new_syntax allocators)
