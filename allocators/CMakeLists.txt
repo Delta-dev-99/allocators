@@ -10,13 +10,15 @@ target_include_directories(allocators INTERFACE include)
 # )
 
 target_sources(allocators INTERFACE
+    include/allocators/allocator.hpp
+    include/allocators/allocators.hpp
+    include/allocators/exception.hpp
+
     include/allocators/internal/structures/bitmap.hpp
     include/allocators/internal/structures/buddy_freelist_array.hpp
     include/allocators/internal/structures/free_list.hpp
 
-    include/allocators/internal/bases/allocator.hpp
     include/allocators/internal/bases/buddy.hpp
-    include/allocators/internal/bases/pointer.hpp
 
     include/allocators/structures/memory_block.hpp
 
