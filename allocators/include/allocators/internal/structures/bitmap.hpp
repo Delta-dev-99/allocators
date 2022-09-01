@@ -11,7 +11,7 @@ namespace dd99::memory::structure
     public:
         // TODO: Verify Block_Bits is used in calculations
         constexpr static auto Block_Size = sizeof(Block_T);
-        constexpr static auto Block_Bits = Block_Size * CHAR_BIT;
+        constexpr static auto Block_Bits = Block_Size * std::numeric_limits<unsigned char>::digits;
 
     public: // statics
         // All blocks are fully used?
@@ -82,7 +82,7 @@ namespace dd99::memory::structure
         {
             // optimization using larger type for iteration
             using Fast_Block = std::uint_fast32_t;
-            const auto Fast_Block_Bits = sizeof(Fast_Block) * CHAR_BIT;
+            const auto Fast_Block_Bits = sizeof(Fast_Block) * std::numeric_limits<unsigned char>::digits;
             const auto n_fast_blocks = bit_size() / Fast_Block_Bits;
             /* volatile */ auto fast_block_ptr = reinterpret_cast<Fast_Block *>(m_base);
             const auto fast_block_ptr_end = reinterpret_cast<Fast_Block *>(m_base) + n_fast_blocks;
@@ -123,7 +123,7 @@ namespace dd99::memory::structure
         {
             // optimization using larger type for iteration
             using Fast_Block = std::uint_fast32_t;
-            const auto Fast_Block_Bits = sizeof(Fast_Block) * CHAR_BIT;
+            const auto Fast_Block_Bits = sizeof(Fast_Block) * std::numeric_limits<unsigned char>::digits;
             const auto n_fast_blocks = bit_size() / Fast_Block_Bits;
             /* volatile */ auto fast_block_ptr = reinterpret_cast<Fast_Block *>(m_base);
             const auto fast_block_ptr_end = reinterpret_cast<Fast_Block *>(m_base) + n_fast_blocks;

@@ -6,6 +6,7 @@
 
 
 #include <allocators/structures/memory_block.hpp>
+#include <concepts>
 
 
 namespace dd99::memory
