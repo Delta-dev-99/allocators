@@ -2,6 +2,7 @@
 
 #include <allocators/pointer/allocator.hpp>
 #include <allocators/exception.hpp>
+#include <bit>
 
 namespace dd99::memory::pointer_allocator
 {
