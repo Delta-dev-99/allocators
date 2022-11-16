@@ -122,6 +122,7 @@ namespace dd99::memory::structure
         void reset()
         {
             // optimization using larger type for iteration
+            // TODO: BUG: NOTE: This optimization breaks strick-aliasing rule
             using Fast_Block = std::uint_fast32_t;
             const auto Fast_Block_Bits = sizeof(Fast_Block) * std::numeric_limits<unsigned char>::digits;
             const auto n_fast_blocks = bit_size() / Fast_Block_Bits;

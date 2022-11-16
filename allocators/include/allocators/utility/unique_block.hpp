@@ -10,6 +10,7 @@ namespace dd99::memory::block_allocator::utility
     // returns Unique_Block on allocation.
     // Blocks are deallocated automatically on destruction.
     // NOTE: The sub allocator cannot be degenerate.
+    // TODO: Rename to: Autofree_Block_Allocator
     template <class Sub_Alloc_T>
     class Unique_Block_Allocator
     {
