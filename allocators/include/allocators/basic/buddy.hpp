@@ -1,6 +1,7 @@
 #pragma once
 
 #include <allocators/internal/bases/buddy.hpp>
+#include <cassert>
 
 
 namespace dd99::memory::block_allocator
