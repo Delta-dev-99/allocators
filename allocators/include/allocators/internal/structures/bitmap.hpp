@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstring>
 #include <limits>
 
 namespace dd99::memory::structure
@@ -125,25 +126,9 @@ namespace dd99::memory::structure
         // clear all mapped bits, set all unmapped bits
         void reset()
         {
-            // optimization using larger type for iteration
-            // TODO: BUG: NOTE: This optimization breaks strick-aliasing rule
-            using Fast_Block = std::uint_fast32_t;
-            const auto Fast_Block_Bits = sizeof(Fast_Block) * std::numeric_limits<unsigned char>::digits;
-            const auto n_fast_blocks = bit_size() / Fast_Block_Bits;
-            /* volatile */ auto fast_block_ptr = reinterpret_cast<Fast_Block *>(m_base);
-            const auto fast_block_ptr_end = reinterpret_cast<Fast_Block *>(m_base) + n_fast_blocks;
-            while (fast_block_ptr < fast_block_ptr_end)
-            {
-                *fast_block_ptr++ = 0;
-            }
-
-            // clear the rest of blocks
-            /* volatile */ auto block_ptr = reinterpret_cast<Block_T *>(fast_block_ptr);
-            const auto block_ptr_end = m_base + size();
-            while (block_ptr < block_ptr_end)
-            {
-                *block_ptr++ = Block_T{0};
-            }
+            // Use memset to clear memory - avoids strict aliasing violations
+            // while maintaining performance through compiler optimizations
+            std::memset(m_base, 0, size() * sizeof(Block_T));
 
             // mark unmapped bits as used
             // last block only
