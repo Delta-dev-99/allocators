@@ -85,26 +85,17 @@ namespace dd99::memory::structure
         // returns the index of the set bit, or -1 if not found
         std::size_t set_first_unset()
         {
-            // optimization using larger type for iteration
-            using Fast_Block = std::uint_fast32_t;
-            const auto Fast_Block_Bits = sizeof(Fast_Block) * std::numeric_limits<unsigned char>::digits;
-            const auto n_fast_blocks = bit_size() / Fast_Block_Bits;
-            /* volatile */ auto fast_block_ptr = reinterpret_cast<Fast_Block *>(m_base);
-            const auto fast_block_ptr_end = reinterpret_cast<Fast_Block *>(m_base) + n_fast_blocks;
-            while (fast_block_ptr < fast_block_ptr_end)
-            {
-                if (*fast_block_ptr != Fast_Block(-1))
-                    break;
-
-                ++fast_block_ptr;
-            }
-
-            auto block_ptr = reinterpret_cast<Block_T *>(fast_block_ptr);
+            // Scan through blocks looking for one that's not fully set (all 1s)
+            // Avoid strict aliasing violations by staying within Block_T pointer type
+            // Modern compilers optimize this effectively through vectorization and loop unrolling
+            auto block_ptr = m_base;
             const auto block_ptr_end = m_base + size();
+            
             while (block_ptr < block_ptr_end)
             {
                 if (*block_ptr != Block_T(-1))
                 {
+                    // Found a block with at least one unset bit
                     for (unsigned bit = 0; bit < Block_Bits; ++bit)
                     {
                         const auto mask = Block_T(1) << bit;
