@@ -6,8 +6,6 @@ A full blown alternative to the usual allocation schemes.
 
 The goal of this library is to provide the required building blocks and flexibility for the construction of a complete memory management system. It can be used alongside standard memory management systems or standalone.
 
-This avoids problems where different instances (which store bookkeeping info inside themselves) allocate the same memory. By allowing only one instance to control a memory region, we eliminate the need for a global control mechanism (which would probably need allocation).
-
 ## The design and interface
 
 Allocator instances are non-fungible and non-copyable.
