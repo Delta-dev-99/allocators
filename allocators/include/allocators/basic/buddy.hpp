@@ -29,18 +29,35 @@ namespace dd99::memory::block_allocator
             if (memory_size < BMP::Block_Size + Block_Size)
                 return 0;
 
-            std::size_t block_count = memory_size / Block_Size;
+            // Analytical initial guess from continuous relaxation
+            constexpr auto pow2_Lm1 = 1ULL << (Levels - 1);
+            constexpr auto a_num = pow2_Lm1 - 1;          // 2^{L-1} - 1
+            constexpr auto denom = 8ULL * Block_Size * pow2_Lm1 + a_num;
+            // Numerator: 8 * memory_size * pow2_Lm1
+            // We assume memory_size * 8 * pow2_Lm1 < 2^64 (holds for realistic RAM).
 
-            // Iteratively approach block count
-            while (true)
+            // Ensure memory_size doesn't cause overflow: memory_size * 8 * pow2_Lm1 < 2^64
+            constexpr auto max_supported_memory = std::numeric_limits<std::size_t>::max() / (8ULL * pow2_Lm1);
+            assert(memory_size <= max_supported_memory && "memory_size would cause overflow in calculation");
+            
+            // Calculate initial block count guess
+            std::size_t block_count = (8ULL * memory_size * pow2_Lm1) / denom;
+
+            // helper predicate
+            auto fits = [&](std::size_t block_count) -> bool {
+                std::size_t bits = Buddy_Base::calculate_buddy_bit_count(block_count);
+                std::size_t bitmap = BMP::calculate_block_count(bits) * BMP::Block_Size;
+                return block_count * Block_Size + bitmap <= memory_size;
+            };
+
+            // adjust - at most ceil(BMP::Block_Size / Block_Size) steps
+            if (fits(block_count))
             {
-                const auto bmp_bits = Buddy_Base::calculate_buddy_bit_count(block_count);
-                const auto bmp_size = BMP::calculate_block_count(bmp_bits) * BMP::Block_Size;
-                const auto next_block_count = (memory_size - bmp_size) / Block_Size;
-                if (next_block_count - block_count <= BMP::calculate_block_count(Levels))
-                    break;
-
-                block_count = next_block_count;
+                while(fits(block_count + 1)) ++block_count;
+            }
+            else
+            {
+                while(!fits(--block_count)); // decrement until fits
             }
 
             return block_count;
