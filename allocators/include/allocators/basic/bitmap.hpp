@@ -78,7 +78,7 @@ namespace dd99::memory::block_allocator
             if (memory_size < BMP::Block_Size + Block_Size)   // cannot fit even one block + 1 bitmap block
                 return 0;
 
-            auto fits = [](std::size_t N) -> bool {
+            auto fits = [&](std::size_t N) -> bool {
                 auto bits = N;                         // one bit per block
                 auto bitmap_size = BMP::Block_Size * ((bits + BMP::Block_Bits - 1) / BMP::Block_Bits); // bitmap size in bytes
                 return N * Block_Size + bitmap_size <= memory_size;
