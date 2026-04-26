@@ -5,6 +5,10 @@
 
 namespace dd99::memory::structure
 {
+    
+    // A bitmap type that doesn't own the underlying storage
+    // On construction, it is given a pointer to the base of the storage, and a number of bits.
+    // Bits are grouped in blocks of a specified type (template argument)
     template <class Block_T = std::uint8_t>
     class Bitmap
     {

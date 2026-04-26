@@ -343,6 +343,7 @@ namespace dd99::memory::block_allocator::internal::base
             for (unsigned lvl = 0; lvl < Last_Level; ++lvl)
             {
                 const auto block_count = calculate_block_count_in_lvl(m_block_count, lvl);
+                if (block_count == 0) break; // upper levels may be empty. this prevents wrap-around on `block_count - 1` on the next line.
                 const Block_Address last_block_address{.level = lvl, .index = block_count - 1};
                 if (!block_has_buddy(last_block_address))
                 {

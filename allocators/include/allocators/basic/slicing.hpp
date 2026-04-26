@@ -12,7 +12,7 @@ namespace dd99::memory::block_allocator
         // Singly linked list of memory blocks that stores
         // nodes on blocks and allows different block sizes.
         // This is a custom freelist that keeps the nodes sorted,
-        // joins adjacent free blocks and and slices blocks as needed.
+        // joins adjacent free blocks and slices blocks as needed.
         class Slicing_Freelist
         {
         protected:
@@ -85,6 +85,7 @@ namespace dd99::memory::block_allocator
                 auto prev_ptr = do_insert(block);
 
                 // Merge adjacent free blocks
+                // try merging with previous first
                 if (prev_ptr)
                 {
                     if (!try_merge(prev_ptr))
@@ -93,6 +94,7 @@ namespace dd99::memory::block_allocator
                 else
                     prev_ptr = first;
 
+                // try merge with next
                 try_merge(prev_ptr);
             }
 
@@ -158,9 +160,10 @@ namespace dd99::memory::block_allocator
             {
                 if (prev_ptr->get_memory_block().get_end() == reinterpret_cast<std::byte *>(prev_ptr->next))
                 {
-                    prev_ptr->size += prev_ptr->next->size;
-                    prev_ptr->next = prev_ptr->next->next;
-                    prev_ptr->next->~Free_Sized_Block_Header();
+                    auto to_merge_ptr = prev_ptr->next;
+                    prev_ptr->size += to_merge_ptr->size;
+                    prev_ptr->next = to_merge_ptr->next;
+                    to_merge_ptr->~Free_Sized_Block_Header();
                     return true;
                 }
 
@@ -196,7 +199,7 @@ namespace dd99::memory::block_allocator
 
         void deallocate(const memory::Block &memory)
         {
-            if (m_memory.contains(memory))
+            if (owns(memory))
                 m_free_list.push(memory);
         }
 
