@@ -22,8 +22,10 @@ namespace dd99::memory
         bool
         contains(const Block & other) const
         {
-            const auto base_offset = other.base - base;
-            return (base_offset >= 0) && (base + base_offset + other.size <= get_end());
+            // const auto base_offset = other.base - base;
+            // return (base_offset >= 0) && (base + base_offset + other.size <= get_end());
+
+            return (other.base >= base) && (other.get_end() <= get_end());
         }
 
         constexpr

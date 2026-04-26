@@ -91,7 +91,7 @@ namespace dd99::memory::block_allocator::utility
 
         void deallocate_all() { m_sub_alloc.deallocate_all(); }
 
-        bool owns(std::byte *memory) const { return m_sub_alloc.contains(memory); }
+        bool owns(std::byte *memory) const { return m_sub_alloc.owns(memory); }
 
         bool owns(const memory::Block &memory) const { return m_sub_alloc.owns(memory); }
 

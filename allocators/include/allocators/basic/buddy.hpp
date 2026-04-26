@@ -25,12 +25,13 @@ namespace dd99::memory::block_allocator
         static constexpr
         std::size_t calculate_block_count(std::size_t memory_size)
         {
+            // check if memory is not enough for 1 block + minimal bitmap
             if (memory_size < BMP::Block_Size + Block_Size)
                 return 0;
 
             std::size_t block_count = memory_size / Block_Size;
 
-            // Iteratively aproach block count
+            // Iteratively approach block count
             while (true)
             {
                 const auto bmp_bits = Buddy_Base::calculate_buddy_bit_count(block_count);

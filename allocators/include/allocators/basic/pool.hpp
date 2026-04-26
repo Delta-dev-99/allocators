@@ -33,7 +33,7 @@ namespace dd99::memory::block_allocator
 
         void deallocate(const memory::Block &memory)
         {
-            if (m_memory.contains(memory))
+            if (owns(memory))
                 m_free_list.push(memory);
         }
 
