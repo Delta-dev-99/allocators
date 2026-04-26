@@ -18,3 +18,6 @@ target_link_libraries(compilation_instantiation allocators)
 add_executable(new_syntax new_syntax.cpp)
 # set_target_properties(compilation_instantiation PROPERTIES EXCLUDE_FROM_ALL TRUE)
 target_link_libraries(new_syntax allocators)
+
+add_executable(buddy_allocator_algorithms_2 buddy_allocator_algorithms_2.cpp)
+target_compile_features(buddy_allocator_algorithms_2 PRIVATE cxx_std_26)
