@@ -71,19 +71,48 @@ namespace dd99::memory::block_allocator
         }
 
     public:
-        constexpr static auto block_count(std::size_t memory_size)
+        static constexpr auto block_count(std::size_t memory_size)
         {
-            // worst case block count: bitmap is full unused memory is just below 1 block and 1 new bitmap element
-            const auto worst_case_unused = Block_Size + BMP::Block_Size - 1;
-            // TODO: This formula is wrong
-            auto block_count = (BMP::Block_Bits * (memory_size - worst_case_unused)) / (BMP::Block_Bits * Block_Size + 1);
-            const auto unused = memory_size - BMP::calculate_block_count(block_count) * BMP::Block_Size - block_count * Block_Size;
-            
-            if (unused >= Block_Size && !BMP::fully_mapped(block_count))
-                ++block_count;
-            
-            return block_count;
+            // TODO: Test this
+
+            if (memory_size < BMP::Block_Size + Block_Size)   // cannot fit even one block + 1 bitmap block
+                return 0;
+
+            auto fits = [](std::size_t N) -> bool {
+                auto bits = N;                         // one bit per block
+                auto bitmap_size = BMP::Block_Size * ((bits + BMP::Block_Bits - 1) / BMP::Block_Bits); // bitmap size in bytes
+                return N * Block_Size + bitmap_size <= memory_size;
+            };
+
+            std::size_t lo = 0;
+            std::size_t hi = memory_size / Block_Size;       // absolute maximum
+
+            // Binary search for the largest N that fits.
+            // overflow‑safe ceiling midpoint
+            while (lo < hi) {
+                std::size_t diff = hi - lo;
+                std::size_t mid = lo + (diff >> 1) + (diff & 1);
+                if (fits(mid))
+                    lo = mid;
+                else
+                    hi = mid - 1;
+            }
+            return lo;
         }
+
+        // constexpr static auto block_count(std::size_t memory_size)
+        // {
+        //     // worst case block count: bitmap is full unused memory is just below 1 block and 1 new bitmap element
+        //     const auto worst_case_unused = Block_Size + BMP::Block_Size - 1;
+        //     // TODO: This formula is wrong
+        //     auto block_count = (BMP::Block_Bits * (memory_size - worst_case_unused)) / (BMP::Block_Bits * Block_Size + 1);
+        //     const auto unused = memory_size - BMP::calculate_block_count(block_count) * BMP::Block_Size - block_count * Block_Size;
+            
+        //     if (unused >= Block_Size && !BMP::fully_mapped(block_count))
+        //         ++block_count;
+            
+        //     return block_count;
+        // }
 
     private:
         memory::Block m_memory;
