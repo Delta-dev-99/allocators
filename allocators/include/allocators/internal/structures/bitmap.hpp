@@ -28,8 +28,7 @@ namespace dd99::memory::structure
         // The number of Bitmap Blocks used
         constexpr static std::size_t calculate_block_count(std::size_t bit_count)
         {
-            if (bit_count == 0) return 0;
-            return  (bit_count - 1) / Block_Bits + 1;
+            return  (bit_count + Block_Bits - 1) / Block_Bits;
         }
         
     public:
