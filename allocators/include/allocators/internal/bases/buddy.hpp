@@ -1,10 +1,12 @@
 #pragma once
 
 #include <allocators/allocator.hpp>
-#include <allocators/internal/structures/buddy_freelist_array.hpp>
+// #include <allocators/internal/structures/buddy_freelist_array.hpp>
+#include <allocators/internal/structures/free_list.hpp>
 #include <allocators/internal/structures/bitmap.hpp>
 
 #include <limits>
+#include <tuple>
 #include <bit>
 
 namespace dd99::memory::block_allocator::internal::base
@@ -19,13 +21,21 @@ namespace dd99::memory::block_allocator::internal::base
               unsigned LEVELS,
               class Bitmap_Block_Type = std::byte>
     class Buddy_Base
-        : dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>
-        , public Allocator
+        // : dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>
+        : public Allocator
     {
     protected:
-        using Freelist_Array_Base = dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>;
+        // using Freelist_Array_Base = dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>;
         using BMP = dd99::memory::structure::Bitmap<Bitmap_Block_Type>;
         using Block_Address = Buddy_Block_Address;
+
+        // synthesize type for tuple of freelists
+        using Freelist_Tuple = decltype(
+            []<std::size_t ... Is>(std::index_sequence<Is...>)
+            {
+                return std::tuple<dd99::memory::structure::Freelist_Double_Link<(BLOCK_SIZE << Is)>...>{};
+            } (std::make_index_sequence<LEVELS>())
+        );
 
     public: // constant definitions and compile-time checks
         static constexpr unsigned Levels = LEVELS;
@@ -70,8 +80,8 @@ namespace dd99::memory::block_allocator::internal::base
 
     public: // constructors and assignment
         Buddy_Base(const memory::Block & memory, std::size_t block_count, std::byte * bitmap_base)
-            : Freelist_Array_Base()
-            , m_block_count(block_count)
+            // : Freelist_Array_Base()
+            : m_block_count(block_count)
             , m_memory(memory)
             , m_bitmap(calculate_buddy_bit_count(m_block_count), bitmap_base)
         {
@@ -237,7 +247,15 @@ namespace dd99::memory::block_allocator::internal::base
                 {   // buddy is free. join the blocks
                     const auto buddy_block_index = get_buddy_block_index(address.index);
                     const auto buddy_block = get_block({.level = address.level, .index = buddy_block_index});
-                    Freelist_Array_Base::m_freelists[address.level].remove(buddy_block);
+
+                    [&]<std::size_t ... Is>(std::index_sequence<Is ...>) {
+                        switch (address.level)
+                        {
+                            ((case Is: m_freelists[Is].remove(buddy_block); break;) ... );
+                        }
+                    }(std::make_index_sequence<LEVELS>());
+                    // Freelist_Array_Base::m_freelists[address.level].remove(buddy_block);
+
                     const auto joint_block = get_block(joint_block_address);
                     return deallocate(joint_block, joint_block_address);
                 }
@@ -369,7 +387,8 @@ namespace dd99::memory::block_allocator::internal::base
         std::size_t m_block_count;
         memory::Block m_memory;
         BMP m_bitmap;
-
+        Freelist_Tuple m_freelists;
+        
     };
 
 }

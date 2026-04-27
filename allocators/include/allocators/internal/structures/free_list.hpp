@@ -11,6 +11,7 @@ namespace dd99::memory::structure
 {
     // singly linked list of free memory blocks that stores
     // nodes on empty blocks
+    template <std::size_t Block_Size>
     class Freelist
     {
     protected:
@@ -18,7 +19,6 @@ namespace dd99::memory::structure
         struct Free_Block_Header { Free_Block_Header *next = nullptr; };
 
     private:
-        std::size_t m_block_size;
         Free_Block_Header *first = nullptr;
 
     public:
@@ -28,12 +28,9 @@ namespace dd99::memory::structure
             clear();
         }
 
-        Freelist(std::size_t block_size)
-            : m_block_size(block_size)
+        Freelist()
         {
-            if (sizeof(Free_Block_Header) > block_size)
-                throw dd99::memory::invalid_block_size{};
-                // throw std::length_error{"Frelist: block_size (" + std::to_string(block_size) + ") is too short. Min: " + std::to_string(sizeof(Free_Block_Header))};
+            static_assert(sizeof(Free_Block_Header) <= Block_Size, "freelist block size is too small to store the freelist node header");
         }
 
         Freelist(const Freelist &) = delete;
@@ -51,7 +48,7 @@ namespace dd99::memory::structure
             auto current = first;
             first = first->next;
             current->~Free_Block_Header();
-            return {.base = reinterpret_cast<std::byte *>(current), .size = m_block_size};
+            return {.base = reinterpret_cast<std::byte *>(current), .size = Block_Size};
         }
 
         void push(const memory::Block& memory)
@@ -83,6 +80,7 @@ namespace dd99::memory::structure
 
     // doubly linked list of free memory blocks that stores
     // nodes on empty blocks
+    template <std::size_t Block_Size>
     class Freelist_Double_Link
     {
     protected:
@@ -90,7 +88,6 @@ namespace dd99::memory::structure
         struct Free_Block_Header { Free_Block_Header *next = nullptr; Free_Block_Header *prev = nullptr; };
 
     private:
-        std::size_t m_block_size;
         Free_Block_Header *m_first = nullptr;
 
     public:
@@ -100,18 +97,14 @@ namespace dd99::memory::structure
             clear();
         }
 
-        Freelist_Double_Link(std::size_t block_size)
-            : m_block_size(block_size)
+        Freelist_Double_Link()
         {
-            if (sizeof(Free_Block_Header) > block_size)
-                throw dd99::memory::invalid_block_size{};
-                // throw std::length_error{"Freelist_Double_Link: block_size (" + std::to_string(block_size) + ") is too short. Min: " + std::to_string(sizeof(Free_Block_Header))};
+            static_assert(sizeof(Free_Block_Header) <= Block_Size, "freelist block size is too small to store the freelist node header");
         }
 
         Freelist_Double_Link(const Freelist_Double_Link &) = delete;
         Freelist_Double_Link(Freelist_Double_Link && other)
-            : m_block_size(std::move(other.m_block_size))
-            , m_first(std::move(other.m_first))
+            : m_first(other.m_first)
         {
             other.m_first = nullptr;
         }
@@ -121,7 +114,6 @@ namespace dd99::memory::structure
         {
             clear();
             m_first = other.m_first;
-            m_block_size = other.m_block_size;
             return *this;
         }
 
@@ -131,7 +123,7 @@ namespace dd99::memory::structure
         memory::Block pop()
         {
             auto block_ptr = m_first;
-            const memory::Block block{.base = reinterpret_cast<std::byte *>(block_ptr), .size = m_block_size};
+            const memory::Block block{.base = reinterpret_cast<std::byte *>(block_ptr), .size = Block_Size};
             remove(block);
             return block;
         }

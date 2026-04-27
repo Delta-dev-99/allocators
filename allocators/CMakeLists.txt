@@ -1,7 +1,7 @@
 
 add_library(allocators INTERFACE)
 add_library(dd99::allocators ALIAS allocators)
-target_compile_features(allocators INTERFACE cxx_std_20)
+target_compile_features(allocators INTERFACE cxx_std_26)
 target_include_directories(allocators INTERFACE include)
 # set_target_warnings(allocators WARNINGS_AS_ERRORS PRIVATE)
 
