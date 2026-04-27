@@ -12,6 +12,8 @@ namespace dd99::memory::block_allocator
     template <std::size_t Block_Size>
     class Pool : public Allocator
     {
+        static_assert(Block_Size >= sizeof(memory::structure::Freelist::Free_Block_Header), "Block size too small to fit freelist node");
+
     public:
         Pool(const memory::Block &memory)
             : m_memory(memory)

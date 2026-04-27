@@ -31,8 +31,11 @@ namespace dd99::memory::structure
         Freelist(std::size_t block_size)
             : m_block_size(block_size)
         {
-            if (sizeof(Free_Block_Header) > block_size)
-                throw dd99::memory::invalid_block_size{};
+            // PRECONDITION: Free_Block_Header fits in a block. (user is responsible for checking)
+            // TODO: Add debug assertion for precondition
+
+            // if (sizeof(Free_Block_Header) > block_size)
+                // throw dd99::memory::invalid_block_size{};
                 // throw std::length_error{"Frelist: block_size (" + std::to_string(block_size) + ") is too short. Min: " + std::to_string(sizeof(Free_Block_Header))};
         }
 
@@ -103,8 +106,11 @@ namespace dd99::memory::structure
         Freelist_Double_Link(std::size_t block_size)
             : m_block_size(block_size)
         {
-            if (sizeof(Free_Block_Header) > block_size)
-                throw dd99::memory::invalid_block_size{};
+            // PRECONDITION: Free_Block_Header fits in a block. (user is responsible for checking)
+            // TODO: Add debug assertion for precondition
+
+            // if (sizeof(Free_Block_Header) > block_size)
+                // throw dd99::memory::invalid_block_size{};
                 // throw std::length_error{"Freelist_Double_Link: block_size (" + std::to_string(block_size) + ") is too short. Min: " + std::to_string(sizeof(Free_Block_Header))};
         }
 

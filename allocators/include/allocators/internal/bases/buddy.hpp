@@ -22,6 +22,8 @@ namespace dd99::memory::block_allocator::internal::base
         : dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>
         , public Allocator
     {
+        static_assert(BLOCK_SIZE >= sizeof(memory::structure::Freelist_Double_Link::Free_Block_Header), "Block size too small to fit freelist node");
+
     protected:
         using Freelist_Array_Base = dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>;
         using BMP = dd99::memory::structure::Bitmap<Bitmap_Block_Type>;
