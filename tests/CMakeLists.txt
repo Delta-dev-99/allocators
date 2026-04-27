@@ -21,3 +21,7 @@ target_link_libraries(new_syntax allocators)
 
 add_executable(buddy_allocator_algorithms_2 buddy_allocator_algorithms_2.cpp)
 target_compile_features(buddy_allocator_algorithms_2 PRIVATE cxx_std_26)
+
+add_executable(basic_buddy_allocator_test basic_buddy_allocator_test.cpp)
+target_link_libraries(basic_buddy_allocator_test allocators)
+# target_compile_features(basic_buddy_allocator_test PRIVATE cxx_std_26)
