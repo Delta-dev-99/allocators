@@ -17,6 +17,7 @@ namespace dd99::memory::structure
     protected:
         // Header for free blocks. The nodes of the freelist
         struct Free_Block_Header { Free_Block_Header *next = nullptr; };
+        static_assert(sizeof(Free_Block_Header) <= Block_Size, "freelist block size is too small to store the freelist node header");
 
     private:
         Free_Block_Header *first = nullptr;
@@ -30,7 +31,6 @@ namespace dd99::memory::structure
 
         Freelist()
         {
-            static_assert(sizeof(Free_Block_Header) <= Block_Size, "freelist block size is too small to store the freelist node header");
         }
 
         Freelist(const Freelist &) = delete;
@@ -86,6 +86,7 @@ namespace dd99::memory::structure
     protected:
         // Header for free blocks. The nodes of the freelist
         struct Free_Block_Header { Free_Block_Header *next = nullptr; Free_Block_Header *prev = nullptr; };
+        static_assert(sizeof(Free_Block_Header) <= Block_Size, "freelist block size is too small to store the freelist node header");
 
     private:
         Free_Block_Header *m_first = nullptr;
@@ -99,7 +100,6 @@ namespace dd99::memory::structure
 
         Freelist_Double_Link()
         {
-            static_assert(sizeof(Free_Block_Header) <= Block_Size, "freelist block size is too small to store the freelist node header");
         }
 
         Freelist_Double_Link(const Freelist_Double_Link &) = delete;
