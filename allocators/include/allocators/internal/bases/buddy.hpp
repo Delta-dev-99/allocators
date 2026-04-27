@@ -1,10 +1,13 @@
 #pragma once
 
 #include <allocators/allocator.hpp>
-#include <allocators/internal/structures/buddy_freelist_array.hpp>
+// #include <allocators/internal/structures/buddy_freelist_array.hpp>
+#include <allocators/internal/structures/free_list.hpp>
 #include <allocators/internal/structures/bitmap.hpp>
 
 #include <limits>
+#include <tuple>
+#include <array>
 #include <bit>
 
 namespace dd99::memory::block_allocator::internal::base
@@ -19,13 +22,21 @@ namespace dd99::memory::block_allocator::internal::base
               unsigned LEVELS,
               class Bitmap_Block_Type = std::byte>
     class Buddy_Base
-        : dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>
-        , public Allocator
+        // : dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>
+        : public Allocator
     {
     protected:
-        using Freelist_Array_Base = dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>;
+        // using Freelist_Array_Base = dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>;
         using BMP = dd99::memory::structure::Bitmap<Bitmap_Block_Type>;
         using Block_Address = Buddy_Block_Address;
+
+        // synthesize type for tuple of freelists
+        using Freelist_Tuple = decltype(
+            []<std::size_t ... Is>(std::index_sequence<Is...>)
+            {
+                return std::tuple<dd99::memory::structure::Freelist_Double_Link<(BLOCK_SIZE << Is)>...>{};
+            } (std::make_index_sequence<LEVELS>())
+        );
 
     public: // constant definitions and compile-time checks
         static constexpr unsigned Levels = LEVELS;
@@ -70,8 +81,8 @@ namespace dd99::memory::block_allocator::internal::base
 
     public: // constructors and assignment
         Buddy_Base(const memory::Block & memory, std::size_t block_count, std::byte * bitmap_base)
-            : Freelist_Array_Base()
-            , m_block_count(block_count)
+            // : Freelist_Array_Base()
+            : m_block_count(block_count)
             , m_memory(memory)
             , m_bitmap(calculate_buddy_bit_count(m_block_count), bitmap_base)
         {
@@ -93,6 +104,42 @@ namespace dd99::memory::block_allocator::internal::base
         constexpr virtual
         std::byte *
         get_blocks_base() const = 0;
+
+
+
+        template <class Callable>
+        constexpr decltype(auto) visit_freelist_by_index(std::size_t index, Callable && callable)
+        {
+            // // Helper to get the return type when applying callable to element I
+            // template <std::size_t I> using RetTypeAt = decltype(callable(std::get<I>(m_freelists)));
+
+            // // Compute a common return type; if all are same, it's that type.
+            // // If different, common_type_t will be ill‑formed → compile error.
+            // template <std::size_t... Is>
+            // static auto common_ret(std::index_sequence<Is...>)
+            //     -> std::common_type_t<RetTypeAt<Is>...>;
+            // using RetType = decltype(common_ret(std::make_index_sequence<N>{}));
+
+            using RetType = decltype([]<std::size_t ... Is>(std::index_sequence<Is ...>)
+            -> std::common_type_t<decltype(callable(std::get<Is>(std::declval<Freelist_Tuple &>())))...>
+            {
+                return {};
+            }
+            (std::make_index_sequence<Levels>()));
+
+            // TODO: deduce return type from callable
+            using FnPtr = RetType (*) (Freelist_Tuple &, Callable &&);
+            constexpr auto table = []<std::size_t ... Is>(std::index_sequence<Is ...>){
+                return std::array<FnPtr, Levels>{
+                    [](Freelist_Tuple & freelists, Callable && callable) -> RetType
+                    {
+                        return callable(std::get<Is>(freelists));
+                    } ...
+                };
+            }(std::make_index_sequence<Levels>());
+            
+            return table[index](m_freelists, std::forward<Callable>(callable));
+        }
 
 
 
@@ -237,13 +284,26 @@ namespace dd99::memory::block_allocator::internal::base
                 {   // buddy is free. join the blocks
                     const auto buddy_block_index = get_buddy_block_index(address.index);
                     const auto buddy_block = get_block({.level = address.level, .index = buddy_block_index});
-                    Freelist_Array_Base::m_freelists[address.level].remove(buddy_block);
+
+                    visit_freelist_by_index(address.level, [buddy_block](auto & freelist){ freelist.remove(buddy_block); });
+
+                    // [&]<std::size_t ... Is>(std::index_sequence<Is ...>) {
+                    //     switch (address.level)
+                    //     {
+                    //         ((case Is: m_freelists[Is].remove(buddy_block); break;) ... );
+                    //     }
+                    // }(std::make_index_sequence<LEVELS>());
+
+                    // Freelist_Array_Base::m_freelists[address.level].remove(buddy_block);
+
                     const auto joint_block = get_block(joint_block_address);
                     return deallocate(joint_block, joint_block_address);
                 }
             }
 
-            Freelist_Array_Base::m_freelists[address.level].push(memory);
+            visit_freelist_by_index(address.level, [memory](auto & freelist){ freelist.push(memory); });
+
+            // Freelist_Array_Base::m_freelists[address.level].push(memory);
         }
 
     public: // specialized functions
@@ -263,13 +323,15 @@ namespace dd99::memory::block_allocator::internal::base
 
             Block blk;
 
-            if (Freelist_Array_Base::m_freelists[level].empty())
+            // if (Freelist_Array_Base::m_freelists[level].empty())
+            if (visit_freelist_by_index(level, [](auto & freelist){ return freelist.empty(); }))
             {
                 blk = allocate_from_level(level + 1);
                 if (!blk) return {};
 
                 blk.size /= 2;
-                Freelist_Array_Base::m_freelists[level].push(blk);
+                // Freelist_Array_Base::m_freelists[level].push(blk);
+                visit_freelist_by_index(level, [blk](auto & freelist){ freelist.push(blk); });
 
                 blk.base = blk.get_end();
 
@@ -277,7 +339,10 @@ namespace dd99::memory::block_allocator::internal::base
                 // NOTE: Could optimize based on that
             }
             else
-                blk = Freelist_Array_Base::m_freelists[level].pop();
+            {
+                // blk = Freelist_Array_Base::m_freelists[level].pop();
+                blk = visit_freelist_by_index(level, [](auto & freelist){ return freelist.pop(); });
+            }
 
             // step 2: got a block, toggle the buddy bit.
             // some blocks do not have a buddy.
@@ -326,7 +391,8 @@ namespace dd99::memory::block_allocator::internal::base
 
             for (unsigned lvl = 0; lvl < Levels; ++lvl)
             {
-                Freelist_Array_Base::m_freelists[lvl].clear();
+                // Freelist_Array_Base::m_freelists[lvl].clear();
+                visit_freelist_by_index(lvl, [](auto & freelist){ freelist.clear(); });
             }
 
             // Build freelists:
@@ -337,7 +403,8 @@ namespace dd99::memory::block_allocator::internal::base
             for (std::size_t index = 0; index < last_level_block_count; ++index)
             {
                 const auto current_block = get_block({.level = Last_Level, .index = index});
-                Freelist_Array_Base::m_freelists[Last_Level].push(current_block);
+                // Freelist_Array_Base::m_freelists[Last_Level].push(current_block);
+                std::get<Last_Level>(m_freelists).push(current_block);
             }
 
             for (unsigned lvl = 0; lvl < Last_Level; ++lvl)
@@ -348,7 +415,8 @@ namespace dd99::memory::block_allocator::internal::base
                 if (!block_has_buddy(last_block_address))
                 {
                     const auto last_block = get_block(last_block_address);
-                    Freelist_Array_Base::m_freelists[lvl].push(last_block);
+                    // Freelist_Array_Base::m_freelists[lvl].push(last_block);
+                    visit_freelist_by_index(lvl, [last_block](auto & freelist){ freelist.push(last_block); });
                 }
             }
         }
@@ -369,7 +437,8 @@ namespace dd99::memory::block_allocator::internal::base
         std::size_t m_block_count;
         memory::Block m_memory;
         BMP m_bitmap;
-
+        Freelist_Tuple m_freelists;
+        
     };
 
 }

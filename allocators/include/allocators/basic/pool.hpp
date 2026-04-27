@@ -15,7 +15,7 @@ namespace dd99::memory::block_allocator
     public:
         Pool(const memory::Block &memory)
             : m_memory(memory)
-            , m_free_list(Block_Size)
+            , m_free_list()
         {
             build_free_list();
         }
@@ -67,7 +67,7 @@ namespace dd99::memory::block_allocator
 
     private:
         memory::Block m_memory;
-        memory::structure::Freelist m_free_list;
+        memory::structure::Freelist<Block_Size> m_free_list;
     };
 
 }
