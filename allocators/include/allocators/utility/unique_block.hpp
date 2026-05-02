@@ -16,7 +16,6 @@ namespace dd99::memory::block_allocator::utility
     {
     public:
 
-        // BUG: When allocator is moved, the pointer inside deallocator is invalidated
         struct Deallocator
         {
             // used ptr to allow assignment
@@ -57,14 +56,16 @@ namespace dd99::memory::block_allocator::utility
 
         Unique_Block_Allocator & operator=(Unique_Block_Allocator && other)
         {
-            cleanup();
+            if (this != & other)
+            {
+                cleanup();
 
-            m_sub_alloc = std::move(other.m_sub_alloc);
-            m_self_ptr_block = std::move(other.m_self_ptr_block);
+                m_sub_alloc = std::move(other.m_sub_alloc);
+                m_self_ptr_block = std::move(other.m_self_ptr_block);
 
-            *reinterpret_cast<Unique_Block_Allocator **>(m_self_ptr_block.base) = this;
-            other.m_self_ptr_block = {};
-
+                *reinterpret_cast<Unique_Block_Allocator **>(m_self_ptr_block.base) = this;
+                other.m_self_ptr_block = {};
+            }
             return *this;
         }
 
