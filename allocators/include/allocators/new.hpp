@@ -6,7 +6,7 @@
 
 namespace dd99::memory
 {
-    template <class T, Block_Allocator Allocator = dd99::memory::block_allocator::Allocator>
+    template <class T, Block_Allocator Allocator>
     requires std::is_object_v<T> && (!std::is_unbounded_array_v<T>)
     auto allocator_new(Allocator & allocator)
     {
@@ -15,7 +15,7 @@ namespace dd99::memory
     }
 
     // allocate array
-    template <class T, Block_Allocator Allocator = dd99::memory::block_allocator::Allocator>
+    template <class T, Block_Allocator Allocator>
     requires std::is_unbounded_array_v<T>
     auto allocator_new(Allocator & allocator, std::size_t count)
     {
@@ -24,7 +24,7 @@ namespace dd99::memory
     }
 
 
-    template <class T, class Allocator = dd99::memory::block_allocator::Allocator>
+    template <class T, class Allocator>
     void allocator_delete(Allocator & allocator, dd99::memory::new_result<T> mem)
     {
         allocator.deallocate(mem);

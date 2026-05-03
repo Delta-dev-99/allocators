@@ -14,7 +14,7 @@ namespace dd99::memory::block_allocator
     // Allocates fixed-size blocks
     // Uses some of the memory to keep a bitmap
     template <std::size_t Block_Size, class Bitmap_Element_T = std::uint8_t>
-    class Bitmap : public Allocator
+    class Bitmap
     {
         using BMP = dd99::memory::structure::Bitmap<Bitmap_Element_T>;
 
@@ -138,4 +138,6 @@ namespace dd99::memory::block_allocator
             return std::size_t(memory.base - m_blocks_base) / Block_Size;
         }
     };
+
+    static_assert(Block_Allocator<Bitmap<1, uint8_t>>, "This definition doesn't comply with the `Block_Allocator` concept");
 }

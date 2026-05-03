@@ -9,7 +9,7 @@ namespace dd99::memory::block_allocator::composite
     // This allows the use of the same allocator as an underlying
     // allocator of 2 or more composite allocators.
     template <class Sub_Alloc_T>
-    class Ref : public Allocator
+    class Ref
     {
     public:
         Ref(Sub_Alloc_T &underlying_allocator)
@@ -36,4 +36,7 @@ namespace dd99::memory::block_allocator::composite
     protected:
         Sub_Alloc_T &m_alloc_ref;
     };
+
+    static_assert(Block_Allocator<Ref<void*>>, "This definition doesn't comply with the `Block_Allocator` concept");
+
 }

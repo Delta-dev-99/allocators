@@ -10,7 +10,7 @@ namespace dd99::memory::pointer_allocator
     // NOTE that this is not a composable allocator,
     // nor compatible with the rest of allocators on this library.
     template <class Sub_Alloc_T>
-    class Basic : public Allocator
+    class Basic
     {
     public:
         Basic(Sub_Alloc_T&& sub_allocator)
@@ -22,7 +22,7 @@ namespace dd99::memory::pointer_allocator
     
     public:
         [[nodiscard]]
-        std::byte *allocate(std::size_t requested_size)
+        std::byte * allocate(std::size_t requested_size)
         {
             Block allocated_block = m_sub_alloc.allocate(requested_size + sizeof(Block));
             // create a copy of the Block structure at the allocated block

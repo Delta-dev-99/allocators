@@ -12,7 +12,7 @@ namespace dd99::memory::block_allocator::composite
     // It is not an "Allocator" though, as it will not take
     // just a size for allocation requests.
     template <class Predicate, class Sub_Allocator>
-    class Filter : public Allocator
+    class Filter
     {
     public:
         Filter(Sub_Allocator && sub_allocator, Predicate && predicate)
@@ -53,5 +53,7 @@ namespace dd99::memory::block_allocator::composite
         Sub_Allocator m_sub_allocator;
         Predicate m_predicate;
     };
+
+    static_assert(Block_Allocator<Filter<void(*)(std::size_t), void*>>, "This definition doesn't comply with the `Block_Allocator` concept");
 
 }

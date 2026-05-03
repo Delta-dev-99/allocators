@@ -23,7 +23,6 @@ namespace dd99::memory::block_allocator::internal::base
               class Bitmap_Block_Type = std::byte>
     class Buddy_Base
         // : dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>
-        : public Allocator
     {
     protected:
         // using Freelist_Array_Base = dd99::memory::structure::detail::Buddy_Freelist_Array_Base<BLOCK_SIZE, LEVELS>;
@@ -440,5 +439,7 @@ namespace dd99::memory::block_allocator::internal::base
         Freelist_Tuple m_freelists;
         
     };
+
+    static_assert(Block_Allocator<Buddy_Base<2*sizeof(void*), 1>>, "This definition doesn't comply with the `Block_Allocator` concept");
 
 }

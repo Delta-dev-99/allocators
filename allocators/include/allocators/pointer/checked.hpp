@@ -13,7 +13,7 @@ namespace dd99::memory::pointer_allocator
     // ----------------------------------------
     // The returned pointer points to the start of `memory`.
     template <class Sub_Alloc_T>
-    class Pointer_Checked : public Allocator
+    class Pointer_Checked
     {
     public:
         Pointer_Checked(Sub_Alloc_T&& sub_allocator)
@@ -28,7 +28,7 @@ namespace dd99::memory::pointer_allocator
     
     public:
         [[nodiscard]]
-        std::byte *allocate(std::size_t requested_size)
+        std::byte * allocate(std::size_t requested_size)
         {
             auto const alloc_size = requested_size + sizeof(Block) + 2 * sizeof(Check_Header);
             Block allocated_block = m_sub_alloc.allocate(alloc_size);
@@ -72,12 +72,12 @@ namespace dd99::memory::pointer_allocator
         { return m_sub_alloc.owns(memory); }
 
     private:
-        static Check_Header *get_start_check_ptr(const Block &memory)
+        static Check_Header * get_start_check_ptr(const Block &memory)
         {
             return reinterpret_cast<Check_Header *>(memory.base + sizeof(Block));
         }
 
-        static Check_Header *get_end_check_ptr(const Block &memory)
+        static Check_Header * get_end_check_ptr(const Block &memory)
         {
             return reinterpret_cast<Check_Header *>(memory.get_end() - sizeof(Check_Header));
         }
@@ -89,7 +89,7 @@ namespace dd99::memory::pointer_allocator
             return Check_Header(std::rotl(reinterpret_cast<std::uintptr_t>(memory.base), 15) ^ memory.size);
         }
 
-        static std::byte *memory_block_to_ptr(const Block &memory)
+        static std::byte * memory_block_to_ptr(const Block &memory)
         {
             return memory.base + sizeof(Block) + sizeof(Check_Header);
         }

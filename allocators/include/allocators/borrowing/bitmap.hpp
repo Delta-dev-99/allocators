@@ -13,7 +13,7 @@ namespace dd99::memory::block_allocator::borrowing
     template <std::size_t Block_Size,
               class Sub_Alloc_T = dd99::memory::block_allocator::degenerate::Constant,
               class Bitmap_Element_T = std::uint8_t>
-    class Bitmap : public Allocator
+    class Bitmap
     {
         using BMP_Structure = dd99::memory::structure::Bitmap<Bitmap_Element_T>;
 
@@ -107,4 +107,7 @@ namespace dd99::memory::block_allocator::borrowing
         Aux_Block m_aux_memory;
         BMP_Structure m_bitmap;
     };
+
+    static_assert(Block_Allocator<Bitmap<1>>, "This definition doesn't comply with the `Block_Allocator` concept");
+
 }

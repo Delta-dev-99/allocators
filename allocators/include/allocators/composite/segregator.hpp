@@ -5,7 +5,7 @@
 namespace dd99::memory::block_allocator::composite
 {
     template <std::size_t Threshold, class Allocator_LE, class Allocator_G>
-    class Segregator : public Allocator
+    class Segregator
     {
     public:
         Segregator(Allocator_LE &&allocator_le, Allocator_G &&allocator_g)
@@ -52,5 +52,7 @@ namespace dd99::memory::block_allocator::composite
         Allocator_LE m_alloc_le;
         Allocator_G m_alloc_g;
     };
+
+    static_assert(Block_Allocator<Segregator<0, void*, void*>>, "This definition doesn't comply with the `Block_Allocator` concept");
 
 }

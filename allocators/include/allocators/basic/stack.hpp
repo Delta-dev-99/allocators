@@ -6,7 +6,7 @@
 namespace dd99::memory::block_allocator
 {
     // memory overhead on the controlled block: none
-    class Stack : public Allocator
+    class Stack
     {
     public:
         Stack(const Block &memory)
@@ -65,4 +65,7 @@ namespace dd99::memory::block_allocator
         Block m_memory;
         std::byte * m_current;
     };
+
+    static_assert(Block_Allocator<Stack>, "This definition doesn't comply with the `Block_Allocator` concept");
+
 }

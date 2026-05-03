@@ -11,7 +11,7 @@ namespace dd99::memory::block_allocator::degenerate
     // It is perfect in the sense that it
     // always fails successfully.
     // NOTE: Is stateless
-    class Null : public Allocator
+    class Null
     {
     public:
         constexpr Null() noexcept {}
@@ -60,4 +60,7 @@ namespace dd99::memory::block_allocator::degenerate
         owns(const memory::Block &) const noexcept
         { return false; }
     };
+
+    static_assert(Block_Allocator<Null>, "This definition doesn't comply with the `Block_Allocator` concept");
+
 }

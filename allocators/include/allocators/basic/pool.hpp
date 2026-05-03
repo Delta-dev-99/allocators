@@ -10,7 +10,7 @@ namespace dd99::memory::block_allocator
     // Uses a free list (forward list with nodes in unused blocks)
     // Requires Block_Size to be large enough to fit a list node in a block
     template <std::size_t Block_Size>
-    class Pool : public Allocator
+    class Pool
     {
     public:
         Pool(const memory::Block &memory)
@@ -69,5 +69,8 @@ namespace dd99::memory::block_allocator
         memory::Block m_memory;
         memory::structure::Freelist<Block_Size> m_free_list;
     };
+
+    static_assert(Block_Allocator<Pool<sizeof(void*)>>, "This definition doesn't comply with the `Block_Allocator` concept");
+
 
 }

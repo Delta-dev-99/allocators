@@ -180,7 +180,7 @@ namespace dd99::memory::block_allocator
     // Uses a free list (linked list with nodes in unused blocks)
     // Requires allocation sizes to be large enough to fit a list node (adjusted if not)
     // TODO: This is unfinished
-    class Slicing : public Allocator
+    class Slicing
     {
     public:
         Slicing(const memory::Block& memory)
@@ -223,5 +223,8 @@ namespace dd99::memory::block_allocator
         memory::Block m_memory;
         detail::Slicing_Freelist m_free_list;
     };
+
+    static_assert(Block_Allocator<Slicing>, "This definition doesn't comply with the `Block_Allocator` concept");
+    
 
 }

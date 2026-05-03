@@ -39,7 +39,7 @@ auto get_repeatable_rng_engine()
 }
 
 template <class Distribution>
-void stat_allocator(alloc::Allocator & allocator, std::size_t iterations, Distribution allocation_size_distribution, double allocation_probability = 0.65)
+void stat_allocator(auto & allocator, std::size_t iterations, Distribution allocation_size_distribution, double allocation_probability = 0.65)
 {
     auto allocator_with_stats = alloc::metrics::Stats(alloc::metrics::Timing(alloc::composite::Ref(allocator)));
     using alloc_type = decltype(allocator_with_stats);

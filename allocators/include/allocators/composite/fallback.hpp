@@ -26,7 +26,7 @@ namespace dd99::memory::block_allocator::composite
 
     // Specialization for end case of recursion
     template <class Primary_T, class Fallback_T>
-    class Fallback<Primary_T, Fallback_T> : public Allocator
+    class Fallback<Primary_T, Fallback_T>
     {
     public:
         Fallback(Primary_T &&primary, Fallback_T &&fallback)
@@ -79,4 +79,7 @@ namespace dd99::memory::block_allocator::composite
         Primary_T m_primary;
         Fallback_T m_fallback;
     };
+
+    static_assert(Block_Allocator<Fallback<void*, void*>>, "This definition doesn't comply with the `Block_Allocator` concept");
+    
 }
