@@ -1,5 +1,6 @@
 #pragma once
 
+#include <allocators/structures/memory_block.hpp>
 #include <allocators/exception.hpp>
 #include <cstddef>
 #include <new>

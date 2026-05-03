@@ -12,11 +12,11 @@ namespace dd99::memory
     }
 
     // allocate array
-    template <class T, Pointer_Allocator Allocator = dd99::memory::block_allocator::Allocator>
+    template <class T, Pointer_Allocator Allocator = dd99::memory::pointer_allocator::Allocator>
     requires std::is_unbounded_array_v<T>
     T * allocator_new(Allocator & allocator, std::size_t count)
     {
-        // TODO: Verify alignment
+        // TODO: Verify alignment and padding
         return allocator.allocate(count * sizeof(std::remove_extent_t<T>));
     }
 }

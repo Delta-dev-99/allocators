@@ -1,5 +1,7 @@
 #pragma once
 
+#include <allocators/structures/memory_block.hpp>
+
 
 namespace dd99::memory::block_allocator::composite
 {
@@ -8,7 +10,7 @@ namespace dd99::memory::block_allocator::composite
     // NOTE: The memory Block structure is copyed multiple times.
     // NOTE: This class can only be meaningfully used with the Heap_Block struct.
     // NOTE: This class also defeats the purpose of the library.
-    // NOTE: The only reason this class is on the "composite" namespace is that can be used for composition.
+    // NOTE: The only reason this class is on the "composite" namespace is that it can be used for composition.
     template <class Aquire_Memory_T, class Sub_Allocator_T>
     class Owner : Aquire_Memory_T, public Sub_Allocator_T
     {

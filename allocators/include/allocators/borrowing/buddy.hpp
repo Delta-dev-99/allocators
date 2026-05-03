@@ -2,6 +2,8 @@
 
 #include <allocators/internal/bases/buddy.hpp>
 #include <allocators/basic/stack.hpp>
+#include <allocators/utility/unique_block.hpp>
+#include <allocators/composite/throwing.hpp>
 
 
 // borrowing allocators borrow memory from other allocators to place inner state

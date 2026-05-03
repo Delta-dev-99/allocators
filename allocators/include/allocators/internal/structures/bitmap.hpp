@@ -3,6 +3,9 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <cstddef>
+#include <type_traits>
+
 
 namespace dd99::memory::structure
 {

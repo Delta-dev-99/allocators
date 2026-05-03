@@ -1,6 +1,8 @@
 #pragma once
 
+#include <allocators/structures/memory_block.hpp>
 #include <allocators/exception.hpp>
+
 
 namespace dd99::memory::block_allocator::composite
 {

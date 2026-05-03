@@ -1,5 +1,7 @@
 #pragma once
 
+#include <allocators/structures/memory_block.hpp>
+
 
 
 namespace dd99::memory::block_allocator::utility
