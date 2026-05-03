@@ -12,13 +12,14 @@
 namespace dd99::memory
 {
     template <class Alloc>
-    concept Block_Allocator = requires(Alloc alloc, std::size_t size, const Block & blk, const std::byte * b_ptr)
+    concept Block_Allocator = requires(Alloc alloc, std::size_t size, std::size_t alignment, const Block & blk, const std::byte * b_ptr)
     {
-        { alloc.allocate(size)      } -> std::same_as<Block>;
-        { alloc.deallocate(blk)     } -> std::same_as<void>;
-        { alloc.deallocate_all()    } -> std::same_as<void>;
-        { alloc.owns(blk)           } -> std::same_as<bool>;
-        { alloc.owns(b_ptr)         } -> std::same_as<bool>;
+        { alloc.allocate(size)              } -> std::same_as<Block>;
+        { alloc.allocate(size, alignment)   } -> std::same_as<Block>;
+        { alloc.deallocate(blk)             } -> std::same_as<void>;
+        { alloc.deallocate_all()            } -> std::same_as<void>;
+        { alloc.owns(blk)                   } -> std::same_as<bool>;
+        { alloc.owns(b_ptr)                 } -> std::same_as<bool>;
     };
 }
 
