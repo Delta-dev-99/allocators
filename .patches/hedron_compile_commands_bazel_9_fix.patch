@@ -1,0 +1,47 @@
+# This patch solves problems with using Bazel version 9.0.1
+# Some native rules for Python and C++ were removed in favor of external modules.
+# This patch adds the missing dependencies and replaces native rule invocations as necessary.
+
+--- a/refresh_compile_commands.bzl
++++ b/refresh_compile_commands.bzl
+@@ -57,6 +57,7 @@
+ # Implementation
+ 
+ load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
++load("@rules_python//python:defs.bzl", "py_binary")
+ 
+ 
+ def refresh_compile_commands(
+@@ -97,7 +98,7 @@
+     _expand_template(name = script_name, labels_to_flags = targets, exclude_headers = exclude_headers, exclude_external_sources = exclude_external_sources, **kwargs)
+ 
+     # Combine them so the wrapper calls the main script
+-    native.py_binary(
++    py_binary(
+         name = name,
+         main = version_checker_script_name,
+         srcs = [version_checker_script_name, script_name],
+
+
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -1,4 +1,6 @@
+ module(name = "hedron_compile_commands")
++bazel_dep(name = "rules_python", version = "1.9.0")
++bazel_dep(name = "rules_cc", version = "0.2.17")
+ 
+ p = use_extension("//:workspace_setup.bzl", "hedron_compile_commands_extension")
+ pt = use_extension("//:workspace_setup_transitive.bzl", "hedron_compile_commands_extension")
+
+
+
+--- a/BUILD
++++ b/BUILD
+@@ -1,6 +1,7 @@
+ load(":refresh_compile_commands.bzl", "refresh_compile_commands")
++load("@rules_cc//cc:defs.bzl", "cc_binary")
+ 
+ # See README.md for interface.
+ 
+ # But if you aren't doing any cross-compiling for other platforms, the following can be a good default:
+ # bazel run @hedron_compile_commands//:refresh_all

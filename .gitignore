@@ -2,3 +2,4 @@
 build
 timings
 lib/
+MODULE.bazel.lock
