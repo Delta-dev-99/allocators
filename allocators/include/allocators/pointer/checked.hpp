@@ -65,7 +65,7 @@ namespace dd99::memory::pointer_allocator
 
         void deallocate_all() { m_sub_alloc.deallocate_all(); }
 
-        bool owns(std::byte *memory) const
+        bool owns(const std::byte * memory) const
         { return m_sub_alloc.owns(memory); }
 
         bool owns(const Block &memory) const

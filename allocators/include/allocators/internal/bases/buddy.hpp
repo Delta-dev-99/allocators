@@ -421,7 +421,7 @@ namespace dd99::memory::block_allocator::internal::base
         }
 
         bool
-        owns(std::byte * memory) const
+        owns(const std::byte * memory) const
         {
             return m_memory.contains(memory);
         }

@@ -36,7 +36,7 @@ namespace dd99::memory::block_allocator::degenerate
         void deallocate_all()
         { m_allocated = false; }
 
-        bool owns(std::byte *memory) const
+        bool owns(const std::byte * memory) const
         { return m_memory.contains(memory); }
 
         bool owns(const memory::Block& memory) const

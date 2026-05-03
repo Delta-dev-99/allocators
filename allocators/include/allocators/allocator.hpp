@@ -12,7 +12,7 @@
 namespace dd99::memory
 {
     template <class Alloc>
-    concept Block_Allocator = requires(Alloc alloc, std::size_t size, Block blk, std::byte * b_ptr)
+    concept Block_Allocator = requires(Alloc alloc, std::size_t size, const Block & blk, const std::byte * b_ptr)
     {
         { alloc.allocate(size)      } -> std::same_as<Block>;
         { alloc.deallocate(blk)     } -> std::same_as<void>;
@@ -43,7 +43,7 @@ namespace dd99::memory
 //         virtual void deallocate(const Block &memory) = 0;
 //         virtual void deallocate_all() = 0;
 
-//         virtual bool owns(std::byte *memory) const = 0;
+//         virtual bool owns(const std::byte * memory) const = 0;
 //         virtual bool owns(const Block &memory) const = 0;
         
 //     };

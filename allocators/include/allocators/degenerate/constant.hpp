@@ -50,12 +50,12 @@ namespace dd99::memory::block_allocator::degenerate
 
         constexpr
         bool
-        owns(std::byte *memory) const
+        owns(const std::byte * memory) const
         { return m_memory.contains(memory); }
 
         constexpr
         bool
-        owns(const memory::Block& memory) const
+        owns(const memory::Block & memory) const
         { return m_memory.contains(memory); }
 
     private:

@@ -52,7 +52,7 @@ namespace dd99::memory::block_allocator::degenerate
 
         constexpr
         bool
-        owns(std::byte *) const noexcept
+        owns(const std::byte *) const noexcept
         { return false; }
 
         constexpr

@@ -40,7 +40,7 @@ namespace dd99::memory::block_allocator::utility
             m_sub_allocator.deallocate_all();
         }
 
-        bool owns(std::byte *memory) const
+        bool owns(const std::byte * memory) const
         {
             return m_sub_allocator.owns(memory);
         }

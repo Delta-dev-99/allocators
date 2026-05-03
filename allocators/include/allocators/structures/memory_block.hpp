@@ -29,7 +29,7 @@ namespace dd99::memory
         }
 
         constexpr
-        bool contains(std::byte * ptr) const
+        bool contains(const std::byte * ptr) const
         {
             return (base <= ptr) && (get_end() >= ptr);
         }

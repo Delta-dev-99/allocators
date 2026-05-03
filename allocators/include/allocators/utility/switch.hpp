@@ -90,7 +90,7 @@ namespace dd99::memory::block_allocator::utility
             return deallocate_all(index_sequence{});
         }
 
-        bool owns(std::byte *memory) const
+        bool owns(const std::byte * memory) const
         {
             return owns(memory, index_sequence{});
         }

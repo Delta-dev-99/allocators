@@ -106,7 +106,7 @@ namespace dd99::memory::block_allocator::metrics
             update_operation_timings(Timed_Operation::Full_Deallocation, start, duration);
         }
 
-        bool owns(std::byte *memory) const { return Sub_Alloc_T::owns(memory); }
+        bool owns(const std::byte * memory) const { return Sub_Alloc_T::owns(memory); }
         bool owns(const memory::Block &memory) const { return Sub_Alloc_T::owns(memory); }
 
     private:

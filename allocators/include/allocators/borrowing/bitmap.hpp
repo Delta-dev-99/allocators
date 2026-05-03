@@ -79,7 +79,7 @@ namespace dd99::memory::block_allocator::borrowing
             return m_memory.contains(memory);
         }
 
-        bool owns(std::byte *memory) const
+        bool owns(const std::byte * memory) const
         {
             return m_memory.contains(memory);
         }

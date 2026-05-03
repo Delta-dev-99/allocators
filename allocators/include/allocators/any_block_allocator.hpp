@@ -21,17 +21,17 @@ namespace dd99::memory::block_allocator
         template <Block_Allocator Allocator>
         constexpr block_allocator_vtable vtable_for = block_allocator_vtable
         {
-            .allocate       = [](void * alloc_ptr, std::size_t size)    -> Block    { return reinterpret_cast<Allocator *>(alloc_ptr)->allocate(size);      },
-            .deallocate     = [](void * alloc_ptr, const Block & blk)   -> void     { return reinterpret_cast<Allocator *>(alloc_ptr)->deallocate(blk);     },
-            .deallocate_all = [](void * alloc_ptr)                      -> void     { return reinterpret_cast<Allocator *>(alloc_ptr)->deallocate_all();    },
-            .owns_block     = [](void * alloc_ptr, const Block & blk)   -> bool     { return reinterpret_cast<Allocator *>(alloc_ptr)->owns(blk);           },
-            .owns_pointer   = [](void * alloc_ptr, void * blk_ptr)      -> bool     { return reinterpret_cast<Allocator *>(alloc_ptr)->owns(blk_ptr);       },
+            .allocate       = [](void * alloc_ptr, std::size_t size)            -> Block    { return reinterpret_cast<Allocator *>(alloc_ptr)->allocate(size);      },
+            .deallocate     = [](void * alloc_ptr, const Block & blk)           -> void     { return reinterpret_cast<Allocator *>(alloc_ptr)->deallocate(blk);     },
+            .deallocate_all = [](void * alloc_ptr)                              -> void     { return reinterpret_cast<Allocator *>(alloc_ptr)->deallocate_all();    },
+            .owns_block     = [](void * alloc_ptr, const Block & blk)           -> bool     { return reinterpret_cast<Allocator *>(alloc_ptr)->owns(blk);           },
+            .owns_pointer   = [](void * alloc_ptr, const std::byte * blk_ptr)   -> bool     { return reinterpret_cast<Allocator *>(alloc_ptr)->owns(blk_ptr);       },
         };
     }
 
     struct any_block_allocator_ref
     {
-        detail::block_allocator_vtable * m_vptr;
+        const detail::block_allocator_vtable * m_vptr;
         void * m_allocator_ptr;
 
         template <Block_Allocator Allocator>
@@ -46,5 +46,7 @@ namespace dd99::memory::block_allocator
         bool    owns            (const Block & blk)         { return m_vptr->owns_block(m_allocator_ptr, blk); }
         bool    owns            (const std::byte * blk_ptr) { return m_vptr->owns_pointer(m_allocator_ptr, blk_ptr); }
     };
+
+    static_assert(Block_Allocator<any_block_allocator_ref>);
 
 }

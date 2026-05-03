@@ -43,7 +43,7 @@ namespace dd99::memory::block_allocator
             build_free_list();
         }
 
-        bool owns(std::byte *memory) const
+        bool owns(const std::byte * memory) const
         {
             return m_memory.contains(memory);
         }

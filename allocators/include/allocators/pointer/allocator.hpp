@@ -33,7 +33,7 @@ namespace dd99::memory::pointer_allocator
         virtual void deallocate(std::byte * memory) = 0;
         virtual void deallocate_all() = 0;
 
-        virtual bool owns(std::byte * memory) const = 0;
+        virtual bool owns(const std::byte * memory) const = 0;
         virtual bool owns(const Block & memory) const = 0;
     };
 

@@ -51,12 +51,12 @@ namespace dd99::memory::block_allocator
             m_current = m_memory.base;
         }
 
-        bool owns(std::byte *memory) const
+        bool owns(const std::byte * memory) const
         {
             return m_memory.contains(memory);
         }
 
-        bool owns(const Block &memory) const
+        bool owns(const Block & memory) const
         {
             return m_memory.contains(memory);
         }

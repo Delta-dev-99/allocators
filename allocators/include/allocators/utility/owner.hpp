@@ -31,7 +31,7 @@ namespace dd99::memory::block_allocator::composite
         void deallocate_all()
         { Sub_Allocator_T::deallocate_all(); }
 
-        bool owns(std::byte *memory) const
+        bool owns(const std::byte * memory) const
         { return Sub_Allocator_T::owns(memory); }
 
         bool owns(const memory::Block &memory) const
