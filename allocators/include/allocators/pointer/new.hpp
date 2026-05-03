@@ -4,7 +4,7 @@
 
 namespace dd99::memory
 {
-    template <class T, Pointer_Allocator Allocator = dd99::memory::pointer_allocator::Allocator>
+    template <class T, Pointer_Allocator Allocator>
     requires std::is_object_v<T> && (!std::is_unbounded_array_v<T>)
     T * allocator_new(Allocator & allocator)
     {
@@ -12,7 +12,7 @@ namespace dd99::memory
     }
 
     // allocate array
-    template <class T, Pointer_Allocator Allocator = dd99::memory::pointer_allocator::Allocator>
+    template <class T, Pointer_Allocator Allocator>
     requires std::is_unbounded_array_v<T>
     T * allocator_new(Allocator & allocator, std::size_t count)
     {
