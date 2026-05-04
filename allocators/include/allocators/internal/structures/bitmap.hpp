@@ -20,6 +20,7 @@ namespace dd99::memory::structure
         // TODO: Verify Block_Bits is used in calculations
         constexpr static auto Block_Size = sizeof(Block_T);
         constexpr static auto Block_Bits = Block_Size * std::numeric_limits<unsigned char>::digits;
+        constexpr static auto Block_Alignment = alignof(Block_T);
 
     public: // statics
         // All blocks are fully used?
@@ -36,11 +37,12 @@ namespace dd99::memory::structure
         
     public:
         // Create the bitmap in-place
-        Bitmap(std::size_t bit_count, std::byte *base)
+        Bitmap(std::size_t bit_count, std::byte * base)
             : m_base(reinterpret_cast<Block_T *>(base))
             , m_bit_size(bit_count)
             , m_size(Bitmap::calculate_block_count(bit_count))
         {
+            // TODO: assert alignment
         }
 
     public:
@@ -141,7 +143,7 @@ namespace dd99::memory::structure
         }
 
     private:
-        Block_T *m_base;
+        Block_T *   m_base;
         std::size_t m_bit_size;
         std::size_t m_size;
     };
