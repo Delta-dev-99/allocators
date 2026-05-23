@@ -29,3 +29,7 @@ target_link_libraries(basic_buddy_allocator_test allocators)
 add_executable(any_block_allocator_test any_block_allocator_test.cpp)
 target_link_libraries(any_block_allocator_test allocators)
 # target_compile_features(any_block_allocator_test PRIVATE cxx_std_26)
+
+add_executable(test_assert test_assert.cpp)
+target_link_libraries(test_assert allocators)
+target_compile_features(test_assert PRIVATE cxx_std_26)

@@ -10,43 +10,43 @@ target_include_directories(allocators INTERFACE include)
 # )
 
 target_sources(allocators INTERFACE
-    include/allocators/allocator.hpp
-    include/allocators/allocators.hpp
-    include/allocators/exception.hpp
+    # include/allocators/allocator.hpp
+    # include/allocators/allocators.hpp
+    # include/allocators/exception.hpp
 
-    include/allocators/internal/structures/bitmap.hpp
-    include/allocators/internal/structures/buddy_freelist_array.hpp
-    include/allocators/internal/structures/free_list.hpp
+    # include/allocators/internal/structures/bitmap.hpp
+    # include/allocators/internal/structures/buddy_freelist_array.hpp
+    # include/allocators/internal/structures/free_list.hpp
 
-    include/allocators/internal/bases/buddy.hpp
+    # include/allocators/internal/bases/buddy.hpp
 
-    include/allocators/structures/memory_block.hpp
+    # include/allocators/structures/memory_block.hpp
 
-    include/allocators/basic/bitmap.hpp
-    include/allocators/basic/buddy.hpp
-    include/allocators/basic/pool.hpp
-    include/allocators/basic/slicing.hpp
-    include/allocators/basic/stack.hpp
+    # include/allocators/basic/bitmap.hpp
+    # include/allocators/basic/buddy.hpp
+    # include/allocators/basic/pool.hpp
+    # include/allocators/basic/slicing.hpp
+    # include/allocators/basic/stack.hpp
     
-    include/allocators/borrowing/bitmap.hpp
-    include/allocators/borrowing/buddy.hpp
+    # include/allocators/borrowing/bitmap.hpp
+    # include/allocators/borrowing/buddy.hpp
     
-    include/allocators/composite/quantizer.hpp
-    include/allocators/composite/fallback.hpp
-    include/allocators/composite/segregator.hpp
-    include/allocators/composite/ref.hpp
-    include/allocators/composite/throwing.hpp
+    # include/allocators/composite/quantizer.hpp
+    # include/allocators/composite/fallback.hpp
+    # include/allocators/composite/segregator.hpp
+    # include/allocators/composite/ref.hpp
+    # include/allocators/composite/throwing.hpp
 
-    include/allocators/degenerate/boolean.hpp
-    include/allocators/degenerate/constant.hpp
-    include/allocators/degenerate/null.hpp
+    # include/allocators/degenerate/boolean.hpp
+    # include/allocators/degenerate/constant.hpp
+    # include/allocators/degenerate/null.hpp
     
-    include/allocators/metrics/stats.hpp
-    include/allocators/metrics/timing.hpp
+    # include/allocators/metrics/stats.hpp
+    # include/allocators/metrics/timing.hpp
 
-    include/allocators/pointer/basic.hpp
-    include/allocators/pointer/checked.hpp
+    # include/allocators/pointer/basic.hpp
+    # include/allocators/pointer/checked.hpp
 
-    include/allocators/utility/owner.hpp
-    include/allocators/utility/unique_block.hpp
+    # include/allocators/utility/owner.hpp
+    # include/allocators/utility/unique_block.hpp
 )

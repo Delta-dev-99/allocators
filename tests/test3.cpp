@@ -1,9 +1,9 @@
 
-#include <allocators/pointer/basic.hpp>
-#include <allocators/pointer/checked.hpp>
-#include <allocators/metrics/stats.hpp>
-#include <allocators/composite/fallback.hpp>
-#include <allocators/basic/slicing.hpp>
+#include <allocators/pointer_allocators/basic.hpp>
+#include <allocators/pointer_allocators/checked.hpp>
+#include <allocators/block_allocators/metrics/stats.hpp>
+#include <allocators/block_allocators/composite/fallback.hpp>
+#include <allocators/block_allocators/basic/slicing.hpp>
 #include <allocators/acquire_memory/self_contained_block.hpp>
 
 

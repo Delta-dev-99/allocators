@@ -1,9 +1,9 @@
 
 #include <allocators/acquire_memory/self_contained_block.hpp>
-#include <allocators/new.hpp>
-#include <allocators/basic/stack.hpp>
-#include <allocators/pointer/new.hpp>
-#include <allocators/pointer/basic.hpp>
+#include <allocators/block_allocators/new.hpp>
+#include <allocators/block_allocators/basic/stack.hpp>
+#include <allocators/pointer_allocators/new.hpp>
+#include <allocators/pointer_allocators/basic.hpp>
 
 
 

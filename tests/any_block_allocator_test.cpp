@@ -1,8 +1,8 @@
 // test_any_block_allocator.cpp
-#include <allocators/any_block_allocator.hpp>
-#include <allocators/basic/buddy.hpp>
-#include <allocators/basic/pool.hpp>
-#include <allocators/basic/stack.hpp>
+#include <allocators/block_allocators/any_block_allocator.hpp>
+#include <allocators/block_allocators/basic/buddy.hpp>
+#include <allocators/block_allocators/basic/pool.hpp>
+#include <allocators/block_allocators/basic/stack.hpp>
 #include <cstdio>
 #include <cstring>
 #include <new>

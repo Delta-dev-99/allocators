@@ -1,17 +1,17 @@
-#include <allocators/metrics/stats.hpp>
-#include <allocators/metrics/timing.hpp>
-#include <allocators/composite/ref.hpp>
-#include <allocators/composite/quantizer.hpp>
-#include <allocators/composite/fallback.hpp>
-#include <allocators/composite/segregator.hpp>
-#include <allocators/basic/slicing.hpp>
-#include <allocators/basic/pool.hpp>
-#include <allocators/basic/stack.hpp>
-#include <allocators/basic/bitmap.hpp>
-#include <allocators/basic/buddy.hpp>
+#include <allocators/block_allocators/metrics/stats.hpp>
+#include <allocators/block_allocators/metrics/timing.hpp>
+#include <allocators/block_allocators/composite/ref.hpp>
+#include <allocators/block_allocators/composite/quantizer.hpp>
+#include <allocators/block_allocators/composite/fallback.hpp>
+#include <allocators/block_allocators/composite/segregator.hpp>
+#include <allocators/block_allocators/basic/slicing.hpp>
+#include <allocators/block_allocators/basic/pool.hpp>
+#include <allocators/block_allocators/basic/stack.hpp>
+#include <allocators/block_allocators/basic/bitmap.hpp>
+#include <allocators/block_allocators/basic/buddy.hpp>
 
-#include <allocators/borrowing/bitmap.hpp>
-#include <allocators/borrowing/buddy.hpp>
+#include <allocators/block_allocators/borrowing/bitmap.hpp>
+#include <allocators/block_allocators/borrowing/buddy.hpp>
 
 #include <allocators/acquire_memory/self_contained_block.hpp>
 

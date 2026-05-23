@@ -1,4 +1,4 @@
-#include <allocators/basic/buddy.hpp>   // adjust path as needed
+#include <allocators/block_allocators/basic/buddy.hpp>   // adjust path as needed
 #include <allocators/structures/memory_block.hpp>
 
 #include <cstdint>
