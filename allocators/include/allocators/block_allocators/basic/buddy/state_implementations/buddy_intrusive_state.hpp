@@ -67,7 +67,6 @@ namespace dd99::memory::block_allocator::buddy_namespace
                 return joint_blk_address.index + layout.get_cumulative_joint_block_count(joint_blk_address.level - 1);
             }
 
-            [[nodiscard]]
             constexpr
             bool
             toggle_joint_block_state(block_address_type joint_blk_address, const layout_type & layout)
@@ -90,6 +89,10 @@ namespace dd99::memory::block_allocator::buddy_namespace
             , m_state_memory{std::forward<state_memory_block_type>(state_memory)}
             , m_state_tracker{bitmap_type{m_layout.get_total_joint_block_count(), m_state_memory.base}}
         {
+            // TODO: assert state memory is enough
+            // assert(m_state_memory.size >= bitmap_type::calculate_block_count(m_layout.get_total_joint_block_count()) * bitmap_type::Block_Size)
+            // TODO: assert state memory is properly aligned
+            // assert(state_memory.base & (bitmap_type::Block_Alignment - 1) == 0)
             init_freelists();
         }
 
@@ -135,91 +138,76 @@ namespace dd99::memory::block_allocator::buddy_namespace
 
         constexpr
         void
-        push(Block blk, block_address_type blk_addr = m_layout.get_block_address(blk))
+        push(level_type level, std::byte * block_base)
         {
-            // if the block has a buddy and it is free, we merge the blocks.
-            if (m_layout.block_has_buddy(blk_addr))
+            auto block_address = m_layout.get_block_address(block_base, level);
+            if (m_layout.block_has_buddy(block_address))
             {
-                const auto joint_blk_addr = layout_type::get_joint_block_address(blk_addr);
-                const auto joint_blk_state = m_state_tracker.toggle_joint_block_state(joint_blk_addr, m_layout);
-                if (!joint_blk_state) // meaning: is buddy also free?
-                { // buddy is free. join the blocks
-                    const auto buddy_blk_address = layout_type::get_buddy_block_address(blk_addr);
-                    const auto buddy_blk = m_layout.get_block(buddy_blk_address);
-
-                    // the buddy no longer appears on freelists (part of a larger block)
-                    m_freelist_collection[buddy_blk_address.level].remove(buddy_blk.base);
-
-                    // get block and coalesce by pushing recursively
-                    const auto joint_blk = m_layout.get_block(joint_blk_addr);
-                    return push(joint_blk, joint_blk_addr);
-                }
+                auto joint_block_address = layout_type::get_joint_block_address(block_address);
+                m_state_tracker.toggle_joint_block_state(joint_block_address);
             }
-
-            // NOTE: there is a `return` above, so this only happens when the block wasn't merged
-            m_freelist_collection[blk_addr.level].push(blk.base);
+            m_freelist_collection[level].push(block_base);
         }
 
         [[nodiscard]]
         constexpr
-        Block
+        std::byte *
         pop(level_type level)
         {
-            // assumed level is in valid range
-            // TODO: assert(level < levels && level >= 0);
+            if (m_freelist_collection[level].empty()) return nullptr;
+            auto block_base = m_freelist_collection[level].pop();
+            auto block_address = m_layout.get_block_address(block_base, level);
+            if (m_layout.block_has_buddy(block_address))
+            {
+                auto joint_block_address = layout_type::get_joint_block_address(block_address);
+                m_state_tracker.toggle_joint_block_state(joint_block_address);
+            }
+            return block_base;
+        }
 
-            // get a free block
-            auto blk = [&]() -> Block {
-                if (!m_freelist_collection[level].empty())
+        // TODO: optimize
+        [[nodiscard]]
+        constexpr
+        std::byte *
+        merge_or_push(level_type level, std::byte * block_base)
+        {
+            auto block_address = m_layout.get_block_address(block_base, level);
+            if (!m_layout.block_has_buddy(block_address))
+            {
+                m_freelist_collection[level].push(block_base);
+                return nullptr;
+            }
+            else
+            {
+                auto joint_block_address = layout_type::get_joint_block_address(block_address);
+                bool is_buddy_free = !m_state_tracker.toggle_joint_block_state(joint_block_address);
+                if (is_buddy_free)
                 {
-                    auto base_address = m_freelist_collection[level].pop();
-                    return Block{.base = base_address, .size = layout_type::get_block_size(level)};
+                    auto buddy_address = layout_type::get_buddy_block_address(block_address);
+                    std::byte * buddy_base = m_layout.get_block(buddy_address).base;
+                    m_freelist_collection[level].remove(buddy_base);
+                    return std::min(block_base, buddy_base); // return base of joint block
                 }
                 else
                 {
-                    // limit recursion with a bounds check
-                    if (level + 1 > last_level) return {};
-
-                    // recurse
-                    auto big_blk = pop(level + 1);
-                    if (!big_blk) return {};
-
-                    auto blk = big_blk; blk.size /= 2;
-                    auto buddy_blk = blk; buddy_blk.base = blk.get_end();
-
-                    // we only allocate half of the block, so we add the other half to the freelist
-                    // we don't need to update state because it already is correct (block was already free)
-                    m_freelist_collection[level].push(buddy_blk.base);
-
-                    // NOTE: We know blk has a buddy
-                    // NOTE: Could optimize based on that
-
-                    return blk;
+                    m_freelist_collection[level].push(block_base);
+                    return nullptr;
                 }
-            }(level);
-
-            // NOTE: maybe we could avoid this check? it was already checked inside the lambda above. maybe the compiler will optimize?
-            if (!blk) return {};
-
-            // update block state
-            const auto blk_address = m_layout.get_block_address(blk.base, level);
-            if (m_layout.block_has_buddy(blk_address))
-            {
-                // we need to toggle the buddy state
-                const auto joint_blk_address = layout_type::get_joint_block_address(blk_address);
-                m_state_tracker.toggle_joint_block_state(joint_blk_address, m_layout);
             }
-
-            return blk;
         }
 
 
-
         layout_type m_layout;
-        state_memory_block_type m_state_memory; // used to store state the bitmap
+        state_memory_block_type m_state_memory; // used to store state (the bitmap)
 
         std::array<freelist_type, levels> m_freelist_collection; // track free blocks
         buddy_state_tracker m_state_tracker; // track buddy blocks
     };
+
+    // TODO: storing the state memory block and also passing it to the bitmap is redundant.
+    // both types will end up storing the same memory block.
+    // furthermore, the state doesn't touch the state memory block, except through the bitmap.
+    // perhaps a better approach would be to just forward the memory block to the bitmap.
+    // we could use the same technique on the bitmap class (capture the block type, allow auto-free on destruction block types to work).
 
 }
