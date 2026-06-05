@@ -63,7 +63,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
     // - {index, level} : size is calculated from level, base is calculated from level and index.
     // the first one {base, size} is the normal block representation in the whole library
     // the third one {level, index} is the internal representation of buddy block addresses
-    // the second one {level, base} is an intermediate compromise used in the state interface.
+    // the second one {base, level} is an intermediate compromise used in the state interface.
     // there is also one extra representation {index, size} which could theoretically work, but isn't used anywhere.
     // *** currently our interface always uses the {base, level} representation even when it may not be optimal for all implementations.
     // maybe we could let the specific implementation determine the addressing scheme and conversions to be used?
