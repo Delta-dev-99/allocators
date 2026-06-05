@@ -1,105 +1,135 @@
 #pragma once
 
-#include <allocators/block_allocators/internal/bases/buddy.hpp>
-#include <cassert>
+#include <allocators/block_allocators/basic/buddy/buddy_state.hpp>
+// #include <cassert>
 
 
 namespace dd99::memory::block_allocator
 {
 
-    template <std::size_t BLOCK_SIZE,
-              unsigned LEVELS,
-              class Bitmap_Block_Type = std::byte>
+    template <buddy_namespace::State_Concept State_Type>
     class Buddy
-        : public dd99::memory::block_allocator::internal::base::Buddy_Base<BLOCK_SIZE, LEVELS, Bitmap_Block_Type>
     {
-    protected: // internal type definitions
-        using Buddy_Base = dd99::memory::block_allocator::internal::base::Buddy_Base<BLOCK_SIZE, LEVELS, Bitmap_Block_Type>;
-        using typename Buddy_Base::BMP;
-
     public: // constant definitions
-        using Buddy_Base::Levels;
-        using Buddy_Base::Block_Size;
-        using Buddy_Base::Max_Block_Size;
+        using state_type = State_Type;
+        using layout_type = state_type::layout_type;
+        using level_type = state_type::level_type;
+        using index_type = state_type::index_type;
 
-    public: // static functions
-        static constexpr
-        std::size_t calculate_block_count(std::size_t memory_size)
-        {
-            // check if memory is not enough for 1 block + minimal bitmap
-            if (memory_size < BMP::Block_Size + Block_Size)
-                return 0;
-
-            // Analytical initial guess from continuous relaxation
-            constexpr auto pow2_Lm1 = 1ULL << (Levels - 1);
-            constexpr auto a_num = pow2_Lm1 - 1;          // 2^{L-1} - 1
-            constexpr auto denom = 8ULL * Block_Size * pow2_Lm1 + a_num;
-            // Numerator: 8 * memory_size * pow2_Lm1
-            // We assume memory_size * 8 * pow2_Lm1 < 2^64 (holds for realistic RAM).
-
-            // Ensure memory_size doesn't cause overflow: memory_size * 8 * pow2_Lm1 < 2^64
-            constexpr auto max_supported_memory = std::numeric_limits<std::size_t>::max() / (8ULL * pow2_Lm1);
-            assert(memory_size <= max_supported_memory && "memory_size would cause overflow in calculation");
-            
-            // Calculate initial block count guess
-            std::size_t block_count = (8ULL * memory_size * pow2_Lm1) / denom;
-
-            // helper predicate
-            auto fits = [&](std::size_t block_count) -> bool {
-                std::size_t bits = Buddy_Base::calculate_buddy_bit_count(block_count);
-                std::size_t bitmap = BMP::calculate_block_count(bits) * BMP::Block_Size;
-                return block_count * Block_Size + bitmap <= memory_size;
-            };
-
-            // adjust - at most ceil(BMP::Block_Size / Block_Size) steps
-            if (fits(block_count))
-            {
-                while(fits(block_count + 1)) ++block_count;
-            }
-            else
-            {
-                while(!fits(--block_count)); // decrement until fits
-            }
-
-            return block_count;
-        }
-
-    private: // internal constructors
-        Buddy(memory::Block memory, std::size_t block_count, std::byte * blocks_base)
-            : Buddy_Base(memory, block_count, memory.base)
-            , m_blocks_base(blocks_base)
-        {
-            deallocate_all();
-        }
-
-        Buddy(memory::Block memory, std::size_t block_count)
-            : Buddy(memory, block_count, memory.get_end() - block_count * Block_Size)
-        { }
+        static constexpr auto block_size = state_type::block_size;
+        static constexpr auto levels = state_type::levels;
+        static constexpr auto last_level = state_type::last_level;
 
     public: // constructors
-        Buddy(memory::Block memory)
-            : Buddy(memory, calculate_block_count(memory.size))
+        Buddy(state_type && state)
+            : m_state{std::forward<state_type>(state)}
         { }
 
-        Buddy(const Buddy &) = delete;
-        void operator=(const Buddy &) = delete;
-
-    public: // allocator interface implementation
-        using Buddy_Base::allocate;
-        using Buddy_Base::deallocate;
-        using Buddy_Base::deallocate_all;
-        using Buddy_Base::owns;
-
-    protected:
+    private:
+        [[nodiscard]]
         constexpr
-        std::byte *
-        get_blocks_base() const override
+        std::byte * allocate_impl(level_type level)
         {
-            return m_blocks_base;
+            // recursion termination condition
+            if (level > last_level) return nullptr;
+
+            // try freelist
+            if (auto block_base = m_state.pop(level)) return block_base;
+
+            // get larger block
+            auto block_base = allocate_impl(level+1); // recursion
+            if (!block_base) return nullptr;
+            
+            // split larger block
+            auto half_size = layout_type::get_block_size(level);
+            auto buddy_base = block_base + half_size;
+            m_state.push(level, buddy_base);
+            return block_base;
         }
 
+    public: // allocator interface implementation
+        [[nodiscard]]
+        constexpr
+        memory::Block
+        allocate_level(level_type requested_level)
+        {
+            return Block{.base = allocate_impl(requested_level), .size = layout_type::get_block_size(requested_level)};
+        }
+
+        [[nodiscard]]
+        constexpr
+        memory::Block
+        allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
+        {
+            // TODO: consider, for alignment larger than requested size we can allocate from a higher level and split the block.
+            // TODO: assert requested_alignment is a power of 2
+            if (requested_size == 0) return {};
+            const auto size_level = layout_type::calculate_block_level(requested_size);
+            const auto alignment_level = std::max(size_level, layout_type::get_alignment_level(requested_alignment));
+            
+            // now, get a block from the alignment level and split it down to the size level
+            auto block_level = alignment_level;
+            auto block_base = allocate_impl(block_level);
+            while (block_level > size_level)
+            {
+                --block_level;
+                auto half_size = layout_type::get_block_size(block_level);
+                auto buddy_base = block_base + half_size;
+                m_state.push(block_level, buddy_base);
+            }
+
+            return Block{.base = block_base, .size = layout_type::get_block_size(size_level)};
+        }
+
+        [[nodiscard]]
+        constexpr
+        memory::Block
+        allocate(std::size_t requested_size)
+        {
+            if (requested_size == 0) return {};
+            const auto requested_level = layout_type::calculate_block_level(requested_size);
+            return allocate_level(requested_level);
+        }
+
+
+        constexpr
+        void
+        deallocate(Block blk)
+        {
+            if (!owns(blk)) return;
+
+            auto level = layout_type::get_block_level(blk.size);
+            auto block_base = blk.base;
+            while(block_base = m_state.merge_or_push(level, block_base))
+            {
+                ++level;
+            }
+        }
+
+        constexpr
+        void
+        deallocate_all()
+        {
+            m_state.reset();
+        }
+
+        constexpr
+        bool
+        owns(const std::byte * blk_base) const
+        {
+            return m_state.m_layout.m_memory.contains(blk_base);
+        }
+
+        constexpr
+        bool
+        owns(Block blk) const
+        {
+            return m_state.m_layout.m_memory.contains(blk);
+        }
+
+
     private:
-        std::byte * m_blocks_base;
+        state_type m_state;
     };
 
 }
