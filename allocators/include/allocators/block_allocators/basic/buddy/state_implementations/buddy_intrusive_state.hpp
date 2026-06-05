@@ -23,7 +23,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
     // The `State_Block_Type` template parameter:
     // The type of the memory block provided by the user to store the buddy state and free list information. Intended to be deduced via factory function. This block is expected to be large enough to hold the necessary data structures for managing the buddy system's state across all levels. The policy will use this block to maintain the state of which blocks are free and which are allocated, as well as to manage the linked lists of free blocks at each level. The user is responsible for providing a suitable memory block for this purpose, and the policy will handle the organization and management of this block internally.
     // This is part of the lifetime management customization mechanism used in this library. Allows either using a plain memory block, or a RAII auto-freeing memory block type.
-    template <Layout_Concept Layout, class State_Memory_Block_Type>
+    template <Layout_Concept Layout, class State_Memory_Block_Type, class Bitmap_Element_Type = std::byte>
     struct buddy_intrusive_state
     {
         // Check whether this policy type actually satisfies the requirements for buddy policy types.
@@ -45,7 +45,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
         static constexpr auto last_level = levels - 1;
 
         using freelist_type = dd99::memory::structure::basic_linked_list;
-        using bitmap_type = dd99::memory::structure::Bitmap<std::byte>;
+        using bitmap_type = dd99::memory::structure::Bitmap<Bitmap_Element_Type>;
 
         static_assert(sizeof(freelist_type::node) <= block_size,
             "block_size is too small to hold a freelist node.");
