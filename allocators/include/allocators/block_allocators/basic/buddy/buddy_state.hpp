@@ -9,6 +9,8 @@ namespace dd99::memory::block_allocator::buddy_namespace
 {
 
     // the buddy state implements the underlying data structure access and manipulation functions used by the buddy allocator. this separation allows for different strategies for managing the buddy system's internal state, such as using a bitmap and linked list, a fused structure for both, or other data structure architectures, without reimplementing the same core logic.
+    // TODO: add requirements on static constexpr values that must be present
+    // TODO: add requirements on member types that must be present
     template <class T>
     concept State_Concept = requires { typename T::level_type; } // TODO: consider adding requirements on `level_type`, such as maybe being an unsigned integer type.
     && requires (T & t, T::level_type level, std::byte * block_base)
