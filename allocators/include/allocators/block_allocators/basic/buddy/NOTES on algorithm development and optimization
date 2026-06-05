@@ -1,0 +1,334 @@
+The algorithm for using the state interface on the buddy allocator is as follows:
+1. On allocation:
+   a. The buddy allocator determines the appropriate level for the requested block size.
+   b. It calls `state.pop(level)`.
+   c. If the level is empty, it recurses up in levels trying to split a larger block. Else just return the block.
+   d. The recursion uses `state.pop(level)` to find a block, until one is found or the levels are exhausted.
+   e. When recursing back, call `state.push(level, block_address)` to push the unused block halves back to the freelist and update state.
+2. On deallocation:
+  a. The buddy allocator determines the level of the block being deallocated.
+  b. It calls `state.merge_or_push(level, block_address)`.
+  c. If we get nullptr, then the buddy was not free, and the block was pushed to the free list. State is updated accordingly and the deallocation process is complete.
+  d. If we get a block address, then the buddy was also free and we just got it (by address). State now doesn't have the buddy as free anymore. We then recurse up to the next level with the merged block.
+
+The rationale for having both `push` and `merge_or_push` is that on allocation, we always know when we are splitting a block, so we can unconditionally push the buddy half to the free list (no buddy check). On deallocation, we want to try merging with the buddy if it's free (we need to check). This allows saving some operations on allocation.
+
+
+
+a cleaner description of the algorithm.
+note: state bit indicates whether the block and its buddy are split (different states) or not (same states, either both allocated or both free). state bit is shared by both blocks.
+on allocation:
+- determine appropriate level from request
+- get a free block from the freelist for this level
+- if we got a block, toggle state bit (if exists) and return the block
+- else, we get a block from the next higher level freelist
+- if that block has state bit, toggle it
+- split the block in half, push one half into the appropriate freelist, and toggle its state bit; return the other half.
+
+```cpp
+// allocation pseudocode 1:
+// ---------------------------
+
+Block allocate(size, alignment)
+{
+    auto level = determine_level(size, alignment);
+    if (!freelists[level].empty())
+    {
+        // get a block, toggle state bit
+        auto block = freelists[level].pop();
+        toggle_state_bit(block);
+        return block;
+    }
+    else
+    {
+        if (!freelists[level+1].empty())
+        {
+            // get a block, split it
+            auto block = freelists[level+1].pop();
+            toggle_state_bit(block);
+            auto [sub_block, sub_block_buddy] = split_block(block);
+            freelists[level].push(sub_block_buddy);
+            toggle_state_bit(sub_block);
+            return sub_block;
+        }
+        else
+        {
+            // ... the same pattern for all levels
+        }
+    }
+}
+```
+
+
+```cpp
+// allocation pseudocode 2:
+// ---------------------------
+
+Block get_split_block(level)
+{
+    auto block = get_block(level);
+    toggle_state_bit(block);
+    auto [sub_block, sub_block_buddy] = split_block(block);
+    freelists[level-1].push(sub_block_buddy);
+    // sub block is not yet allocated or anything, just not in the freelist
+    // this means that state for the sub block pair is still untouched (meaning they are both set as free)
+    return sub_block;
+}
+
+Block get_block(level)
+{
+    // this code may belong inside `get_split_block`
+    if (!freelists[level].empty()) return freelists[level].pop();
+    else return get_split_block(level+1);
+}
+
+Block allocate(size, alignment)
+{
+    auto level = determine_level(size, alignment);
+    if (!freelists[level].empty())
+    {
+        // get a block, toggle state bit
+        auto block = freelists[level].pop();
+        toggle_state_bit(block);
+        return block;
+    }
+    else
+    {
+        auto block = get_split_block(level+1);
+        toggle_state_bit(block);
+        return block;
+    }
+}
+```
+
+
+```cpp
+// allocation pseudocode 3:
+// ---------------------------
+
+// note: we changed the level semantics (off by one)
+Block get_split_block(level)
+{
+    auto large_block = get_block(level+1);
+    toggle_state_bit(large_block);
+    auto [block, buddy] = split_block(large_block);
+    freelists[level].push(buddy);
+    return block;
+}
+
+Block get_block(level)
+{
+    if (!freelists[level].empty()) return freelists[level].pop();
+    else return get_split_block(level);
+}
+
+Block allocate(size, alignment)
+{
+    auto level = determine_level(size, alignment);
+    auto block = get_block(level);
+    toggle_state_bit(block);
+    return block;
+}
+```
+
+this last pseudocode looks clean, but we need to group freelist and state bit operations for the same block, for performance.
+
+it seems that we toggle 1 bit per level accessed
+we also get one block per level (not counting the buddy which is pushed back into the freelist)
+
+it seems that `toggle_state_bit()` is always called right after `get_block()`
+maybe this means that we should toggle the bit inside `get_block()`.
+
+
+```cpp
+// allocation pseudocode 4:
+// ---------------------------
+
+Block get_split_block(level)
+{
+    auto large_block = get_block(level+1);
+    auto [block, buddy] = split_block(large_block);
+    freelists[level].push(buddy);
+    return block;
+}
+
+Block get_block(level)
+{
+    Block block;
+    if (!freelists[level].empty()) block = freelists[level].pop();
+    else block = get_split_block(level);
+    toggle_state_bit(block);
+    return block;
+}
+
+Block allocate(size, alignment)
+{
+    auto level = determine_level(size, alignment);
+    auto block = get_block(level);
+    return block;
+}
+```
+
+we can see that we always toggle state either after a freelist `pop()`, or after `get_split_block()`
+we need to correlate freelist and state bit operations, so we need to trace back that `get_split_block()` function for the other half of the correlation.
+since `get_block` already contains both the freelist `pop()` and the bit toggle (at least on one of its execution paths), for the purpose of this analysis step, we can assume it is always balanced.
+so, let's trace `get_split_block()`:
+```cpp
+    large_block = get_block(level+1); // balanced
+    auto [block, buddy] = split_block(large_block); // pure address and size calculation
+    freelists[level].push(buddy); // only instruction left; we can assume unbalanced
+    return block;
+// <after return, on `get_block()`>
+    toggle_state_bit(block); // balances with the previous freelist `push()`
+```
+this leads us to conclude that all freelist operations (either `push()` or `pop()`) are paired with a corresponding bit toggle, at least during allocation.
+
+
+```cpp
+// allocation pseudocode 5:
+// ---------------------------
+
+Block pop_freelist(level)
+{
+    auto block = freelist[level].pop();
+    toggle_state_bit(block);
+    return block;
+}
+
+void push_freelist(level, block)
+{
+    toggle_state_bit(block);
+    freelist[level].push(block);
+}
+
+Block get_split_block(level)
+{
+    auto large_block = get_block(level+1);
+    auto [block, buddy] = split_block(large_block);
+    push_freelist(level, buddy);
+    return block;
+}
+
+Block get_block(level)
+{
+    if (!freelists[level].empty()) return pop_freelist(level);
+    else return get_split_block(level);
+}
+
+Block allocate(size, alignment)
+{
+    auto level = determine_level(size, alignment);
+    auto block = get_block(level);
+    return block;
+}
+```
+
+this seems better.
+now freelist and state bit operations for the same block are grouped together.
+this means that we can define an interface based on this pseudocode which allows for efficient (single-lookup) access to both states for the same block.
+we can now take advantage of the possible grouping of both states in-memory.
+
+in retrospective, toggling the state bit on any freelist operation seems like the natural thing to do, but we needed to do the development to be sure.
+
+the next step is to do the same thing for deallocation and verify if the pattern still holds.
+
+but maybe we aren't finished here.
+we have recursion distributed between `get_block()` and `get_split_block()`, which may not be easy to spot.
+also, `get_split_block()` is only ever called from `get_block()`.
+maybe this means that we should combine both functions.
+
+
+```cpp
+// allocation pseudocode 6:
+// ---------------------------
+
+Block pop_freelist(level)
+{
+    auto block = freelist[level].pop();
+    toggle_state_bit(block);
+    return block;
+}
+
+void push_freelist(level, block)
+{
+    toggle_state_bit(block);
+    freelist[level].push(block);
+}
+
+Block get_block(level)
+{
+    if (!freelists[level].empty())
+    {
+        return pop_freelist(level);
+    }
+    else
+    {
+        auto large_block = get_block(level+1);
+        auto [block, buddy] = split_block(large_block);
+        push_freelist(level, buddy);
+        return block;
+    }
+}
+
+Block allocate(size, alignment)
+{
+    auto level = determine_level(size, alignment);
+    return get_block(level);
+}
+```
+
+we can clearly see here that we either push or pop the freelist on each level we touch.
+
+the `get_block()` function is pretty much all that is in the `allocate()` function, besides the level estimation code. `get_block()` is actually performing a complete allocation, given the target level. we can transform this to overloads of the same function to better represent this.
+
+we should also introduce a distinction between functions that belong to the allocator, and functions that belong to the state.
+
+
+```cpp
+// allocation pseudocode 7:
+// ---------------------------
+
+// state functions
+
+Block pop_freelist(level)
+{
+    auto block = freelist[level].pop();
+    toggle_state_bit(block);
+    return block;
+}
+
+void push_freelist(level, block)
+{
+    toggle_state_bit(block);
+    freelist[level].push(block);
+}
+
+// allocator functions
+
+Block allocate(level)
+{
+    if (!freelists[level].empty())
+    {
+        return pop_freelist(level);
+    }
+    else
+    {
+        auto large_block = get_block(level+1);
+        auto [block, buddy] = split_block(large_block);
+        push_freelist(level, buddy);
+        return block;
+    }
+}
+
+Block allocate(size, alignment)
+{
+    auto level = determine_level(size, alignment);
+    return allocate(level);
+}
+```
+
+we have pretty much sketched the high level algorithmic details to near perfection.
+we should now focus on the details which arise when we traduce this simplified pseudocode to actual C++ implementation code.
+one such detail that comes to mind is the exact signature of each function.
+for example, the `push_freelist(level, block)` function is actually redundant in arguments, because the level can be calculated from the block.
+calculating the level from the block is a simple operation, but not completely free, and we need to calculate the level before the freelist operation anyways, so the solution may be to avoid passing the whole `block` argument. we actually don't need the size of the block, just the base address, which is actually on which current freelist implementations work - they take `std::byte *` addresses instead of blocks.
