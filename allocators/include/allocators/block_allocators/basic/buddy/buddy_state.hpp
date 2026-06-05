@@ -10,28 +10,64 @@ namespace dd99::memory::block_allocator::buddy_namespace
 
     // the buddy state implements the underlying data structure access and manipulation functions used by the buddy allocator. this separation allows for different strategies for managing the buddy system's internal state, such as using a bitmap and linked list, a fused structure for both, or other data structure architectures, without reimplementing the same core logic.
     template <class T>
-    concept State_Concept = requires (T & t, std::size_t level, std::byte * block_address)
+    concept State_Concept = requires { typename T::level_type; } // TODO: consider adding requirements on `level_type`, such as maybe being an unsigned integer type.
+    && requires (T & t, T::level_type level, std::byte * block_base)
     {
-        { t.push(level, block_address) }            -> std::same_as<void>; // called on allocation when a block is split. unconditionally adds the unused buddy half to the free list and updates state.
-        { t.merge_or_push(level, block_address) }   -> std::same_as<std::byte *>; // called on deallocation. if the buddy is also free, take it and returning its address. if the buddy is not free, pushes the block, updates state, and returns nullptr.
-        { t.pop(level) }                            -> std::same_as<std::byte *>; // called on allocation. take a block from this level. returns nullptr if level is empty.
-        { t.has_free_blocks(level) }                -> std::convertible_to<bool>; // checks if there are any free blocks available at the specified level.
-        { t.reset() }                               -> std::same_as<void>; // resets the data structures, which means that freelists are emptied and must be reconstructed.
+        { t.push(level, block_base) }           -> std::same_as<void>; // called on allocation when a block is split. adds block to freelist and toggles state bit.
+        { t.pop(level) }                        -> std::same_as<std::byte *>; // called on allocation. take block from freelist and toggle state bit. returns nullptr if level is empty.
+        { t.merge_or_push(level, block_base) }  -> std::same_as<std::byte *>; // called on deallocation. toggle state bit. if the buddy is free, take it from freelist and return joint block address. if the buddy is not free, add block to freelist and returns nullptr.
+
+        // { t.has_free_blocks(level) }            -> std::convertible_to<bool>; // checks if there are any free blocks available at the specified level. // not used by the allocator. checks are performed by calling `pop` directly.
+        { t.reset() }                           -> std::same_as<void>; // resets the data structures.
     };
 
-    // The algorithm for using the state interface on the buddy allocator is as follows:
-    // 1. On allocation:
-    //    a. The buddy allocator determines the appropriate level for the requested block size.
-    //    b. It calls `state.pop(level)`.
-    //    c. If the level is empty, it recurses up in levels trying to split a larger block. Else just return the block.
-    //    d. The recursion uses `state.pop(level)` to find a block, until one is found or the levels are exhausted.
-    //    e. When recursing back, call `state.push(level, block_address)` to push the unused block halves back to the freelist and update state.
-    // 2. On deallocation:
-    //   a. The buddy allocator determines the level of the block being deallocated.
-    //   b. It calls `state.merge_or_push(level, block_address)`.
-    //   c. If we get nullptr, then the buddy was not free, and the block was pushed to the free list. State is updated accordingly and the deallocation process is complete.
-    //   d. If we get a block address, then the buddy was also free and we just got it (by address). State now doesn't have the buddy as free anymore. We then recurse up to the next level with the merged block.
 
-    // The rationale for having both `push` and `merge_or_push` is that on allocation, we always know when we are splitting a block, so we can unconditionally push the buddy half to the free list (no buddy check). On deallocation, we want to try merging with the buddy if it's free (we need to check). This allows saving some operations on allocation.
+    // allocation pseudocode:
+    // std::byte * allocate_impl(level)
+    // {
+    //     if (level > max_level) return nullptr; // condition for terminating recursion
+    //     if (auto block_base = m_state.pop(level)) return block_base; // try direct allocation from level
+    //     auto block_base = allocate_impl(level+1); // recursively get larger block
+    //     if (!block_base) return nullptr; // allocation failed
+    //     auto half_size = layout_type::get_block_size(level); // half the size of the larger block
+    //     auto buddy_base = block_base + half_size; // calculate address of buddy block
+    //     m_state.push(level, buddy_base); // push buddy back to freelist. this also updates state to reflect `block` as allocated, because `block` and `buddy` share the same state bit.
+    //     return block_base;
+    // }
+    // 
+    // Block allocate(level) { return Block{.base = allocate_impl(level), .size = layout_type::get_block_size(level)}; }
+
+    // deallocation pseudocode:
+    // void deallocate_impl(level, block_base)
+    // {
+    //     if (larger_block_base = m_state.merge_or_push(level, block_base))
+    //         return deallocate_impl(level+1, larger_block_base);
+    // }
+    // 
+    // void deallocate(block) { return deallocate_impl(layout_type::get_block_level(block.size), block.base); }
+
+    // TODO: are we losing performance by separating the recursion into `deallocate_impl` instead of implementing it into the state?
+    // TODO: would it be better to use an iterative approach instead of recursion? maybe something like:
+    // ```cpp
+    // while (block_base = state.merge_or_push(level, block_base)) {
+    //     ++level;
+    // }
+    // ```
+    // perhaps the compiler will optimize because the recursion is on the return statement.
+    // such optimization prevents consuming stack as recursion deepens, achieving equivalence to iteration.
+
+    // TODO: we could gain a tiny bit of performance if we avoid redundant conversions between addressing forms for blocks.
+    // addressing forms are:
+    // - {base, size} : level is calculated from size, index is calculated from base and level
+    // - {base, level} : size is calculated from level, index is calculated from base and level
+    // - {index, level} : size is calculated from level, base is calculated from level and index.
+    // the first one {base, size} is the normal block representation in the whole library
+    // the third one {level, index} is the internal representation of buddy block addresses
+    // the second one {level, base} is an intermediate compromise used in the state interface.
+    // there is also one extra representation {index, size} which could theoretically work, but isn't used anywhere.
+    // *** currently our interface always uses the {base, level} representation even when it may not be optimal for all implementations.
+    // maybe we could let the specific implementation determine the addressing scheme and conversions to be used?
+    // we could add some member types to the interface. then we would either rely on implicit/explicit casts or add conversion functions to the interface.
+
 
 }
