@@ -40,12 +40,11 @@ namespace dd99::memory::block_allocator::buddy_namespace
     // 
     // `Managed_Memory_Block_Type` is the type used for the block of memory to be managed by the allocator.
     // the user can pass a normal block, an auto-freeing block, or a custom type
-    template <
-        class Block_Address_Type,
-        Block_Address_Type::level_type Levels,
-        std::size_t Block_Size,
-        class Managed_Memory_Block_Type
-    >
+    template <class                             Block_Address_Type,
+              Block_Address_Type::level_type    Levels,
+              std::size_t                       Block_Size,
+              std::size_t                       Last_Level_Alignment = Block_Size << (Levels-1),
+              class                             Managed_Memory_Block_Type = Block>
     struct buddy_layout
     {
         static_assert(Layout_Concept<buddy_layout>);
@@ -58,10 +57,29 @@ namespace dd99::memory::block_allocator::buddy_namespace
         static constexpr auto levels = Levels;
         static constexpr auto last_level = levels - 1;
         static constexpr auto block_size = Block_Size;
+        static constexpr auto last_level_alignment = Last_Level_Alignment;
 
+        static_assert(last_level_alignment <= (block_size << last_level),
+            "alignment larger than block size is impossible");
 
         // *** auxiliary functions ***
         // ###########################
+
+        static constexpr
+        std::size_t
+        get_level_alignment(level_type level)
+        {
+            return std::max(1, last_level_alignment >> (last_level - level));
+        }
+
+        static constexpr
+        level_type
+        get_alignment_level(std::size_t alignment)
+        {
+            // TODO: assert(alignment <= last_level_alignment);
+            if (alignment <= 1) return 0;
+            else return levels - std::bit_width(last_level_alignment / alignment);
+        }
 
         static constexpr
         std::size_t
