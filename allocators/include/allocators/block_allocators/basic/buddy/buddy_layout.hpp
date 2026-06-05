@@ -218,8 +218,8 @@ namespace dd99::memory::block_allocator::buddy_namespace
         // ##########################
 
         constexpr
-        buddy_layout(managed_memory_block_type && mem_blk)
-            : m_memory{std::forward<managed_memory_block_type>(mem_blk)}
+        buddy_layout(managed_memory_block_type mem_blk)
+            : m_memory{std::move(mem_blk)}
             , m_block_count{m_memory.size / block_size}
         {
             // TODO: assert memory base alignment
