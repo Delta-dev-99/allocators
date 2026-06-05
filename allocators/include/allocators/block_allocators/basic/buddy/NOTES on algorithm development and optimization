@@ -313,8 +313,8 @@ Block allocate(level)
     }
     else
     {
-        auto large_block = get_block(level+1);
-        auto [block, buddy] = split_block(large_block);
+        auto large_block = allocate(level+1);
+        auto [block, buddy] = split_block(large_block); // pure address calculation
         push_freelist(level, buddy);
         return block;
     }
