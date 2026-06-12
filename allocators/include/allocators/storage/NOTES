@@ -1,0 +1,29 @@
+The storage policy system allows to separate the allocator logic from the concern of getting the memory for the bookkeeping data structures.
+This system is composed of a few elements:
+- storage policy object
+- generic storage policy API (concept)
+- allocator_storage_traits customization point
+- storage object
+
+So, there is a generic API for storage policy types, which is supported by the default allocator_storage_traits behavior (specialization for policies that conform to the API concept).
+Other non-generic-API storage policies can be supported by specializing the customization point for the specific allocator type (which includes the policy type).
+The allocator_storage_traits customization point is then used to transform the storage policy object into a storage object. This storage object creation is generally fallible (depending on the policy, it uses `std::expected`-wrapped return type, using the infallible specialization when the operation is not really fallible).
+The allocator keeps the storage object as a member. The storage object is passed (moved/forwarded) to the allocator on construction. The internal member of the allocator of this same type which is initialized by forwarding the passed argument.
+Storage objects are RAII objects which automatically release resources on destruction, encapsulating the RAII part of allocators. Storage objects also conform to a universal API which is shared by all allocator types that support storage policies. This means that even though the creation and setup of the storage object is allocator-specific (inside the specialized customization point), the interface is compatible with any other allocator, which keeps the code familiar.
+
+
+About the factory and allowed deductions:
+All allocators require an explicit storage policy parameter. There is no default for inline storage. If an allocator template is instantiated without specifying the storage policy type, then a factory type is obtained, which allows creating an allocator by deducing the storage policy from the arguments (this is just syntax sugar).
+
+
+About the buddy allocator:
+Currently, the buddy allocator separates most of its logic into a base class, and then has different shell classes for the "basic" and "borrowing" versions. That separation ended-up being, in spirit, the same thing we are trying to achieve here: support multiple storage patterns without touching the allocator logic. But the buddy separation is not well-designed, and even uses virtual functions to carry logic flow between the base and shell classes, which harms performance. The current storage policy design will replace the buddy allocator separation, and result in a single, clean buddy allocator class without a base and without virtual functions or convoluted logic paths where concerns are not cleanly separated.
+
+
+About the API for storage objects:
+This is a preliminar design, but the API may look like the following:
+```cpp
+constexpr memory::block memory() const noexcept; // managed memory is assumed to start at the base of this memory block
+constexpr memory::block aux_memory() const noexcept; // bookkeeping data structures are stored starting at the base of this memory block
+constexpr std::size_t   block_count() const noexcept; // the block count is calculated during storage resolution. having this here allows querying the value without recalculating it (saves an integer division, which is not much; maybe this member should be removed?).
+```
