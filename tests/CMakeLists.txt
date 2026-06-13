@@ -33,3 +33,15 @@ target_link_libraries(any_block_allocator_test allocators)
 add_executable(test_assert test_assert.cpp)
 target_link_libraries(test_assert allocators)
 target_compile_features(test_assert PRIVATE cxx_std_26)
+
+add_executable(buddy_allocator_test_2 buddy_allocator_test_2.cpp)
+target_link_libraries(buddy_allocator_test_2 allocators)
+target_compile_features(buddy_allocator_test_2 PRIVATE cxx_std_26)
+
+add_executable(buddy_internal_state_test buddy_internal_state_test.cpp)
+target_link_libraries(buddy_internal_state_test allocators)
+target_compile_features(buddy_internal_state_test PRIVATE cxx_std_26)
+
+# add_executable(buddy_internal_state_test_2 buddy_internal_state_test_2.cpp)
+# target_link_libraries(buddy_internal_state_test_2 allocators)
+# target_compile_features(buddy_internal_state_test_2 PRIVATE cxx_std_26)
