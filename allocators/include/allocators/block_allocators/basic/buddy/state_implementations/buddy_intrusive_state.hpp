@@ -156,6 +156,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
                 return joint_blk_address.index + layout.get_cumulative_joint_block_count(joint_blk_address.level - 1);
             }
 
+            // returns new state
             constexpr
             bool
             toggle_joint_block_state(block_address_type joint_blk_address, const layout_type & layout)
