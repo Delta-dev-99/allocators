@@ -162,8 +162,10 @@ std::uint64_t reference_Nmax(std::uint64_t memory_size,
 // ----------------------------------------------------------------------
 
 struct TestCase {
-    std::uint64_t M, S, B;
-    unsigned L;
+    std::uint64_t M; // memory size
+    std::uint64_t S; // block size
+    std::uint64_t B; // bitmap block size
+    unsigned L;      // levels
 };
 
 // Thread worker: runs a slice of random tests, compares, logs failures.
