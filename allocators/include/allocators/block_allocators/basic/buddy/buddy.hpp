@@ -103,6 +103,9 @@ namespace dd99::memory::block_allocator
         {
             if (!owns(blk)) return;
 
+            // NOTE: assumes blk.size corresponds exactly to a level
+            // this is true unless the user modified the block manually
+            // if the assumption doesn't hold, the calculated level is incorrect.
             auto level = layout_type::get_block_level(blk.size);
             auto block_base = blk.base;
             while((block_base = m_state.merge_or_push(level, block_base)))
