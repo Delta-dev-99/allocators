@@ -4,9 +4,9 @@
 #include <allocators/block_allocators/composite/quantizer.hpp>
 #include <allocators/block_allocators/composite/fallback.hpp>
 #include <allocators/block_allocators/composite/segregator.hpp>
-#include <allocators/block_allocators/basic/slicing.hpp>
-#include <allocators/block_allocators/basic/pool.hpp>
-#include <allocators/block_allocators/basic/stack.hpp>
+#include <allocators/block_allocators/basic/slicing/slicing.hpp>
+#include <allocators/block_allocators/basic/pool/pool.hpp>
+#include <allocators/block_allocators/basic/stack/stack.hpp>
 #include <allocators/block_allocators/basic/bitmap/bitmap.hpp>
 #include <allocators/block_allocators/basic/buddy/buddy.hpp>
 #include <allocators/block_allocators/basic/buddy/state_implementations/buddy_intrusive_state.hpp>

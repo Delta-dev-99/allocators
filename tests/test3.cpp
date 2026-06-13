@@ -3,7 +3,7 @@
 #include <allocators/pointer_allocators/checked.hpp>
 #include <allocators/block_allocators/metrics/stats.hpp>
 #include <allocators/block_allocators/composite/fallback.hpp>
-#include <allocators/block_allocators/basic/slicing.hpp>
+#include <allocators/block_allocators/basic/slicing/slicing.hpp>
 #include <allocators/structures/blocks/self_contained_block.hpp>
 
 
