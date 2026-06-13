@@ -13,7 +13,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
 
     // A type that describes the layout of the managed memory
     // does not know or care about bookkeeping data structures
-    // TODO: this interface needs to be updated. some functions are missing.
+    // TODO: ensure the interface is now complete
     template <class T>
     concept Layout_Concept = requires
     {
@@ -22,15 +22,28 @@ namespace dd99::memory::block_allocator::buddy_namespace
     {
         typename T::level_type;
         typename T::index_type;
+        typename T::block_address_type;
+
+        { T::levels } -> std::same_as<const typename T::level_type &>;
+        { T::block_size } -> std::same_as<const std::size_t &>;
+
 
         { T::get_block_address(memory_base, blk) } -> std::same_as<typename T::block_address_type>;
         { T::get_block(memory_base, blk_address) } -> std::same_as<block>;
+
+        { T::get_joint_block_address(blk_address) } -> std::same_as<typename T::block_address_type>;
+        { T::get_buddy_block_address(blk_address) } -> std::same_as<typename T::block_address_type>;
 
         { T::get_block_level(blk.size) } -> std::same_as<typename T::level_type>;
         { T::get_level_block_size(blk_address.level) } -> std::same_as<typename std::size_t>;
 
         { layout.get_block_address(blk) } -> std::same_as<typename T::block_address_type>;
+        { layout.get_block_address(blk.base, blk_address.level) } -> std::same_as<typename T::block_address_type>;
         { layout.get_block(blk_address) } -> std::same_as<block>;
+
+        { layout.get_total_joint_block_count() } -> std::same_as<std::size_t>;
+        { layout.get_cumulative_joint_block_count(blk_address.level) } -> std::same_as<std::size_t>;
+        { layout.get_level_block_count(blk_address.level) } -> std::same_as<typename T::index_type>;
         
         { layout.block_has_buddy(blk_address) } -> std::same_as<bool>;
         { layout.is_index_valid(blk_address) } -> std::same_as<bool>;
