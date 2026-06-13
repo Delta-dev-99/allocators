@@ -1,6 +1,6 @@
 #pragma once
 
-#include <allocators/structures/memory_block.hpp>
+#include <allocators/structures/blocks/memory_block.hpp>
 
 namespace dd99::memory
 {
@@ -12,13 +12,13 @@ namespace dd99::memory
         std::size_t size = 0;
 
         constexpr new_result() noexcept = default;
-        constexpr explicit new_result(const dd99::memory::Block block) noexcept
+        constexpr explicit new_result(const dd99::memory::block block) noexcept
             : pointer(reinterpret_cast<T *>(block.base))
             , size(block.size)
         { }
 
         // conversion to memory block
-        operator dd99::memory::Block()
+        operator dd99::memory::block()
         { return {reinterpret_cast<std::byte *>(pointer), size}; }
 
         // decay to pointer
