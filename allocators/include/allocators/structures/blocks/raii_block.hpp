@@ -10,7 +10,7 @@ namespace dd99::memory
     // It deallocates itself on destruction.
     // Same semantics as a unique_ptr.
     // Does not allow copy, only move.
-    template <class Deallocator>
+    template <class Deallocator = void(*)(block)>
     struct raii_block : private block
     {
         // offer the same block API
