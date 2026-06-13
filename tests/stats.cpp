@@ -7,11 +7,9 @@
 #include <allocators/block_allocators/basic/slicing.hpp>
 #include <allocators/block_allocators/basic/pool.hpp>
 #include <allocators/block_allocators/basic/stack.hpp>
-#include <allocators/block_allocators/basic/bitmap.hpp>
+#include <allocators/block_allocators/basic/bitmap/bitmap.hpp>
 #include <allocators/block_allocators/basic/buddy/buddy.hpp>
-
-#include <allocators/block_allocators/borrowing/bitmap.hpp>
-#include <allocators/block_allocators/borrowing/buddy.hpp>
+#include <allocators/block_allocators/basic/buddy/state_implementations/buddy_intrusive_state.hpp>
 
 #include <allocators/structures/blocks/self_contained_block.hpp>
 
@@ -94,6 +92,7 @@ void stat_allocator(auto & allocator, std::size_t iterations, Distribution alloc
               << "\n";
 }
 
+
 int main()
 {
     std::cout.precision(4);
@@ -104,17 +103,28 @@ int main()
               << std::setw(10) << "allocated"
               << "\n";
 
-    using aux_allocator_type = alloc::Stack;
-    using allocator_type = alloc::borrowing::Buddy<64, 11, aux_allocator_type>;
+    using buddy_blk_address_type = alloc::buddy_namespace::buddy_block_address<>;
+    using buddy_layout_type = alloc::buddy_namespace::buddy_standard_layout<buddy_blk_address_type, 64, 11>;
+    using buddy_state_traits = alloc::buddy_namespace::buddy_intrusive_state_traits<buddy_layout_type>;
+    // using buddy_state_type = alloc::buddy_namespace::buddy_intrusive_state<buddy_layout_type, mem::>;
+    // using allocator_type = alloc::buddy<buddy_state_type>;
 
     constexpr std::size_t mem_size = 1 << 20;
-    constexpr auto aux_mem_size = allocator_type::calculate_aux_mem_size(mem_size);
+    mem::self_contained_block<mem_size> memory_ac;
+    auto memory = memory_ac.get_block();
 
-    mem::Self_Contained_Block<mem_size> memory;
-    mem::Self_Contained_Block<aux_mem_size> aux_memory;
+    buddy_layout_type layout{memory};
 
-    aux_allocator_type aux_allocator(aux_memory);
-    allocator_type allocator(memory, std::move(aux_allocator));
+    auto aux_mem_size = buddy_state_traits::get_state_size(layout);
+    auto aux_mem_alignment = buddy_state_traits::get_state_alignment();
+
+    auto aux_memory_ptr = std::make_unique<std::byte[]>(aux_mem_size);
+    // assume alignment is enough
+    // TODO: ensure alignment is enough
+    mem::block aux_memory{aux_memory_ptr.get(), aux_mem_size};
+
+    auto buddy_state = buddy_state_traits::make_state(std::move(layout), aux_memory);
+    alloc::buddy allocator{std::move(buddy_state)};
 
     for (int i = 0; i < 200; i++)
     {

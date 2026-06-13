@@ -15,7 +15,7 @@ int main()
     // namespace blk_alloc = mem::block_allocator;
     // namespace ptr_alloc = mem::pointer_allocator;
 
-    // mem::Self_Contained_Block<512> stack_block, stack_ptr_block;
+    // mem::self_contained_block<512> stack_block, stack_ptr_block;
     // auto my_block_allocator = blk_alloc::Stack(stack_block);
     // auto my_ptr_allocator = ptr_alloc::Basic<blk_alloc::Stack>(stack_ptr_block);
 

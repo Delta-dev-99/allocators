@@ -33,25 +33,26 @@ void print_mem(dd99::memory::block mem)
 
 int main()
 {
-    auto memories = new dd99::memory::Self_Contained_Block<1024>[3];
+    auto memories = new dd99::memory::self_contained_block<1024>[3];
     // dd99::memory::Heap_Block<1024> memories[3];
 
-    dd99::memory::block_allocator::utility::Switch my_switch(mem_req_switch_func,
-        dd99::memory::block_allocator::Slicing{memories[0]},
-        dd99::memory::block_allocator::Stack{memories[1]},
-        dd99::memory::block_allocator::Slicing{memories[2]}
-    );
+    // TODO: enable following comments
+    // dd99::memory::block_allocator::utility::Switch my_switch(mem_req_switch_func,
+    //     dd99::memory::block_allocator::Slicing{memories[0]},
+    //     dd99::memory::block_allocator::Stack{memories[1]},
+    //     dd99::memory::block_allocator::Slicing{memories[2]}
+    // );
 
-    auto x = my_switch.allocate(Memory_Request{.priority = 0, .size = 1024});
-    print_mem(x);
+    // auto x = my_switch.allocate(Memory_Request{.priority = 0, .size = 1024});
+    // print_mem(x);
 
-    auto y = my_switch.allocate(Memory_Request{.priority = 0, .size = 1024});
-    print_mem(y);
+    // auto y = my_switch.allocate(Memory_Request{.priority = 0, .size = 1024});
+    // print_mem(y);
 
-    my_switch.deallocate(x);
-    auto z = my_switch.allocate(Memory_Request{.priority = 0, .size = 1024});
-    print_mem(z);
+    // my_switch.deallocate(x);
+    // auto z = my_switch.allocate(Memory_Request{.priority = 0, .size = 1024});
+    // print_mem(z);
     
-    my_switch.deallocate(y);
-    my_switch.deallocate(z);
+    // my_switch.deallocate(y);
+    // my_switch.deallocate(z);
 }

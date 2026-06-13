@@ -12,8 +12,10 @@ void test1()
     namespace block_alloc = dd99::memory::block_allocator;
     namespace ptr_alloc = dd99::memory::pointer_allocator;
 
-    dd99::memory::Self_Contained_Block<256> my_memory;
-    dd99::memory::Self_Contained_Block<1024> my_memory2;
+    dd99::memory::self_contained_block<256> my_memory_ac;
+    auto my_memory = my_memory_ac.get_block();
+    dd99::memory::self_contained_block<1024> my_memory2_ac;
+    auto my_memory2 = my_memory2_ac.get_block();
 
     
 
