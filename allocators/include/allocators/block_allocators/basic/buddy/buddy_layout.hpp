@@ -4,6 +4,7 @@
 #include <allocators/block_allocators/basic/buddy/buddy_block_address.hpp>
 #include <array>
 #include <bit>
+#include <concepts>
 
 
 
@@ -62,6 +63,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
         static constexpr auto last_level = levels - 1;
         static constexpr auto block_size = Block_Size;
         static constexpr auto last_level_alignment = Last_Level_Alignment;
+        static constexpr auto first_level_alignment = last_level_alignment >> (levels - 1);
 
         static_assert(last_level_alignment <= (block_size << last_level),
             "alignment larger than block size is impossible");
@@ -81,7 +83,8 @@ namespace dd99::memory::block_allocator::buddy_namespace
         get_alignment_level(std::size_t alignment)
         {
             // TODO: assert(alignment <= last_level_alignment);
-            if (alignment <= 1) return 0;
+            // TODO: check whether this fails for huge alignments
+            if (alignment <= first_level_alignment) return 0;
             else return levels - std::bit_width(last_level_alignment / alignment);
         }
 
