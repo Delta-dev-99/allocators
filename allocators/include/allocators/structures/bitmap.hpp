@@ -5,6 +5,7 @@
 #include <limits>
 #include <cstddef>
 #include <type_traits>
+#include <bit>
 
 
 namespace dd99::memory::structure
