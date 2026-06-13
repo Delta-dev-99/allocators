@@ -15,8 +15,6 @@ namespace dd99::memory::pointer_allocator
     template <class Sub_Alloc_T>
     class Pointer_Checked
     {
-        static_assert(Pointer_Allocator<Pointer_Checked>);
-
     public:
         Pointer_Checked(Sub_Alloc_T&& sub_allocator)
             : m_sub_alloc(std::move(sub_allocator))
