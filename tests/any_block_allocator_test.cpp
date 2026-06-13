@@ -2,6 +2,7 @@
 #include <allocators/block_allocators/any_block_allocator.hpp>
 #include <allocators/block_allocators/basic/buddy/buddy.hpp>
 #include <allocators/block_allocators/basic/buddy/state_implementations/buddy_intrusive_state.hpp>
+#include <allocators/structures/blocks/raii_block.hpp>
 // #include <allocators/block_allocators/basic/pool.hpp> // TODO: enable
 // #include <allocators/block_allocators/basic/stack.hpp> // TODO: enable
 #include <cstdio>
@@ -25,6 +26,8 @@ static unsigned passed = 0, failed = 0;
 #define CHECK(cond, msg) do { if (!(cond)) { FAIL(msg); return; } } while(0)
 
 
+// create a buddy allocator using intrusive state implementation for managing the given block.
+// as this is an example, state is stored in dynamically allocated memory (heap)
 template<std::size_t block_size, std::size_t levels>
 constexpr
 auto
@@ -37,9 +40,10 @@ make_buddy(block blk)
 
     layout_type layout{blk};
     auto state_size = traits_type::get_state_size(layout);
-    auto state_buffer = std::make_unique<std::byte[]>(state_size);
-    block state_block{state_buffer.get(), state_size};
-    auto state = traits_type::make_state(std::move(layout), state_block);
+    auto state_buffer_ptr = new std::byte[state_size];
+    raii_block state_block{block{.base = state_buffer_ptr, .size = state_size}, [](block blk){ delete [] blk.base; }};
+
+    auto state = traits_type::make_state(std::move(layout), std::move(state_block));
     return buddy{std::move(state)};
 }
 
@@ -75,7 +79,7 @@ void test_deallocate_all()
 {
     TEST("deallocate_all");
     // Create a buddy allocator on the buffer
-    auto alloc = make_buddy<64, 10>(block{buffer, sizeof(buffer)});
+    auto alloc = make_buddy<64, 10>(block{buffer, 4096});
     any_block_allocator_ref ref = alloc;
 
     // Allocate several blocks
@@ -96,7 +100,7 @@ void test_owns_semantics()
 {
     TEST("owns checks");
     // Create a buddy allocator on the buffer
-    auto alloc = make_buddy<64, 5>(block{buffer, sizeof(buffer)});
+    auto alloc = make_buddy<64, 5>(block{buffer, 64});
     any_block_allocator_ref ref = alloc;
 
     // A random stack pointer must not be owned
