@@ -177,7 +177,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
         buddy_intrusive_state(layout_type && layout, state_memory_block_type state_memory)
             : m_layout{std::forward<layout_type>(layout)}
             , m_state_memory{std::move(state_memory)}
-            , m_state_tracker{bitmap_type{m_layout.get_total_joint_block_count(), m_state_memory.base}}
+            , m_state_tracker{bitmap_type{m_layout.get_total_joint_block_count(), m_state_memory.get_base()}}
         {
             // TODO: assert state memory is enough
             // assert(m_state_memory.size >= bitmap_type::calculate_block_count(m_layout.get_total_joint_block_count()) * bitmap_type::Block_Size)
