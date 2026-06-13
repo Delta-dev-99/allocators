@@ -43,6 +43,7 @@ namespace dd99::memory::structure
             , m_size(Bitmap::calculate_block_count(bit_count))
         {
             // TODO: assert alignment
+            reset();
         }
 
     public:
@@ -141,7 +142,7 @@ namespace dd99::memory::structure
         {
             const auto block_index = index / Block_Bits;
             const auto bit_index = index % Block_Bits;
-            return m_base[block_index] & (Block_T(1) << bit_index);
+            return static_cast<bool>(m_base[block_index] & (Block_T(1) << bit_index));
         }
 
     private:
