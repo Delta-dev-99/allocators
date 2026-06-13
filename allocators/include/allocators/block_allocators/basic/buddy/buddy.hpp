@@ -55,7 +55,9 @@ namespace dd99::memory::block_allocator
         memory::block
         allocate_level(level_type requested_level)
         {
-            return block{.base = allocate_impl(requested_level), .size = layout_type::get_level_block_size(requested_level)};
+            auto base = allocate_impl(requested_level);
+            if (base == nullptr) return {};
+            else return block{.base = allocate_impl(requested_level), .size = layout_type::get_level_block_size(requested_level)};
         }
 
         [[nodiscard]]
