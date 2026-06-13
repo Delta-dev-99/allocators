@@ -8,12 +8,12 @@
 #include <allocators/block_allocators/basic/pool.hpp>
 #include <allocators/block_allocators/basic/stack.hpp>
 #include <allocators/block_allocators/basic/bitmap.hpp>
-#include <allocators/block_allocators/basic/buddy.hpp>
+#include <allocators/block_allocators/basic/buddy/buddy.hpp>
 
 #include <allocators/block_allocators/borrowing/bitmap.hpp>
 #include <allocators/block_allocators/borrowing/buddy.hpp>
 
-#include <allocators/acquire_memory/self_contained_block.hpp>
+#include <allocators/structures/blocks/self_contained_block.hpp>
 
 
 
@@ -44,7 +44,7 @@ void stat_allocator(auto & allocator, std::size_t iterations, Distribution alloc
     auto allocator_with_stats = alloc::metrics::Stats(alloc::metrics::Timing(alloc::composite::Ref(allocator)));
     using alloc_type = decltype(allocator_with_stats);
 
-    std::vector<mem::Block> memory_blocks;
+    std::vector<mem::block> memory_blocks;
 
     // auto rng_eng = get_repeatable_rng_engine();
     std::mt19937_64 rng_eng(std::random_device{}());

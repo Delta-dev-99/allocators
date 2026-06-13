@@ -1,7 +1,7 @@
 #pragma once
 
 #include <allocators/block_allocators/block_allocator.hpp>
-#include <allocators/block_allocators/internal/structures/free_list.hpp>
+#include <allocators/structures/forward_list.hpp>
 #include <allocators/alignment.hpp>
 
 
@@ -25,7 +25,7 @@ namespace dd99::memory::block_allocator
                 std::size_t size;
 
                 // get corresponding memory block
-                memory::Block get_memory_block()
+                memory::block get_memory_block()
                 { return {.base = reinterpret_cast<std::byte *>(this), .size = size}; }
             };
             static constexpr auto Block_Header_Alignment = alignof(Block_Header);
@@ -39,7 +39,7 @@ namespace dd99::memory::block_allocator
 
         public:
             // get a memory slice with at least the specified size
-            memory::Block pop_slice(std::size_t min_size, std::size_t requested_alignment = 1)
+            memory::block pop_slice(std::size_t min_size, std::size_t requested_alignment = 1)
             {
                 // This function searches for a block that satisfies the request and complies with the rules of the allocator.
                 // considering that block headers also have alignment requirements,
@@ -91,7 +91,7 @@ namespace dd99::memory::block_allocator
             }
 
             // sorted by base address
-            void push(const memory::Block& block)
+            void push(const memory::block& block)
             {
                 // insert into list and get pointer to node previous to inserted one
                 // the pointer to the inserted node is do_insert(memory)->next
@@ -130,7 +130,7 @@ namespace dd99::memory::block_allocator
         
         private:
             // returns a pointer to the node before the inserted node
-            Block_Header *do_insert(const memory::Block& memory)
+            Block_Header *do_insert(const memory::block& memory)
             {
                 //
                 // find position and link new node
@@ -196,7 +196,7 @@ namespace dd99::memory::block_allocator
     class Slicing
     {
     public:
-        Slicing(const memory::Block& memory)
+        Slicing(const memory::block& memory)
             : m_memory(memory)
             , m_free_list()
         {
@@ -205,12 +205,12 @@ namespace dd99::memory::block_allocator
 
     public:
         [[nodiscard]]
-        memory::Block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
+        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
             return m_free_list.pop_slice(requested_size);
         }
 
-        void deallocate(const memory::Block &memory)
+        void deallocate(const memory::block &memory)
         {
             if (owns(memory))
                 m_free_list.push(memory);
@@ -227,13 +227,13 @@ namespace dd99::memory::block_allocator
             return m_memory.contains(memory);
         }
 
-        bool owns(const memory::Block& memory) const
+        bool owns(const memory::block& memory) const
         {
             return m_memory.contains(memory);
         }
 
     private:
-        memory::Block m_memory;
+        memory::block m_memory;
         detail::Slicing_Freelist m_free_list;
     };
 

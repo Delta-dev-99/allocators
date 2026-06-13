@@ -1,7 +1,7 @@
 
 #include <allocators/allocators.hpp>
 #include <allocators/block_allocators/utility/switch.hpp>
-#include <allocators/acquire_memory/self_contained_block.hpp>
+#include <allocators/structures/blocks/self_contained_block.hpp>
 #include <iomanip>
 #include <iostream>
 
@@ -24,7 +24,7 @@ std::size_t mem_req_switch_func(Memory_Request mem_req)
 }
 
 
-void print_mem(dd99::memory::Block mem)
+void print_mem(dd99::memory::block mem)
 {
     std::cout << std::setw(20) << std::hex << mem.base << " :   "
               << std::setw(10) << std::dec << mem.size << "\n";

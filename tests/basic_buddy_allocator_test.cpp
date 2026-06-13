@@ -1,5 +1,5 @@
-#include <allocators/block_allocators/basic/buddy.hpp>   // adjust path as needed
-#include <allocators/structures/memory_block.hpp>
+#include <allocators/block_allocators/basic/buddy/buddy.hpp>   // adjust path as needed
+#include <allocators/structures/blocks/memory_block.hpp>
 
 #include <cstdint>
 #include <cstdio>         // printf for output
@@ -17,14 +17,14 @@ using BuddyAlloc = dd99::memory::block_allocator::Buddy<BLOCK_SIZE, LEVELS>;
 
 // Simple linear allocator for tracking allocated blocks in test
 struct AllocRecord {
-    dd99::memory::Block block;
+    dd99::memory::block block;
     bool used = false;
 };
 
 // ------------------------------------------------------------------
 // Helper to check that a block is within memory
 // ------------------------------------------------------------------
-bool block_within(dd99::memory::Block b, std::byte* mem, std::size_t size) {
+bool block_within(dd99::memory::block b, std::byte* mem, std::size_t size) {
     return b.base >= mem && (b.base + b.size) <= (mem + size);
 }
 
@@ -59,7 +59,7 @@ int main() {
 
     // Build the buddy allocator on this memory.
     // The constructor will carve out the bitmap and determine block count.
-    BuddyAlloc buddy(dd99::memory::Block{mem, MEM_SIZE});
+    BuddyAlloc buddy(dd99::memory::block{mem, MEM_SIZE});
 
     // Verify that calculate_block_count matches the actual usable blocks.
     std::size_t expected_block_count = BuddyAlloc::calculate_block_count(MEM_SIZE);
@@ -70,7 +70,7 @@ int main() {
     AllocRecord records[MAX_ALLOCS]{};
     std::size_t alloc_count = 0;
 
-    auto store_alloc = [&](dd99::memory::Block blk) {
+    auto store_alloc = [&](dd99::memory::block blk) {
         if (!blk) return;
         if (alloc_count >= MAX_ALLOCS) {
             std::printf("FAIL: Too many allocations\n");
@@ -88,7 +88,7 @@ int main() {
         if (sz > (BLOCK_SIZE << (LEVELS-1))) break;
         // Allocate several blocks of this size
         for (int i = 0; i < 4; ++i) {
-            dd99::memory::Block blk = buddy.allocate(sz);
+            dd99::memory::block blk = buddy.allocate(sz);
             if (blk) {
                 if (!block_within(blk, mem, MEM_SIZE)) {
                     std::printf("FAIL: allocated block outside memory\n");
@@ -115,7 +115,7 @@ int main() {
     // 2. Test exhaustion: allocate until failure, then check total count
     // ------------------------------------------------------------------
     std::printf("Test: exhaust memory...\n");
-    dd99::memory::Block blk;
+    dd99::memory::block blk;
     while ((blk = buddy.allocate(64))) {
         store_alloc(blk);
     }
@@ -147,7 +147,7 @@ int main() {
     // Now allocate again – should succeed
     std::size_t reallocated = 0;
     for (std::size_t i = 0; i < alloc_count / 2; ++i) {
-        dd99::memory::Block blk2 = buddy.allocate(64);
+        dd99::memory::block blk2 = buddy.allocate(64);
         if (!blk2) break;
         store_alloc(blk2);
         ++reallocated;
@@ -231,7 +231,7 @@ int main() {
     // ------------------------------------------------------------------
     std::printf("Test: block count consistency...\n");
     // Reinitialize allocator to get fresh counts
-    BuddyAlloc buddy2(dd99::memory::Block{mem, MEM_SIZE});
+    BuddyAlloc buddy2(dd99::memory::block{mem, MEM_SIZE});
     std::size_t blocks_used = 0;
     while (true) {
         auto b = buddy2.allocate(BLOCK_SIZE);

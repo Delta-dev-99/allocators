@@ -181,7 +181,7 @@ void test4()
 
 //         // Setup memory block collections
 
-//         std::vector<mem::Block> block_collection;
+//         std::vector<mem::block> block_collection;
 //         block_collection.reserve(10000);
 
 

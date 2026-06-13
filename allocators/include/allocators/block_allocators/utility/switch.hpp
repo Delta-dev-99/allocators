@@ -36,7 +36,7 @@ namespace dd99::memory::block_allocator::utility
 
     private: // implementation details
         template <class Request, std::size_t... Indices>
-        memory::Block allocate(Request request, std::index_sequence<Indices...>)
+        memory::block allocate(Request request, std::index_sequence<Indices...>)
         {
             using ret_type = std::common_type_t<
                 decltype(std::get<Indices>(m_allocators).allocate(request.get_request()))...>;
@@ -51,7 +51,7 @@ namespace dd99::memory::block_allocator::utility
         }
 
         template <std::size_t... Indices>
-        void deallocate(const memory::Block & memory, std::index_sequence<Indices...>)
+        void deallocate(const memory::block & memory, std::index_sequence<Indices...>)
         {
             bool k = (... || (std::get<Indices>(m_allocators).owns(memory)
                 ? (std::get<Indices>(m_allocators).deallocate(memory), true)
@@ -75,12 +75,12 @@ namespace dd99::memory::block_allocator::utility
     public:
         template <class Request>
         [[nodiscard]]
-        memory::Block allocate(Request request)
+        memory::block allocate(Request request)
         {
             return allocate(request, index_sequence{});
         }
 
-        void deallocate(const memory::Block &memory)
+        void deallocate(const memory::block &memory)
         {
             return deallocate(memory, index_sequence{});
         }
@@ -95,7 +95,7 @@ namespace dd99::memory::block_allocator::utility
             return owns(memory, index_sequence{});
         }
 
-        bool owns(const memory::Block &memory) const
+        bool owns(const memory::block &memory) const
         {
             return owns(memory, index_sequence{});
         }

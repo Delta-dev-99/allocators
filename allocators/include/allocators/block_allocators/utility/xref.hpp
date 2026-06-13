@@ -1,6 +1,6 @@
 #pragma once
 
-#include <allocators/structures/memory_block.hpp>
+#include <allocators/structures/blocks/memory_block.hpp>
 
 
 
@@ -21,10 +21,10 @@ namespace dd99::memory::block_allocator::utility
     public:
         template <class Request>
         [[nodiscard]]
-        memory::Block allocate(Request request)
+        memory::block allocate(Request request)
         { return m_alloc_ref.allocate(request); }
 
-        void deallocate(const memory::Block &memory)
+        void deallocate(const memory::block &memory)
         { m_alloc_ref.deallocate(memory); }
 
         void deallocate_all()
@@ -33,7 +33,7 @@ namespace dd99::memory::block_allocator::utility
         bool owns(const std::byte * memory) const
         { return m_alloc_ref.owns(memory); }
 
-        bool owns(const memory::Block &memory) const
+        bool owns(const memory::block &memory) const
         { return m_alloc_ref.owns(memory); }
 
     protected:

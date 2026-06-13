@@ -1,6 +1,6 @@
 #pragma once
 
-#include <allocators/structures/memory_block.hpp>
+#include <allocators/structures/blocks/memory_block.hpp>
 
 namespace dd99::memory::block_allocator::metrics
 {
@@ -37,7 +37,7 @@ namespace dd99::memory::block_allocator::metrics
 
     public:
         [[nodiscard]]
-        memory::Block allocate(std::size_t requested_size)
+        memory::block allocate(std::size_t requested_size)
         {
             const auto total_previous_requested_size = m_stats_data.mean_allocation_request_size * double(m_stats_data.total[Stats_Data::Allocation]);
             m_stats_data.mean_allocation_request_size = (total_previous_requested_size + double(requested_size)) / double(m_stats_data.total[Stats_Data::Allocation] + 1);
@@ -54,7 +54,7 @@ namespace dd99::memory::block_allocator::metrics
             return r;
         }
 
-        void deallocate(const memory::Block &memory)
+        void deallocate(const memory::block &memory)
         {
             ++m_stats_data.total[Stats_Data::Deallocation];
 
@@ -80,7 +80,7 @@ namespace dd99::memory::block_allocator::metrics
         }
 
         bool owns(const std::byte * memory) const { return Sub_Alloc_T::owns(memory); }
-        bool owns(const memory::Block &memory) const { return Sub_Alloc_T::owns(memory); }
+        bool owns(const memory::block &memory) const { return Sub_Alloc_T::owns(memory); }
 
     private:
         Stats_Data m_stats_data;

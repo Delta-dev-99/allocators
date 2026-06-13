@@ -17,28 +17,28 @@ namespace dd99::memory::block_allocator::degenerate
         constexpr Null() noexcept {}
 
         constexpr
-        Null(const memory::Block &) noexcept
+        Null(const memory::block &) noexcept
         { }
 
     public:
         constexpr
-        memory::Block
-        allocate(std::size_t) const noexcept
+        memory::block
+        allocate(std::size_t, std::size_t = 1) const noexcept
         { return {}; }
         
         constexpr
-        memory::Block
+        memory::block
         allocate(std::size_t) noexcept
         { return {}; }
 
 
         constexpr
         void
-        deallocate(const memory::Block &) const noexcept { }
+        deallocate(const memory::block &) const noexcept { }
 
         constexpr
         void
-        deallocate(const memory::Block &) noexcept { }
+        deallocate(const memory::block &) noexcept { }
 
 
         constexpr
@@ -57,10 +57,11 @@ namespace dd99::memory::block_allocator::degenerate
 
         constexpr
         bool
-        owns(const memory::Block &) const noexcept
+        owns(const memory::block &) const noexcept
         { return false; }
+
     };
 
     static_assert(Block_Allocator<Null>, "This definition doesn't comply with the `Block_Allocator` concept");
-
+    
 }

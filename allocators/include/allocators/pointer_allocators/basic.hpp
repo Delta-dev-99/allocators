@@ -26,11 +26,11 @@ namespace dd99::memory::pointer_allocator
         [[nodiscard]]
         std::byte * allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
-            Block allocated_block = m_sub_alloc.allocate(requested_size + sizeof(Block), requested_alignment);
-            // create a copy of the Block structure at the allocated block
-            new(allocated_block.base) Block(allocated_block);
-            // return a pointer to the allocated memory, leaving the Block structure just behind.
-            return allocated_block.base + sizeof(Block);
+            block allocated_block = m_sub_alloc.allocate(requested_size + sizeof(block), requested_alignment);
+            // create a copy of the block structure at the allocated block
+            new(allocated_block.base) block(allocated_block);
+            // return a pointer to the allocated memory, leaving the block structure just behind.
+            return allocated_block.base + sizeof(block);
         }
 
         // assumed pointer is valid. If it causes segmentation fault, blame whoever gave it.
@@ -38,11 +38,11 @@ namespace dd99::memory::pointer_allocator
         {
             if (owns(memory))
             {
-                // get reference to the Block structure
-                auto &allocated_block = *reinterpret_cast<Block *>(memory - sizeof(Block));
+                // get reference to the block structure
+                auto &allocated_block = *reinterpret_cast<block *>(memory - sizeof(block));
 
                 m_sub_alloc.deallocate(allocated_block);
-                allocated_block.~Block();
+                allocated_block.~block();
             }
         }
 
@@ -50,9 +50,9 @@ namespace dd99::memory::pointer_allocator
 
         // assumed pointer is advanced, as returned on allocation
         bool owns(const std::byte * memory) const
-        { return m_sub_alloc.owns(memory - sizeof(Block)); }
+        { return m_sub_alloc.owns(memory - sizeof(block)); }
 
-        bool owns(const Block &memory) const
+        bool owns(const block &memory) const
         { return m_sub_alloc.owns(memory); }
     };
 

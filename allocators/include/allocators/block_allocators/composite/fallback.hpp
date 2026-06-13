@@ -39,7 +39,7 @@ namespace dd99::memory::block_allocator::composite
 
     public:
         [[nodiscard]]
-        memory::Block allocate(std::size_t requested_size,
+        memory::block allocate(std::size_t requested_size,
                                std::size_t requested_alignment = 1)
         {
             auto r = m_primary.allocate(requested_size, requested_alignment);
@@ -48,7 +48,7 @@ namespace dd99::memory::block_allocator::composite
             return r;
         }
 
-        void deallocate(const memory::Block &memory)
+        void deallocate(const memory::block &memory)
         {
             // TODO: Allocators should check if they own the memory
             // before deallocating it.
@@ -71,7 +71,7 @@ namespace dd99::memory::block_allocator::composite
             return m_primary.owns(memory) || m_fallback.owns(memory);
         }
 
-        bool owns(const memory::Block &memory) const
+        bool owns(const memory::block &memory) const
         {
             return m_primary.owns(memory) || m_fallback.owns(memory);
         }

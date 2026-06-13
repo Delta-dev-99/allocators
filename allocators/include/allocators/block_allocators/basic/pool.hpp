@@ -1,7 +1,7 @@
 #pragma once
 
 #include <allocators/block_allocators/block_allocator.hpp>
-#include <allocators/block_allocators/internal/structures/free_list.hpp>
+#include <allocators/structures/forward_list.hpp>
 
 
 namespace dd99::memory::block_allocator
@@ -24,7 +24,7 @@ namespace dd99::memory::block_allocator
 
     public:
         // Expects: provided memory to be aligned to at least Block_Alignment
-        Pool(const memory::Block &memory)
+        Pool(const memory::block &memory)
             : m_memory(memory)
             , m_free_list()
         {
@@ -34,7 +34,7 @@ namespace dd99::memory::block_allocator
 
     public:
         [[nodiscard]]
-        memory::Block allocate(std::size_t requested_size, std::size_t requested_alignment = Block_Alignment)
+        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = Block_Alignment)
         {
             static_cast<void>(requested_alignment); // all blocks are aligned
             // TODO: assert (requested_alignment <= Block_Alignment) && (requested_alignment & (requested_alignment - 1) == 0)
@@ -46,7 +46,7 @@ namespace dd99::memory::block_allocator
             return m_free_list.pop();
         }
 
-        void deallocate(const memory::Block &memory)
+        void deallocate(const memory::block &memory)
         {
             if (owns(memory))
                 m_free_list.push(memory);
@@ -63,7 +63,7 @@ namespace dd99::memory::block_allocator
             return m_memory.contains(memory);
         }
 
-        bool owns(const memory::Block& memory) const
+        bool owns(const memory::block& memory) const
         {
             return m_memory.contains(memory);
         }
@@ -71,7 +71,7 @@ namespace dd99::memory::block_allocator
     private:
         void build_free_list()
         {
-            memory::Block current{.base = m_memory.base, .size = Block_Size};
+            memory::block current{.base = m_memory.base, .size = Block_Size};
             while(current.get_end() <= m_memory.get_end())
             {
                 m_free_list.push(current);
@@ -81,7 +81,7 @@ namespace dd99::memory::block_allocator
         }
 
     private:
-        memory::Block m_memory;
+        memory::block m_memory;
         memory::structure::Freelist<Block_Size> m_free_list;
     };
 

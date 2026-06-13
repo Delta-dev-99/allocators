@@ -65,7 +65,7 @@ namespace dd99::memory::block_allocator::metrics
 
     public:
         [[nodiscard]]
-        memory::Block allocate(std::size_t requested_size)
+        memory::block allocate(std::size_t requested_size)
         {
             const auto start = std::chrono::steady_clock::now();
             auto r = Sub_Alloc_T::allocate(requested_size);
@@ -81,7 +81,7 @@ namespace dd99::memory::block_allocator::metrics
             return r;
         }
 
-        void deallocate(const memory::Block &memory)
+        void deallocate(const memory::block &memory)
         {
             const auto start = std::chrono::steady_clock::now();
             Sub_Alloc_T::deallocate(memory);
@@ -107,7 +107,7 @@ namespace dd99::memory::block_allocator::metrics
         }
 
         bool owns(const std::byte * memory) const { return Sub_Alloc_T::owns(memory); }
-        bool owns(const memory::Block &memory) const { return Sub_Alloc_T::owns(memory); }
+        bool owns(const memory::block &memory) const { return Sub_Alloc_T::owns(memory); }
 
     private:
         Timing_Data m_timing_data;

@@ -4,7 +4,7 @@
 #include <allocators/block_allocators/metrics/stats.hpp>
 #include <allocators/block_allocators/composite/fallback.hpp>
 #include <allocators/block_allocators/basic/slicing.hpp>
-#include <allocators/acquire_memory/self_contained_block.hpp>
+#include <allocators/structures/blocks/self_contained_block.hpp>
 
 
 void test1()

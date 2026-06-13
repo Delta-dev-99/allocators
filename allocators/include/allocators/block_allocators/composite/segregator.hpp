@@ -15,7 +15,7 @@ namespace dd99::memory::block_allocator::composite
 
     public:
         [[nodiscard]]
-        memory::Block allocate(std::size_t requested_size)
+        memory::block allocate(std::size_t requested_size)
         {
             if (requested_size <= Threshold)
                 return m_alloc_le.allocate(requested_size);
@@ -23,7 +23,7 @@ namespace dd99::memory::block_allocator::composite
                 return m_alloc_g.allocate(requested_size);
         }
 
-        void deallocate(const memory::Block &memory)
+        void deallocate(const memory::block &memory)
         {
             if (memory.size <= Threshold)
                 m_alloc_le.deallocate(memory);
@@ -43,7 +43,7 @@ namespace dd99::memory::block_allocator::composite
             return m_alloc_le.owns(memory) || m_alloc_g.owns(memory);
         }
 
-        bool owns(const memory::Block &memory) const
+        bool owns(const memory::block &memory) const
         {
             return (memory.size <= Threshold) ? m_alloc_le.owns(memory) : m_alloc_g.owns(memory);
         }
@@ -52,7 +52,5 @@ namespace dd99::memory::block_allocator::composite
         Allocator_LE m_alloc_le;
         Allocator_G m_alloc_g;
     };
-
-    static_assert(Block_Allocator<Segregator<0, void*, void*>>, "This definition doesn't comply with the `Block_Allocator` concept");
 
 }
