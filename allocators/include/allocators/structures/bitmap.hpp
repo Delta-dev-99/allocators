@@ -101,16 +101,20 @@ namespace dd99::memory::structure
                 if (*block_ptr != Block_T(-1))
                 {
                     // Found a block with at least one unset bit
-                    for (unsigned bit = 0; bit < Block_Bits; ++bit)
-                    {
-                        const auto mask = Block_T(1) << bit;
+                    unsigned bit = std::countr_zero(static_cast<Block_T>(~*block_ptr)); // first 0 bit
+                    *block_ptr |= (Block_T{1} << bit);
+                    return static_cast<std::size_t>(block_ptr - m_base) * Block_Bits + bit;
 
-                        if ((*block_ptr & mask) == 0)
-                        {
-                            *block_ptr |= mask;
-                            return std::size_t(block_ptr - m_base) * Block_Bits + bit;
-                        }
-                    }
+                    // for (unsigned bit = 0; bit < Block_Bits; ++bit)
+                    // {
+                    //     const auto mask = Block_T(1) << bit;
+
+                    //     if ((*block_ptr & mask) == 0)
+                    //     {
+                    //         *block_ptr |= mask;
+                    //         return std::size_t(block_ptr - m_base) * Block_Bits + bit;
+                    //     }
+                    // }
                 }
 
                 ++block_ptr;
