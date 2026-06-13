@@ -42,7 +42,7 @@ namespace dd99::memory
         constexpr
         operator bool() const noexcept
         {
-            return empty();
+            return !empty();
         }
 
 
