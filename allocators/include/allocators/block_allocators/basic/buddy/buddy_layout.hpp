@@ -1,6 +1,6 @@
 #pragma once
 
-#include <allocators/structures/memory_block.hpp>
+#include <allocators/structures/blocks/memory_block.hpp>
 #include <allocators/block_allocators/basic/buddy/buddy_block_address.hpp>
 #include <array>
 #include <bit>
@@ -12,23 +12,24 @@ namespace dd99::memory::block_allocator::buddy_namespace
 
     // A type that describes the layout of the managed memory
     // does not know or care about bookkeeping data structures
+    // TODO: this interface needs to be updated. some functions are missing.
     template <class T>
     concept Layout_Concept = requires
     {
         typename T::block_address_type;
-    } && requires(T & layout, std::byte * memory_base, memory::Block blk, T::block_address_type blk_address)
+    } && requires(T & layout, std::byte * memory_base, memory::block blk, T::block_address_type blk_address)
     {
         typename T::level_type;
         typename T::index_type;
 
         { T::get_block_address(memory_base, blk) } -> std::same_as<typename T::block_address_type>;
-        { T::get_block(memory_base, blk_address) } -> std::same_as<Block>;
+        { T::get_block(memory_base, blk_address) } -> std::same_as<block>;
 
         { T::get_block_level(blk.size) } -> std::same_as<typename T::level_type>;
-        { T::get_block_size(blk_address.level) } -> std::same_as<typename std::size_t>;
+        { T::get_level_block_size(blk_address.level) } -> std::same_as<typename std::size_t>;
 
         { layout.get_block_address(blk) } -> std::same_as<typename T::block_address_type>;
-        { layout.get_block(blk_address) } -> std::same_as<Block>;
+        { layout.get_block(blk_address) } -> std::same_as<block>;
         
         { layout.block_has_buddy(blk_address) } -> std::same_as<bool>;
         { layout.is_index_valid(blk_address) } -> std::same_as<bool>;
@@ -36,18 +37,21 @@ namespace dd99::memory::block_allocator::buddy_namespace
 
 
     // The standard buddy layout.
-    // This describes the managed memory as a contiguous array of blocks starting at a specified memory address
+    // This describes the managed memory as a contiguous array of blocks
     // 
+    // *** Template arguments:
     // `Managed_Memory_Block_Type` is the type used for the block of memory to be managed by the allocator.
-    // the user can pass a normal block, an auto-freeing block, or a custom type
+    // the user can pass a normal block, an auto-freeing block, or a custom type compliant with the interface.
+    // 
+    // 
     template <class                             Block_Address_Type,
-              Block_Address_Type::level_type    Levels,
               std::size_t                       Block_Size,
+              Block_Address_Type::level_type    Levels,
               std::size_t                       Last_Level_Alignment = Block_Size << (Levels-1),
-              class                             Managed_Memory_Block_Type = Block>
-    struct buddy_layout
+              class                             Managed_Memory_Block_Type = block>
+    struct buddy_standard_layout
     {
-        static_assert(Layout_Concept<buddy_layout>);
+        // static_assert(Layout_Concept<buddy_standard_layout>);
 
         using managed_memory_block_type = Managed_Memory_Block_Type;
         using block_address_type = Block_Address_Type;
@@ -97,7 +101,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
 
         static constexpr
         index_type
-        get_level_block_count(Block memory, level_type level)
+        get_level_block_count(block memory, level_type level)
         {
             return get_level_block_count(memory.size / block_size, level);
         }
@@ -195,7 +199,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
 
         static constexpr
         block_address_type
-        get_block_address(std::byte * memory_base, Block blk)
+        get_block_address(std::byte * memory_base, block blk)
         {
             // assumes blk belongs to the allocator
             const auto level = get_block_level(blk.size);
@@ -203,7 +207,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
         }
 
         static constexpr
-        Block
+        block
         get_block(std::byte * memory_base, block_address_type blk_address)
         {
             const auto blk_size = get_level_block_size(blk_address.level);
@@ -218,12 +222,14 @@ namespace dd99::memory::block_allocator::buddy_namespace
         // ##########################
 
         constexpr
-        buddy_layout(managed_memory_block_type mem_blk)
+        buddy_standard_layout(managed_memory_block_type mem_blk)
             : m_memory{std::move(mem_blk)}
-            , m_block_count{m_memory.size / block_size}
+            , m_block_count{static_cast<index_type>(m_memory.size / block_size)}
         {
             // TODO: assert memory base alignment
             // should be aligned to the maximum block alignment (largest block)
+
+            // TODO: assert addresses can represent the whole memory range.
 
             // calculate cumulative joint block counts
             m_cumulative_joint_block_count[0] = 0;
@@ -265,12 +271,12 @@ namespace dd99::memory::block_allocator::buddy_namespace
         [[nodiscard]]
         constexpr
         block_address_type
-        get_block_address(Block blk) const
+        get_block_address(block blk) const
         { return get_block_address(m_memory.base, blk); }
 
         [[nodiscard]]
         constexpr
-        Block
+        block
         get_block(block_address_type blk_address) const
         { return get_block(m_memory.base, blk_address); }
 

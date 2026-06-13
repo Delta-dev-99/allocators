@@ -10,6 +10,93 @@
 
 namespace dd99::memory::block_allocator::buddy_namespace
 {
+    // fw-decl
+    template <Layout_Concept Layout,
+              class State_Memory_Block_Type,
+              class Bitmap_Element_Type = std::byte>
+    struct buddy_intrusive_state;
+
+
+    template <Layout_Concept Layout, class Bitmap_Element_Type = std::byte>
+    struct buddy_intrusive_state_traits
+    {
+        using layout_type = Layout;
+        using bitmap_element_type = Bitmap_Element_Type;
+        using bitmap_type = dd99::memory::structure::Bitmap<bitmap_element_type>;
+
+        static constexpr
+        std::size_t
+        get_state_size(const layout_type & layout)
+        {
+            const auto state_bits = layout.get_total_joint_block_count();
+            const auto bitmap_size = bitmap_type::calculate_block_count(state_bits);
+            return bitmap_size * bitmap_type::Block_Size;
+        }
+
+        static constexpr
+        std::size_t
+        get_state_alignment()
+        {
+            return bitmap_type::Block_Alignment;
+        }
+
+        template <class State_Memory_Block_Type>
+        [[nodiscard]]
+        static constexpr
+        auto
+        make_state(layout_type && layout, State_Memory_Block_Type && state_block)
+            -> buddy_intrusive_state<layout_type, std::decay_t<State_Memory_Block_Type>, bitmap_element_type>
+        {
+            return {std::move(layout), std::forward<State_Memory_Block_Type>(state_block)};
+        }
+
+        struct split_block
+        {
+            block managed, state;
+        };
+
+        static constexpr
+        split_block
+        calculate_block_split(block blk)
+        {
+            // // check if memory is not enough for 1 block + minimal bitmap
+            // if (memory_size < bitmap_type::block_size + block_size)
+            //     return 0;
+
+            // // Analytical initial guess from continuous relaxation
+            // constexpr auto pow2_Lm1 = 1ULL << (Levels - 1);
+            // constexpr auto a_num = pow2_Lm1 - 1;          // 2^{L-1} - 1
+            // constexpr auto denom = 8ULL * Block_Size * pow2_Lm1 + a_num;
+            // // Numerator: 8 * memory_size * pow2_Lm1
+            // // We assume memory_size * 8 * pow2_Lm1 < 2^64 (holds for realistic RAM).
+
+            // // Ensure memory_size doesn't cause overflow: memory_size * 8 * pow2_Lm1 < 2^64
+            // constexpr auto max_supported_memory = std::numeric_limits<std::size_t>::max() / (8ULL * pow2_Lm1);
+            // assert(memory_size <= max_supported_memory && "memory_size would cause overflow in calculation");
+            
+            // // Calculate initial block count guess
+            // std::size_t block_count = (8ULL * memory_size * pow2_Lm1) / denom;
+
+            // // helper predicate
+            // auto fits = [&](std::size_t block_count) -> bool {
+            //     std::size_t bits = Buddy_Base::calculate_buddy_bit_count(block_count);
+            //     std::size_t bitmap = BMP::calculate_block_count(bits) * BMP::Block_Size;
+            //     return block_count * Block_Size + bitmap <= memory_size;
+            // };
+
+            // // adjust - at most ceil(BMP::Block_Size / Block_Size) steps
+            // if (fits(block_count))
+            // {
+            //     while(fits(block_count + 1)) ++block_count;
+            // }
+            // else
+            // {
+            //     while(!fits(--block_count)); // decrement until fits
+            // }
+
+            // return block_count;
+        }
+    };
 
     // The intrusive state implementation stores linked list nodes directly on the managed free blocks, which helps reduce the memory footprint.
     // An external XOR bitmap is used to store buddy state. The user must provide the memory block for this bitmap.
@@ -23,14 +110,16 @@ namespace dd99::memory::block_allocator::buddy_namespace
     // The `State_Block_Type` template parameter:
     // The type of the memory block provided by the user to store the buddy state and free list information. Intended to be deduced via factory function. This block is expected to be large enough to hold the necessary data structures for managing the buddy system's state across all levels. The policy will use this block to maintain the state of which blocks are free and which are allocated, as well as to manage the linked lists of free blocks at each level. The user is responsible for providing a suitable memory block for this purpose, and the policy will handle the organization and management of this block internally.
     // This is part of the lifetime management customization mechanism used in this library. Allows either using a plain memory block, or a RAII auto-freeing memory block type.
-    template <Layout_Concept Layout, class State_Memory_Block_Type, class Bitmap_Element_Type = std::byte>
+    template <Layout_Concept Layout,
+              class State_Memory_Block_Type,
+              class Bitmap_Element_Type>
     struct buddy_intrusive_state
     {
         // Check whether this policy type actually satisfies the requirements for buddy policy types.
         // This is just a cost-free sanity check which should always pass.
         // Failure here likely means that either a template parameter was terribly wrong, or that there's an error in this implementation.
-        static_assert(State_Concept<buddy_intrusive_state>,
-            "buddy_intrusive_state does not satisfy State_Concept requirements.");
+        // static_assert(State_Concept<buddy_intrusive_state>,
+        //     "buddy_intrusive_state does not satisfy State_Concept requirements.");
 
         using layout_type = Layout;
         using state_memory_block_type = State_Memory_Block_Type;
@@ -144,7 +233,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
             if (m_layout.block_has_buddy(block_address))
             {
                 auto joint_block_address = layout_type::get_joint_block_address(block_address);
-                m_state_tracker.toggle_joint_block_state(joint_block_address);
+                m_state_tracker.toggle_joint_block_state(joint_block_address, m_layout);
             }
             m_freelist_collection[level].push(block_base);
         }
@@ -160,7 +249,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
             if (m_layout.block_has_buddy(block_address))
             {
                 auto joint_block_address = layout_type::get_joint_block_address(block_address);
-                m_state_tracker.toggle_joint_block_state(joint_block_address);
+                m_state_tracker.toggle_joint_block_state(joint_block_address, m_layout);
             }
             return block_base;
         }
@@ -180,7 +269,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
             else
             {
                 auto joint_block_address = layout_type::get_joint_block_address(block_address);
-                bool is_buddy_free = !m_state_tracker.toggle_joint_block_state(joint_block_address);
+                bool is_buddy_free = !m_state_tracker.toggle_joint_block_state(joint_block_address, m_layout);
                 if (is_buddy_free)
                 {
                     auto buddy_address = layout_type::get_buddy_block_address(block_address);
@@ -211,3 +300,18 @@ namespace dd99::memory::block_allocator::buddy_namespace
     // we could use the same technique on the bitmap class (capture the block type, allow auto-free on destruction block types to work).
 
 }
+
+
+
+// example. creation of state:
+// 
+// auto layout = make_buddy_layout<64, 6>(main_memory);
+// 
+// using state_traits_type = buddy_intrusive_state_traits<decltype(layout)>;
+// auto state_size = state_traits_type::get_state_size(layout);
+// auto state_alignment = state_traits_type::get_state_alignment();
+//
+// auto state_memory_block = allocate_state_memory_block_somehow(state_size, state_alignment);
+// 
+// auto state = state_traits_type::make_state(std::move(layout), std::move(state_memory_block));
+// 

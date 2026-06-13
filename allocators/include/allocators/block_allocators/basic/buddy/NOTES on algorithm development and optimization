@@ -29,7 +29,7 @@ on allocation:
 // allocation pseudocode 1:
 // ---------------------------
 
-Block allocate(size, alignment)
+block allocate(size, alignment)
 {
     auto level = determine_level(size, alignment);
     if (!freelists[level].empty())
@@ -64,7 +64,7 @@ Block allocate(size, alignment)
 // allocation pseudocode 2:
 // ---------------------------
 
-Block get_split_block(level)
+block get_split_block(level)
 {
     auto block = get_block(level);
     toggle_state_bit(block);
@@ -75,14 +75,14 @@ Block get_split_block(level)
     return sub_block;
 }
 
-Block get_block(level)
+block get_block(level)
 {
     // this code may belong inside `get_split_block`
     if (!freelists[level].empty()) return freelists[level].pop();
     else return get_split_block(level+1);
 }
 
-Block allocate(size, alignment)
+block allocate(size, alignment)
 {
     auto level = determine_level(size, alignment);
     if (!freelists[level].empty())
@@ -107,7 +107,7 @@ Block allocate(size, alignment)
 // ---------------------------
 
 // note: we changed the level semantics (off by one)
-Block get_split_block(level)
+block get_split_block(level)
 {
     auto large_block = get_block(level+1);
     toggle_state_bit(large_block);
@@ -116,13 +116,13 @@ Block get_split_block(level)
     return block;
 }
 
-Block get_block(level)
+block get_block(level)
 {
     if (!freelists[level].empty()) return freelists[level].pop();
     else return get_split_block(level);
 }
 
-Block allocate(size, alignment)
+block allocate(size, alignment)
 {
     auto level = determine_level(size, alignment);
     auto block = get_block(level);
@@ -144,7 +144,7 @@ maybe this means that we should toggle the bit inside `get_block()`.
 // allocation pseudocode 4:
 // ---------------------------
 
-Block get_split_block(level)
+block get_split_block(level)
 {
     auto large_block = get_block(level+1);
     auto [block, buddy] = split_block(large_block);
@@ -152,16 +152,16 @@ Block get_split_block(level)
     return block;
 }
 
-Block get_block(level)
+block get_block(level)
 {
-    Block block;
+    block block;
     if (!freelists[level].empty()) block = freelists[level].pop();
     else block = get_split_block(level);
     toggle_state_bit(block);
     return block;
 }
 
-Block allocate(size, alignment)
+block allocate(size, alignment)
 {
     auto level = determine_level(size, alignment);
     auto block = get_block(level);
@@ -188,7 +188,7 @@ this leads us to conclude that all freelist operations (either `push()` or `pop(
 // allocation pseudocode 5:
 // ---------------------------
 
-Block pop_freelist(level)
+block pop_freelist(level)
 {
     auto block = freelist[level].pop();
     toggle_state_bit(block);
@@ -201,7 +201,7 @@ void push_freelist(level, block)
     freelist[level].push(block);
 }
 
-Block get_split_block(level)
+block get_split_block(level)
 {
     auto large_block = get_block(level+1);
     auto [block, buddy] = split_block(large_block);
@@ -209,13 +209,13 @@ Block get_split_block(level)
     return block;
 }
 
-Block get_block(level)
+block get_block(level)
 {
     if (!freelists[level].empty()) return pop_freelist(level);
     else return get_split_block(level);
 }
 
-Block allocate(size, alignment)
+block allocate(size, alignment)
 {
     auto level = determine_level(size, alignment);
     auto block = get_block(level);
@@ -242,7 +242,7 @@ maybe this means that we should combine both functions.
 // allocation pseudocode 6:
 // ---------------------------
 
-Block pop_freelist(level)
+block pop_freelist(level)
 {
     auto block = freelist[level].pop();
     toggle_state_bit(block);
@@ -255,7 +255,7 @@ void push_freelist(level, block)
     freelist[level].push(block);
 }
 
-Block get_block(level)
+block get_block(level)
 {
     if (!freelists[level].empty())
     {
@@ -270,7 +270,7 @@ Block get_block(level)
     }
 }
 
-Block allocate(size, alignment)
+block allocate(size, alignment)
 {
     auto level = determine_level(size, alignment);
     return get_block(level);
@@ -290,7 +290,7 @@ we should also introduce a distinction between functions that belong to the allo
 
 // state functions
 
-Block pop_freelist(level)
+block pop_freelist(level)
 {
     auto block = freelist[level].pop();
     toggle_state_bit(block);
@@ -305,7 +305,7 @@ void push_freelist(level, block)
 
 // allocator functions
 
-Block allocate(level)
+block allocate(level)
 {
     if (!freelists[level].empty())
     {
@@ -320,7 +320,7 @@ Block allocate(level)
     }
 }
 
-Block allocate(size, alignment)
+block allocate(size, alignment)
 {
     auto level = determine_level(size, alignment);
     return allocate(level);

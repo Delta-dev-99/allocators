@@ -1,5 +1,6 @@
 #pragma once
 
+#include <allocators/block_allocators/basic/buddy/buddy_layout.hpp>
 #include <concepts>
 #include <cstddef>
 
@@ -37,7 +38,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
     //     return block_base;
     // }
     // 
-    // Block allocate(level) { return Block{.base = allocate_impl(level), .size = layout_type::get_block_size(level)}; }
+    // block allocate(level) { return block{.base = allocate_impl(level), .size = layout_type::get_block_size(level)}; }
 
     // deallocation pseudocode:
     // void deallocate_impl(level, block_base)

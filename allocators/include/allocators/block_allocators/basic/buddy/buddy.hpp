@@ -1,6 +1,8 @@
 #pragma once
 
 #include <allocators/block_allocators/basic/buddy/buddy_state.hpp>
+#include <allocators/structures/blocks/memory_block.hpp>
+#include <algorithm>
 // #include <cassert>
 
 
@@ -8,7 +10,7 @@ namespace dd99::memory::block_allocator
 {
 
     template <buddy_namespace::State_Concept State_Type>
-    class Buddy
+    class buddy
     {
     public: // constant definitions
         using state_type = State_Type;
@@ -21,8 +23,8 @@ namespace dd99::memory::block_allocator
         static constexpr auto last_level = state_type::last_level;
 
     public: // constructors
-        Buddy(state_type && state)
-            : m_state{std::forward<state_type>(state)}
+        buddy(state_type state)
+            : m_state{std::move(state)}
         { }
 
     private:
@@ -41,7 +43,7 @@ namespace dd99::memory::block_allocator
             if (!block_base) return nullptr;
             
             // split larger block
-            auto half_size = layout_type::get_block_size(level);
+            auto half_size = layout_type::get_level_block_size(level);
             auto buddy_base = block_base + half_size;
             m_state.push(level, buddy_base);
             return block_base;
@@ -50,16 +52,16 @@ namespace dd99::memory::block_allocator
     public: // allocator interface implementation
         [[nodiscard]]
         constexpr
-        memory::Block
+        memory::block
         allocate_level(level_type requested_level)
         {
-            return Block{.base = allocate_impl(requested_level), .size = layout_type::get_block_size(requested_level)};
+            return block{.base = allocate_impl(requested_level), .size = layout_type::get_block_size(requested_level)};
         }
 
         [[nodiscard]]
         constexpr
-        memory::Block
-        allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
+        memory::block
+        allocate(std::size_t requested_size, std::size_t requested_alignment)
         {
             // TODO: consider, for alignment larger than requested size we can allocate from a higher level and split the block.
             // TODO: assert requested_alignment is a power of 2
@@ -70,20 +72,21 @@ namespace dd99::memory::block_allocator
             // now, get a block from the alignment level and split it down to the size level
             auto block_level = alignment_level;
             auto block_base = allocate_impl(block_level);
+            if (!block_base) return {}; // allocation failed. we need to check to avoid pushing nullptr into the freelist.
             while (block_level > size_level)
             {
                 --block_level;
-                auto half_size = layout_type::get_block_size(block_level);
+                auto half_size = layout_type::get_level_block_size(block_level);
                 auto buddy_base = block_base + half_size;
                 m_state.push(block_level, buddy_base);
             }
 
-            return Block{.base = block_base, .size = layout_type::get_block_size(size_level)};
+            return block{.base = block_base, .size = layout_type::get_level_block_size(size_level)};
         }
 
         [[nodiscard]]
         constexpr
-        memory::Block
+        memory::block
         allocate(std::size_t requested_size)
         {
             if (requested_size == 0) return {};
@@ -94,13 +97,13 @@ namespace dd99::memory::block_allocator
 
         constexpr
         void
-        deallocate(Block blk)
+        deallocate(block blk)
         {
             if (!owns(blk)) return;
 
             auto level = layout_type::get_block_level(blk.size);
             auto block_base = blk.base;
-            while(block_base = m_state.merge_or_push(level, block_base))
+            while((block_base = m_state.merge_or_push(level, block_base)))
             {
                 ++level;
             }
@@ -122,7 +125,7 @@ namespace dd99::memory::block_allocator
 
         constexpr
         bool
-        owns(Block blk) const
+        owns(block blk) const
         {
             return m_state.m_layout.m_memory.contains(blk);
         }
