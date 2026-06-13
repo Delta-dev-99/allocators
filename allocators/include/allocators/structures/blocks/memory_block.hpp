@@ -30,7 +30,7 @@ namespace dd99::memory
         bool
         contains(const std::byte * ptr) const noexcept
         {
-            return (get_base() <= ptr) && (get_end() >= ptr);
+            return (get_base() <= ptr) && (get_end() > ptr);
         }
 
         constexpr
