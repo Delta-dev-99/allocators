@@ -46,6 +46,7 @@ namespace dd99::memory::structure
             std::byte * node_address = reinterpret_cast<std::byte *>(current);
 
             m_first_ptr = current->m_next_ptr;
+            if (m_first_ptr) m_first_ptr->m_prev_ptr = nullptr;
             current->~node();
 
             return node_address;
