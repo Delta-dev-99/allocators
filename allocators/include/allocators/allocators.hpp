@@ -22,7 +22,7 @@
 #include <allocators/block_allocators/utility/filter.hpp>
 #include <allocators/block_allocators/utility/owner.hpp>
 // #include <allocators/block_allocators/utility/switch.hpp> // disabled temporarily (requires <tuple>)
-#include <allocators/block_allocators/utility/unique_block.hpp>
+#include <allocators/block_allocators/utility/raii_block.hpp>
 #include <allocators/exception.hpp>
 
 
