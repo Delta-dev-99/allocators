@@ -75,7 +75,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
         std::size_t
         get_level_alignment(level_type level)
         {
-            return std::max(1, last_level_alignment >> (last_level - level));
+            return std::max(std::size_t{1}, last_level_alignment >> (last_level - level));
         }
 
         static constexpr
@@ -83,7 +83,9 @@ namespace dd99::memory::block_allocator::buddy_namespace
         get_alignment_level(std::size_t alignment)
         {
             // TODO: assert(alignment <= last_level_alignment);
-            // TODO: check whether this fails for huge alignments
+            // NOTE: `alignment > last_level_alignment` results in `last_level + 1` which is correctly handled on allocation
+            // NOTE: `alignment == 0` causes a division by zero, but this is a user error. minimum alignment is 1, which is effectively unaligned.
+            // TODO: assert(alignment > 0);
             if (alignment <= first_level_alignment) return 0;
             else return levels - std::bit_width(last_level_alignment / alignment);
         }
