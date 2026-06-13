@@ -16,7 +16,7 @@ namespace dd99::memory::block_allocator
         };
 
     public:
-        Stack(const Block &memory)
+        Stack(const block &memory)
             : m_memory(memory)
             , m_current(memory.base)
         { }
@@ -29,7 +29,7 @@ namespace dd99::memory::block_allocator
         
     public:
         [[nodiscard]]
-        Block allocate(std::size_t requested_size,
+        block allocate(std::size_t requested_size,
                     //    std::size_t requested_alignment = alignof(std::max_align_t))
                        std::size_t requested_alignment = 1)
         {
@@ -38,7 +38,7 @@ namespace dd99::memory::block_allocator
             const auto available_size = m_memory.size - used_size;
             if (available_size >= requested_size)
             {
-                Block current{.base = m_current, .size = requested_size};
+                block current{.base = m_current, .size = requested_size};
                 m_current += requested_size;
                 return current;
             }
@@ -47,7 +47,7 @@ namespace dd99::memory::block_allocator
         }
 
         // Can only free the last allocated block
-        void deallocate(const Block &memory)
+        void deallocate(const block &memory)
         {
             if (memory.base < m_memory.base) return; // TODO: consider whether this check should be omitted
             if (memory.get_end() == m_current) // implies `owns()`
@@ -66,7 +66,7 @@ namespace dd99::memory::block_allocator
             return m_memory.contains(memory);
         }
 
-        bool owns(const Block & memory) const
+        bool owns(const block & memory) const
         {
             return m_memory.contains(memory);
         }
@@ -76,15 +76,15 @@ namespace dd99::memory::block_allocator
         constexpr void reset(Mark mark) noexcept { m_current = mark.m_current; }
 
         // consumes the stack until the base is aligned. Returns the consumed block (which may be empty).
-        constexpr memory::Block align(std::size_t alignment)
+        constexpr memory::block align(std::size_t alignment)
         {
             auto old = m_current;
             m_current = align_up(m_current, alignment);
-            return memory::Block{.base = old, .size = static_cast<std::size_t>(m_current - old)};
+            return memory::block{.base = old, .size = static_cast<std::size_t>(m_current - old)};
         }
 
     private:
-        Block m_memory;
+        block m_memory;
         std::byte * m_current;
     };
 
