@@ -37,7 +37,7 @@ make_buddy(block blk)
 
     layout_type layout{blk};
     auto state_size = traits_type::get_state_size(layout);
-    auto state_buffer = std::make_unique<std::byte>(state_size);
+    auto state_buffer = std::make_unique<std::byte[]>(state_size);
     block state_block{state_buffer.get(), state_size};
     auto state = traits_type::make_state(std::move(layout), state_block);
     return buddy{std::move(state)};
