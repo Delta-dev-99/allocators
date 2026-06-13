@@ -10,7 +10,7 @@ namespace dd99::memory::block_allocator
     class Stack
     {
     public:
-        struct Mark
+        struct mark_type
         {
             std::byte * m_current;
         };
@@ -72,8 +72,8 @@ namespace dd99::memory::block_allocator
         }
 
     public: // stack-specific API
-        [[nodiscard]] constexpr Mark mark() noexcept { return Mark{m_current}; }
-        constexpr void reset(Mark mark) noexcept { m_current = mark.m_current; }
+        [[nodiscard]] constexpr mark_type mark() noexcept { return mark_type{m_current}; }
+        constexpr void reset(mark_type mark) noexcept { m_current = mark.m_current; }
 
         // consumes the stack until the base is aligned. Returns the consumed block (which may be empty).
         constexpr memory::block align(std::size_t alignment)
