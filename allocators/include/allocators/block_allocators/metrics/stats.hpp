@@ -37,14 +37,14 @@ namespace dd99::memory::block_allocator::metrics
 
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t requested_size)
+        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
             const auto total_previous_requested_size = m_stats_data.mean_allocation_request_size * double(m_stats_data.total[Stats_Data::Allocation]);
             m_stats_data.mean_allocation_request_size = (total_previous_requested_size + double(requested_size)) / double(m_stats_data.total[Stats_Data::Allocation] + 1);
 
             ++m_stats_data.total[Stats_Data::Allocation];
 
-            auto r = Sub_Alloc_T::allocate(requested_size);
+            auto r = Sub_Alloc_T::allocate(requested_size, requested_alignment);
 
             if (r)
                 m_stats_data.total[Stats_Data::Allocated_Size] += r.size;
