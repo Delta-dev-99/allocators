@@ -8,7 +8,7 @@ namespace dd99::memory
 {
 
     template <class T>
-    concept Block_Concept = requires(const T & blk, const block & other_blk, const std::byte * bptr)
+    concept Block_Concept = requires(T & blk, const block & other_blk, const std::byte * bptr)
     {
         { blk.get_base() } -> std::convertible_to<std::byte *>;
         { blk.get_size() } -> std::convertible_to<std::size_t>;

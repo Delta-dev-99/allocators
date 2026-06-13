@@ -12,7 +12,8 @@ namespace dd99::memory
     {
         static_assert(Size > 0);
 
-        constexpr std::byte * get_base() const noexcept { return m_data; }
+        constexpr const std::byte * get_base() const noexcept { return m_data; }
+        constexpr std::byte * get_base() noexcept { return m_data; }
         constexpr std::size_t get_size() const noexcept { return sizeof(m_data); }
         constexpr std::byte * get_end() const noexcept { return get_base() + get_size(); }
         
@@ -47,7 +48,7 @@ namespace dd99::memory
 
         constexpr
         block
-        get_block() const noexcept
+        get_block() noexcept
         {
             return block{
                 .base = get_base(),
