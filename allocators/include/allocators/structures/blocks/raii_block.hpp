@@ -30,8 +30,8 @@ namespace dd99::memory
         }
 
         raii_block() = default;
-        raii_block(block && blk, Deallocator && deallocator)
-            : block(std::move(blk))
+        raii_block(block blk, Deallocator && deallocator)
+            : block(blk)
             , dealloc(std::move(deallocator))
         { }
 
