@@ -18,32 +18,35 @@ namespace dd99::memory::structure
     class Bitmap
     {
     public:
-        // TODO: Verify Block_Bits is used in calculations
-        constexpr static auto Block_Size = sizeof(Block_T);
-        constexpr static auto Block_Bits = Block_Size * std::numeric_limits<unsigned char>::digits;
-        constexpr static auto Block_Alignment = alignof(Block_T);
+        using block_type = Block_T;
+
+        // TODO: Verify block_bits is used in calculations
+        constexpr static auto block_size = sizeof(block_type);
+        constexpr static auto block_bits = block_size * std::numeric_limits<unsigned char>::digits;
+        constexpr static auto block_alignment = alignof(block_type);
 
     public: // statics
         // All blocks are fully used?
         constexpr static bool fully_mapped(std::size_t bit_count)
         {
-            return bit_count % Block_Bits == 0;
+            return bit_count % block_bits == 0;
         }
 
         // The number of Bitmap Blocks used
         constexpr static std::size_t calculate_block_count(std::size_t bit_count)
         {
-            return  (bit_count + Block_Bits - 1) / Block_Bits;
+            return  (bit_count + block_bits - 1) / block_bits;
         }
         
     public:
         // Create the bitmap in-place
         Bitmap(std::size_t bit_count, std::byte * base)
-            : m_base(reinterpret_cast<Block_T *>(base))
+            : m_base(reinterpret_cast<block_type *>(base))
             , m_bit_size(bit_count)
             , m_size(Bitmap::calculate_block_count(bit_count))
         {
-            // TODO: assert alignment
+            DD99_ALLOCATORS_ASSERT_HARDENED("memory must be appropriately aligned", is_aligned(m_base, block_alignment));
+            
             reset();
         }
 
@@ -68,19 +71,19 @@ namespace dd99::memory::structure
 
         void set(std::size_t bit_index)
         {
-            m_base[bit_index / Block_Bits] |= (Block_T(1) << (bit_index % Block_Bits));
+            m_base[bit_index / block_bits] |= (block_type(1) << (bit_index % block_bits));
         }
 
         void unset(std::size_t bit_index)
         {
-            m_base[bit_index / Block_Bits] &= ~(Block_T(1) << (bit_index % Block_Bits));
+            m_base[bit_index / block_bits] &= ~(block_type(1) << (bit_index % block_bits));
         }
 
         bool toggle(std::size_t bit_index)
         {
-            const auto blk_index = bit_index / Block_Bits;
-            const auto bit_index_in_blk = bit_index % Block_Bits;
-            const auto bit_mask = static_cast<Block_T>(Block_T(1) << bit_index_in_blk);
+            const auto blk_index = bit_index / block_bits;
+            const auto bit_index_in_blk = bit_index % block_bits;
+            const auto bit_mask = static_cast<block_type>(block_type{1} << bit_index_in_blk);
 
             m_base[blk_index] ^= bit_mask;
 
@@ -92,28 +95,28 @@ namespace dd99::memory::structure
         std::size_t set_first_unset()
         {
             // Scan through blocks looking for one that's not fully set (all 1s)
-            // Avoid strict aliasing violations by staying within Block_T pointer type
+            // Avoid strict aliasing violations by staying within block_type pointer type
             // Modern compilers should optimize this effectively through vectorization and loop unrolling
             auto block_ptr = m_base;
             const auto block_ptr_end = m_base + size();
             
             while (block_ptr < block_ptr_end)
             {
-                if (*block_ptr != Block_T(-1))
+                if (*block_ptr != block_type(-1))
                 {
                     // Found a block with at least one unset bit
-                    unsigned bit = std::countr_zero(static_cast<Block_T>(~*block_ptr)); // first 0 bit
-                    *block_ptr |= (Block_T{1} << bit);
-                    return static_cast<std::size_t>(block_ptr - m_base) * Block_Bits + bit;
+                    unsigned bit = std::countr_zero(static_cast<block_type>(~*block_ptr)); // first 0 bit
+                    *block_ptr |= (block_type{1} << bit);
+                    return static_cast<std::size_t>(block_ptr - m_base) * block_bits + bit;
 
-                    // for (unsigned bit = 0; bit < Block_Bits; ++bit)
+                    // for (unsigned bit = 0; bit < block_bits; ++bit)
                     // {
-                    //     const auto mask = Block_T(1) << bit;
+                    //     const auto mask = block_type(1) << bit;
 
                     //     if ((*block_ptr & mask) == 0)
                     //     {
                     //         *block_ptr |= mask;
-                    //         return std::size_t(block_ptr - m_base) * Block_Bits + bit;
+                    //         return std::size_t(block_ptr - m_base) * block_bits + bit;
                     //     }
                     // }
                 }
@@ -129,30 +132,30 @@ namespace dd99::memory::structure
         {
             // Use memset to clear memory - avoids strict aliasing violations
             // while maintaining performance through compiler optimizations
-            std::memset(m_base, 0, size() * sizeof(Block_T));
+            std::memset(m_base, 0, size() * block_size);
 
             // mark unmapped bits as used
             // last block only
             if (!fully_mapped())
             {
-                const auto n_used_bits = bit_size() % Block_Bits;
-                const auto n_unused_bits = Block_Bits - n_used_bits;
+                const auto n_used_bits = bit_size() % block_bits;
+                const auto n_unused_bits = block_bits - n_used_bits;
 
-                m_base[size() - 1] |= static_cast<Block_T>(((std::make_unsigned_t<Block_T>(1) << n_unused_bits) - 1) << n_used_bits);
+                m_base[size() - 1] |= static_cast<block_type>(((std::make_unsigned_t<block_type>(1) << n_unused_bits) - 1) << n_used_bits);
             }
         }
 
         // get the value of a specific bit
         bool operator[](std::size_t index) const
         {
-            const auto block_index = index / Block_Bits;
-            const auto bit_index = index % Block_Bits;
-            return static_cast<bool>(m_base[block_index] & (Block_T(1) << bit_index));
+            const auto block_index = index / block_bits;
+            const auto bit_index = index % block_bits;
+            return static_cast<bool>(m_base[block_index] & (block_type(1) << bit_index));
         }
 
     private:
-        Block_T *   m_base;
-        std::size_t m_bit_size;
-        std::size_t m_size;
+        block_type * m_base;
+        std::size_t  m_bit_size;
+        std::size_t  m_size;
     };
 }
