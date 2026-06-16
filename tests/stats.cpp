@@ -10,8 +10,10 @@
 #include <allocators/block_allocators/basic/bitmap/bitmap.hpp>
 #include <allocators/block_allocators/basic/buddy/buddy.hpp>
 #include <allocators/block_allocators/basic/buddy/state_implementations/buddy_intrusive_state.hpp>
+#include <allocators/block_allocators/basic/buddy/state_implementations/buddy_fused_state.hpp>
 
 #include <allocators/structures/blocks/self_contained_block.hpp>
+#include <allocators/structures/blocks/raii_block.hpp>
 
 
 
@@ -93,6 +95,69 @@ void stat_allocator(auto & allocator, std::size_t iterations, Distribution alloc
 }
 
 
+template <std::size_t BlockSize, std::size_t Levels, class LevelType = unsigned int, class IndexType = unsigned int>
+auto make_buddy_alloc2(std::size_t managed_size)
+{
+    using blk_addr_type = dd99::memory::block_allocator::buddy_namespace::buddy_block_address<LevelType, IndexType>;
+    using raii_block_type = dd99::memory::raii_block<>;
+    using layout_type = dd99::memory::block_allocator::buddy_namespace::buddy_standard_layout<blk_addr_type, BlockSize, Levels, BlockSize << (Levels-1), raii_block_type>;
+    using traits_type = dd99::memory::block_allocator::buddy_namespace::buddy_intrusive_state_traits<layout_type>;
+    using state_type = dd99::memory::block_allocator::buddy_namespace::buddy_intrusive_state<layout_type, raii_block_type>;
+
+    constexpr std::size_t managed_alignment = layout_type::last_level_alignment;
+    std::byte * managed_ptr = reinterpret_cast<std::byte *>(::operator new(managed_size, std::align_val_t{managed_alignment}));
+    raii_block_type managed_block{
+        dd99::memory::block{.base = managed_ptr, .size = managed_size},
+        [](dd99::memory::block blk){ if(blk.base != nullptr) ::operator delete(blk.base, std::align_val_t{managed_alignment}); }
+    };
+
+    layout_type layout{std::move(managed_block)};
+
+    auto state_size = traits_type::get_state_size(layout);
+    constexpr auto state_alignment = traits_type::get_state_alignment();
+    std::byte * state_ptr = reinterpret_cast<std::byte *>(::operator new(state_size, std::align_val_t{state_alignment}));
+    raii_block_type state_block{
+        dd99::memory::block{.base = state_ptr, .size = state_size},
+        [](dd99::memory::block blk){ if(blk.base != nullptr) ::operator delete(blk.base, std::align_val_t{state_alignment}); }
+    };
+
+    auto state = traits_type::make_state(std::move(layout), std::move(state_block));
+
+    return dd99::memory::block_allocator::buddy{std::move(state)};
+}
+
+template <std::size_t BlockSize, std::size_t Levels, class LevelType = unsigned int, class IndexType = unsigned int>
+auto make_buddy_alloc(std::size_t managed_size)
+{
+    using blk_addr_type = dd99::memory::block_allocator::buddy_namespace::buddy_block_address<LevelType, IndexType>;
+    using raii_block_type = dd99::memory::raii_block<>;
+    using layout_type = dd99::memory::block_allocator::buddy_namespace::buddy_standard_layout<blk_addr_type, BlockSize, Levels, BlockSize << (Levels-1), raii_block_type>;
+    using traits_type = dd99::memory::block_allocator::buddy_namespace::buddy_fused_state_traits<layout_type>;
+    using state_type = dd99::memory::block_allocator::buddy_namespace::buddy_fused_state<layout_type, raii_block_type>;
+
+    constexpr std::size_t managed_alignment = layout_type::last_level_alignment;
+    std::byte * managed_ptr = reinterpret_cast<std::byte *>(::operator new(managed_size, std::align_val_t{managed_alignment}));
+    raii_block_type managed_block{
+        dd99::memory::block{.base = managed_ptr, .size = managed_size},
+        [](dd99::memory::block blk){ if(blk.base != nullptr) ::operator delete(blk.base, std::align_val_t{managed_alignment}); }
+    };
+
+    layout_type layout{std::move(managed_block)};
+
+    auto state_size = traits_type::get_state_size(layout);
+    constexpr auto state_alignment = traits_type::get_state_alignment();
+    std::byte * state_ptr = reinterpret_cast<std::byte *>(::operator new(state_size, std::align_val_t{state_alignment}));
+    raii_block_type state_block{
+        dd99::memory::block{.base = state_ptr, .size = state_size},
+        [](dd99::memory::block blk){ if(blk.base != nullptr) ::operator delete(blk.base, std::align_val_t{state_alignment}); }
+    };
+
+    auto state = traits_type::make_state(std::move(layout), std::move(state_block));
+
+    return dd99::memory::block_allocator::buddy{std::move(state)};
+}
+
+
 int main()
 {
     std::cout.precision(4);
@@ -103,28 +168,30 @@ int main()
               << std::setw(10) << "allocated"
               << "\n";
 
-    using buddy_blk_address_type = alloc::buddy_namespace::buddy_block_address<>;
-    using buddy_layout_type = alloc::buddy_namespace::buddy_standard_layout<buddy_blk_address_type, 64, 11>;
-    using buddy_state_traits = alloc::buddy_namespace::buddy_intrusive_state_traits<buddy_layout_type>;
+    // using buddy_blk_address_type = alloc::buddy_namespace::buddy_block_address<>;
+    // using buddy_layout_type = alloc::buddy_namespace::buddy_standard_layout<buddy_blk_address_type, 64, 11>;
+    // using buddy_state_traits = alloc::buddy_namespace::buddy_intrusive_state_traits<buddy_layout_type>;
     // using buddy_state_type = alloc::buddy_namespace::buddy_intrusive_state<buddy_layout_type, mem::>;
     // using allocator_type = alloc::buddy<buddy_state_type>;
 
-    constexpr std::size_t mem_size = 1 << 20;
-    mem::self_contained_block<mem_size> memory_ac;
-    auto memory = memory_ac.get_block();
+    // constexpr std::size_t mem_size = 1 << 20;
+    // mem::self_contained_block<mem_size> memory_ac;
+    // auto memory = memory_ac.get_block();
 
-    buddy_layout_type layout{memory};
+    // buddy_layout_type layout{memory};
 
-    auto aux_mem_size = buddy_state_traits::get_state_size(layout);
-    auto aux_mem_alignment = buddy_state_traits::get_state_alignment();
+    // auto aux_mem_size = buddy_state_traits::get_state_size(layout);
+    // auto aux_mem_alignment = buddy_state_traits::get_state_alignment();
 
-    auto aux_memory_ptr = std::make_unique<std::byte[]>(aux_mem_size);
-    // assume alignment is enough
-    // TODO: ensure alignment is enough
-    mem::block aux_memory{aux_memory_ptr.get(), aux_mem_size};
+    // auto aux_memory_ptr = std::make_unique<std::byte[]>(aux_mem_size);
+    // // assume alignment is enough
+    // // TODO: ensure alignment is enough
+    // mem::block aux_memory{aux_memory_ptr.get(), aux_mem_size};
 
-    auto buddy_state = buddy_state_traits::make_state(std::move(layout), aux_memory);
-    alloc::buddy allocator{std::move(buddy_state)};
+    // auto buddy_state = buddy_state_traits::make_state(std::move(layout), aux_memory);
+    // alloc::buddy allocator{std::move(buddy_state)};
+
+    auto allocator = make_buddy_alloc<64, 11>(1 << 20);
 
     for (int i = 0; i < 200; i++)
     {
