@@ -16,4 +16,12 @@ namespace dd99::memory
         return reinterpret_cast<std::byte *>(aligned);
     }
 
+    inline constexpr
+    bool
+    is_aligned(std::byte * ptr, std::size_t alignment)
+    {
+        return (reinterpret_cast<std::uintptr_t>(ptr) & (alignment - 1)) == 0;
+        // return (reinterpret_cast<std::uintptr_t>(ptr) % alignment) == 0;
+    }
+
 }

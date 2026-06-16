@@ -2,6 +2,7 @@
 
 #include <allocators/block_allocators/block_allocator.hpp>
 #include <allocators/structures/new_result.hpp>
+#include <allocators/alignment.hpp>
 #include <type_traits>
 
 namespace dd99::memory
@@ -10,8 +11,12 @@ namespace dd99::memory
     requires std::is_object_v<T> && (!std::is_unbounded_array_v<T>)
     auto allocator_new(Allocator & allocator)
     {
-        // TODO: Verify alignment
-        return new_result<T>{allocator.allocate(sizeof(T))};
+        constexpr auto size = sizeof(T);
+        constexpr auto alignment = alignof(T);
+
+        new_result<T> result{allocator.allocate(size, alignment)};
+        
+        return std::move(result);
     }
 
     // allocate array
@@ -19,8 +24,12 @@ namespace dd99::memory
     requires std::is_unbounded_array_v<T>
     auto allocator_new(Allocator & allocator, std::size_t count)
     {
-        // TODO: Verify alignment
-        return new_result<T>{allocator.allocate(count * sizeof(std::remove_extent_t<T>))};
+        constexpr auto size = sizeof(std::remove_extent_t<T>);
+        constexpr auto alignment = alignof(std::remove_extent_t<T>);
+
+        new_result<T> result{allocator.allocate(size, alignment)};
+
+        return std::move(result);
     }
 
 
