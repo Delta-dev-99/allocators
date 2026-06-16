@@ -1,5 +1,7 @@
 #pragma once
 
+#include <allocators/library_configuration/cpp_config.hpp>
+#include <allocators/alignment.hpp>
 #include <cstddef>
 #include <new>
 
@@ -40,7 +42,7 @@ namespace dd99::memory::structure
         std::byte *
         pop()
         {
-            // TODO: assert(!empty())
+            DD99_ALLOCATORS_ASSERT_HARDENED("tried to pop() empty list", !empty());
 
             const auto current = m_first_ptr;
             std::byte * node_address = reinterpret_cast<std::byte *>(current);
@@ -57,7 +59,8 @@ namespace dd99::memory::structure
         void
         push(std::byte * node_address)
         {
-            // TODO: assert alignment of the given pointer
+            DD99_ALLOCATORS_ASSERT_HARDENED("tried to push unaligned pointer", is_aligned(node_address, alignof(node)));
+
             node * new_node_ptr = new (node_address) node{.m_next_ptr = m_first_ptr};
             m_first_ptr = new_node_ptr;
         }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <allocators/library_configuration/cpp_config.hpp>
 #include <allocators/structures/blocks/block_concept.hpp>
 #include <allocators/structures/bitmap.hpp>
 #include <allocators/alignment.hpp>
@@ -72,7 +73,10 @@ namespace dd99::memory::block_allocator
             , m_block_count{calculate_block_count(m_managed_memory)}
             , m_bmp{m_block_count, m_state_memory.get_base()}
         {
-            // TODO: assert requirements that can't be statically asserted
+            DD99_ALLOCATORS_ASSERT_HARDENED("managed memory base must be aligned to Block_Alignment", is_aligned(m_managed_memory.get_base(), block_alignment));
+            DD99_ALLOCATORS_ASSERT_HARDENED("state memory base must be properly aligned", is_aligned(m_state_memory.get_base(), bmp_type::block_alignment));
+            DD99_ALLOCATORS_ASSERT_CRITICAL("state memory block must be big enough", m_state_memory.get_size() >= bmp_type::calculate_block_count(m_block_count) * bmp_type::block_size);
+            
             deallocate_all();
         }
 

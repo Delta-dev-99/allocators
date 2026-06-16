@@ -65,8 +65,9 @@ namespace dd99::memory::block_allocator
         memory::block
         allocate(std::size_t requested_size, std::size_t requested_alignment)
         {
-            // TODO: consider, for alignment larger than requested size we can allocate from a higher level and split the block.
-            // TODO: assert requested_alignment is a power of 2
+            // NOTE: for alignment larger than requested size we allocate from a higher level and split the block.
+            DD99_ALLOCATORS_ASSERT_HARDENED("alignment must be a power of 2", std::has_single_bit(requested_alignment));
+            
             if (requested_size == 0) return {};
             const auto size_level = layout_type::calculate_block_level(requested_size);
             const auto alignment_level = std::max(size_level, layout_type::get_alignment_level(requested_alignment));

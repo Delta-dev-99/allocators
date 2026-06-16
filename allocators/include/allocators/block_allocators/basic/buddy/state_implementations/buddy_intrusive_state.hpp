@@ -1,5 +1,6 @@
 #pragma once
 
+#include <allocators/library_configuration/cpp_config.hpp>
 #include <allocators/block_allocators/basic/buddy/buddy_layout.hpp>
 #include <allocators/block_allocators/basic/buddy/buddy_state.hpp>
 #include <allocators/structures/linked_list.hpp>
@@ -30,14 +31,14 @@ namespace dd99::memory::block_allocator::buddy_namespace
         {
             const auto state_bits = layout.get_total_joint_block_count();
             const auto bitmap_size = bitmap_type::calculate_block_count(state_bits);
-            return bitmap_size * bitmap_type::Block_Size;
+            return bitmap_size * bitmap_type::block_size;
         }
 
         static constexpr
         std::size_t
         get_state_alignment()
         {
-            return bitmap_type::Block_Alignment;
+            return bitmap_type::block_alignment;
         }
 
         template <class State_Memory_Block_Type>
@@ -66,7 +67,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
             // // Analytical initial guess from continuous relaxation
             // constexpr auto pow2_Lm1 = 1ULL << (Levels - 1);
             // constexpr auto a_num = pow2_Lm1 - 1;          // 2^{L-1} - 1
-            // constexpr auto denom = 8ULL * Block_Size * pow2_Lm1 + a_num;
+            // constexpr auto denom = 8ULL * block_size * pow2_Lm1 + a_num;
             // // Numerator: 8 * memory_size * pow2_Lm1
             // // We assume memory_size * 8 * pow2_Lm1 < 2^64 (holds for realistic RAM).
 
@@ -80,11 +81,11 @@ namespace dd99::memory::block_allocator::buddy_namespace
             // // helper predicate
             // auto fits = [&](std::size_t block_count) -> bool {
             //     std::size_t bits = Buddy_Base::calculate_buddy_bit_count(block_count);
-            //     std::size_t bitmap = BMP::calculate_block_count(bits) * BMP::Block_Size;
-            //     return block_count * Block_Size + bitmap <= memory_size;
+            //     std::size_t bitmap = BMP::calculate_block_count(bits) * BMP::block_size;
+            //     return block_count * block_size + bitmap <= memory_size;
             // };
 
-            // // adjust - at most ceil(BMP::Block_Size / Block_Size) steps
+            // // adjust - at most ceil(BMP::block_size / block_size) steps
             // if (fits(block_count))
             // {
             //     while(fits(block_count + 1)) ++block_count;
@@ -105,7 +106,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
     // This parameter determines the number of linked lists to create and the number of buddy states to manage for a given number of lowest-level blocks.
     // 
     // The `Block_Address_Type` template parameter:
-    // The type used to represent the address of a block in the buddy system. Can be customized to balance required bookkeeping memory vs representable memory range for a given Block_Size used in the buddy allocator. This type is expected to encode both the level and index of the block within the buddy system's hierarchy. The default type is `dd99::memory::block_allocator::buddy_policy::block_address<>`, which uses unsigned integers for both level and index. This type is used by the policy to identify blocks when performing operations such as pushing, popping, and merging blocks in the buddy system. The user can provide a custom type that satisfies the expected interface if they want to use a different encoding for block addresses.
+    // The type used to represent the address of a block in the buddy system. Can be customized to balance required bookkeeping memory vs representable memory range for a given block_size used in the buddy allocator. This type is expected to encode both the level and index of the block within the buddy system's hierarchy. The default type is `dd99::memory::block_allocator::buddy_policy::block_address<>`, which uses unsigned integers for both level and index. This type is used by the policy to identify blocks when performing operations such as pushing, popping, and merging blocks in the buddy system. The user can provide a custom type that satisfies the expected interface if they want to use a different encoding for block addresses.
     // 
     // The `State_Block_Type` template parameter:
     // The type of the memory block provided by the user to store the buddy state and free list information. Intended to be deduced via factory function. This block is expected to be large enough to hold the necessary data structures for managing the buddy system's state across all levels. The policy will use this block to maintain the state of which blocks are free and which are allocated, as well as to manage the linked lists of free blocks at each level. The user is responsible for providing a suitable memory block for this purpose, and the policy will handle the organization and management of this block internally.
@@ -138,10 +139,10 @@ namespace dd99::memory::block_allocator::buddy_namespace
 
         static_assert(sizeof(freelist_type::node) <= block_size,
             "block_size is too small to hold a freelist node.");
-
-        // TODO: assert that freelist node alignment requirements are met by all blocks
-        // NOTE: this means that alignment must be a divisor of block size
-        // NOTE: and managed memory base (inside layout) must have this alignment.
+        
+        static_assert(block_size % alignof(freelist_type::node) == 0,
+            "block_size must be a multiple of the freelist node alignment, "
+            "so that every block meets alignment requirements for nodes");
 
         // a type for tracking the state of buddy blocks
         // wraps a bitmap and adds a convenient interface for the buddy allocator
@@ -152,7 +153,8 @@ namespace dd99::memory::block_allocator::buddy_namespace
             std::size_t
             get_bitmap_index_from_joint(block_address_type joint_blk_address, const layout_type & layout) const
             {
-                // TODO: assert(joint_blk_address.level > 0). Blocks at level 0 aren't joint blocks.
+                DD99_ALLOCATORS_ASSERT_DEBUG("blocks at level 0 aren't joint blocks", joint_blk_address.level > 0);
+
                 return joint_blk_address.index + layout.get_cumulative_joint_block_count(joint_blk_address.level - 1);
             }
 
@@ -179,10 +181,10 @@ namespace dd99::memory::block_allocator::buddy_namespace
             , m_state_memory{std::move(state_memory)}
             , m_state_tracker{bitmap_type{m_layout.get_total_joint_block_count(), m_state_memory.get_base()}}
         {
-            // TODO: assert state memory is enough
-            // assert(m_state_memory.size >= bitmap_type::calculate_block_count(m_layout.get_total_joint_block_count()) * bitmap_type::Block_Size)
-            // TODO: assert state memory is properly aligned
-            // assert(state_memory.base & (bitmap_type::Block_Alignment - 1) == 0)
+            DD99_ALLOCATORS_ASSERT_HARDENED("managed memory base must be appropriately aligned to hold freelist nodes", is_aligned(m_layout.m_memory.get_base(), alignof(freelist_type::node)));
+            DD99_ALLOCATORS_ASSERT_HARDENED("state memory too small", m_state_memory.get_size() >= bitmap_type::calculate_block_count(m_layout.get_total_joint_block_count()) * bitmap_type::block_size);
+            DD99_ALLOCATORS_ASSERT_HARDENED("state memory must be appropriately aligned", is_aligned(m_state_memory.get_base(), bitmap_type::block_alignment));
+
             init_freelists();
         }
 

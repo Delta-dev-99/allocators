@@ -10,6 +10,8 @@ target_include_directories(allocators INTERFACE include)
 # )
 
 target_sources(allocators INTERFACE
+    src/assertions.cpp
+
     # include/allocators/allocator.hpp
     # include/allocators/allocators.hpp
     # include/allocators/exception.hpp

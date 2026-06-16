@@ -1,7 +1,9 @@
 #pragma once
 
+#include <allocators/library_configuration/cpp_config.hpp>
 #include <allocators/structures/blocks/memory_block.hpp>
 #include <allocators/block_allocators/basic/buddy/buddy_block_address.hpp>
+#include <allocators/alignment.hpp>
 #include <array>
 #include <bit>
 #include <concepts>
@@ -95,10 +97,10 @@ namespace dd99::memory::block_allocator::buddy_namespace
         level_type
         get_alignment_level(std::size_t alignment)
         {
-            // TODO: assert(alignment <= last_level_alignment);
-            // NOTE: `alignment > last_level_alignment` results in `last_level + 1` which is correctly handled on allocation
+            DD99_ALLOCATORS_ASSERT_HARDENED("alignment too big", alignment <= last_level_alignment);
+            DD99_ALLOCATORS_ASSERT_DEBUG("alignment must be a power of 2", std::has_single_bit(alignment));
+            // NOTE: `alignment > last_level_alignment` results in `last_level + 1` which is correctly handled on allocation, but the returned block is not aligned as expected
             // NOTE: `alignment == 0` causes a division by zero, but this is a user error. minimum alignment is 1, which is effectively unaligned.
-            // TODO: assert(alignment > 0);
             if (alignment <= first_level_alignment) return 0;
             else return levels - std::bit_width(last_level_alignment / alignment);
         }
@@ -174,6 +176,9 @@ namespace dd99::memory::block_allocator::buddy_namespace
             const auto blk_size = get_level_block_size(level);
             const auto block_offset = static_cast<std::size_t>(block_base - memory_base);
             // TODO: this division could be optimized when block sizes are powers of 2
+            // TODO: can we use assertions to guide optimization assumptions? maybe instead of disabling assertions on release, we could change it to a compiler assumption directive.
+            // TODO: we could then assert(std::has_single_bit(blk_size))
+            // TODO: an alternative would be to use compile-time branching, which would also allow non-power-of-2 block sizes
             return block_offset / blk_size;
         }
 
@@ -244,10 +249,8 @@ namespace dd99::memory::block_allocator::buddy_namespace
             : m_memory{std::move(mem_blk)}
             , m_block_count{static_cast<index_type>(m_memory.size / block_size)}
         {
-            // TODO: assert memory base alignment
-            // should be aligned to the maximum block alignment (largest block)
-
-            // TODO: assert addresses can represent the whole memory range.
+            DD99_ALLOCATORS_ASSERT_HARDENED("managed memory base must be appropriately aligned", is_aligned(m_memory.get_base(), last_level_alignment));
+            DD99_ALLOCATORS_ASSERT_HARDENED("managed memory too big for the chosen addressing type", static_cast<std::size_t>(m_block_count) == (m_memory.size / block_size));
 
             // calculate cumulative joint block counts
             m_cumulative_joint_block_count[0] = 0;

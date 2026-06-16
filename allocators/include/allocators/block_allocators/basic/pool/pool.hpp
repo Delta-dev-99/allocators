@@ -1,5 +1,6 @@
 #pragma once
 
+#include <allocators/library_configuration/cpp_config.hpp>
 #include <allocators/block_allocators/block_allocator.hpp>
 #include <allocators/structures/forward_list.hpp>
 
@@ -36,7 +37,8 @@ namespace dd99::memory::block_allocator
         Pool(const memory::block &memory)
             : m_memory(memory)
         {
-            // TODO: assert memory is aligned
+            DD99_ALLOCATORS_ASSERT_HARDENED("managed memory must be aligned to Block_Alignment", is_aligned(m_memory.get_base(), block_alignment));
+            
             build_free_list();
         }
 
@@ -44,8 +46,9 @@ namespace dd99::memory::block_allocator
         [[nodiscard]]
         memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = block_alignment)
         {
-            static_cast<void>(requested_alignment); // all blocks are aligned
-            // TODO: assert (requested_alignment <= Block_Alignment) && (requested_alignment & (requested_alignment - 1) == 0)
+            static_cast<void>(requested_alignment); // all blocks are aligned, so parameter is unused
+            DD99_ALLOCATORS_ASSERT_HARDENED("alignment must be a power of 2", std::has_single_bit(requested_alignment));
+            DD99_ALLOCATORS_ASSERT_HARDENED("alignment too big", requested_alignment <= block_alignment);
 
             // larger allocations not supported
             if ((requested_size > block_size) || m_freelist.empty())

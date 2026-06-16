@@ -49,7 +49,7 @@ namespace dd99::memory::block_allocator
         // Can only free the last allocated block
         void deallocate(const block &memory)
         {
-            if (memory.base < m_memory.base) return; // TODO: consider whether this check should be omitted
+            if (memory.base < m_memory.base) return; // TODO: *** consider whether this check should be omitted
             if (memory.get_end() == m_current) // implies `owns()`
             {
                 m_current -= memory.size;
