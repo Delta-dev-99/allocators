@@ -7,7 +7,12 @@
 
 namespace dd99::memory
 {
-    [[weak, cold, noreturn]] // TODO: write appropriate attributes
+    // NOTE: this is provided as a weak symbol.
+    // the user may want to provide a custom implementation.
+    // this won't compile on some environments (e.g. freestanding)
+    //  in that case, don't use this file and just provide an appropriate implementation or a stub.
+    //  for a kernel it may be reasonable to replace with a call to `panic()` or an equivalent.
+    [[gnu::weak, gnu::cold, noreturn]]
     void
     allocators_assertion_failed(const assertion_info & info) noexcept
     {
