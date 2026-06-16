@@ -70,12 +70,12 @@ namespace dd99::memory
 }
 
 
-// TODO: currently this class inherits from block and can be used interchangeably.
-// this raises concerns about implicit decay, which would inadvertently cause the destructor to be called and the block to become invalid.
-// perhaps we should check whether unique_ptr can be used where a pointer is expected.
+// NOTE: currently this class inherits from block privately (different from before).
+// this DOES NOT raise concerns about implicit decay, which would inadvertently cause the destructor to be called and the block to become invalid.
+// perhaps we could check whether unique_ptr can be used where a pointer is expected.
 // a better design may allow explicitly getting the block, implicitly working with the members, but not the implicit decay.
 
-// TODO: consider polymorphism on this class.
+// NOTE: considering polymorphism on this class.
 // the destructor is not virtual.
 // the base class block doesn't have a virtual destructor.
 // holding a `block *` to an instance of this class may be safe, but not deleting the pointer.
