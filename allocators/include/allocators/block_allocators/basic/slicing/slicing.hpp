@@ -14,6 +14,8 @@ namespace dd99::memory::block_allocator
         // nodes on blocks and allows different block sizes.
         // This is a custom freelist that keeps the nodes sorted,
         // joins adjacent free blocks and slices blocks as needed.
+        // 
+        // TODO: review and test last changes
         class Slicing_Freelist
         {
         protected:
@@ -39,7 +41,7 @@ namespace dd99::memory::block_allocator
 
         public:
             // get a memory slice with at least the specified size
-            memory::block pop_slice(std::size_t min_size, std::size_t requested_alignment = 1)
+            memory::block pop_slice(std::size_t requested_size, std::size_t requested_alignment = 1)
             {
                 // This function searches for a block that satisfies the request and complies with the rules of the allocator.
                 // considering that block headers also have alignment requirements,
@@ -48,8 +50,9 @@ namespace dd99::memory::block_allocator
                 // we also need to ensure that a block header can be placed on the returned block (to allow deallocation)
 
                 // smaller allocations not allowed
-                if (min_size < sizeof(Block_Header))
-                    min_size = sizeof(Block_Header);
+                if (requested_size < sizeof(Block_Header)) requested_size = sizeof(Block_Header);
+                // less alignment not allowed
+                if (requested_alignment < alignof(Block_Header)) requested_alignment = alignof(Block_Header);
 
                 auto current = first;
                 decltype(current) prev = nullptr;
@@ -57,28 +60,83 @@ namespace dd99::memory::block_allocator
                 {
                     auto current_block = current->get_memory_block();
                     auto current_aligned = align_up(current_block.base, requested_alignment);
-                    
 
-                    if (current->size >= min_size)
+                    // ensure any space left before the block is enough for a block header
+                    if (current_aligned != current_block.base)
+                    {
+                        while(static_cast<std::size_t>(current_aligned - current_block.base) < sizeof(Block_Header))
+                        {
+                            current_aligned = align_up(current_aligned + 1, requested_alignment);
+                        }
+                        // note: haven't decided whether the block is suitable yet, so we can't touch the headers.
+                    }
+                    
+                    // size after aligning-up the start of the block
+                    auto aligned_size = static_cast<std::size_t>(current_block.get_end() - current_aligned);
+
+                    if (aligned_size >= requested_size)
                     {
                         // found a suitable block.
-                        if (current->size >= sizeof(Block_Header) + min_size)
+                        // we will be allocating from this one.
+
+                        // trim space at the start if necessary, destroy header otherwise
+                        if (current_aligned != current_block.base)
+                        {
+                            // trimming the start. we just leave the header there and update the size
+                            current->size -= static_cast<std::size_t>(current_aligned - current_block.base);
+
+                            // current now points to the block before the one we are allocating
+                        }
+                        else
+                        {
+                            // not trimming at the start.
+                            // we need to destroy the block header present there.
+                            if (prev) prev->next = current->next;
+                            else first = current->next;
+                            current->~Block_Header();
+
+                            // update current so that it points to the block before the one we are allocating
+                            if (prev) current = prev;
+                            else current = nullptr;
+                        }
+
+                        // note: the block, starting at current_aligned, is now not in the linked list
+
+                        // end of the block aligned-up for next block header
+                        auto aligned_end = align_up(current_aligned + requested_size, alignof(Block_Header));
+                        // size left after aligned_end
+                        auto aligned_oversize = static_cast<std::size_t>(current_block.get_end() - aligned_end);
+
+                        // check whether we can trim some space at the end
+                        if (aligned_oversize >= sizeof(Block_Header))
                         {
                             // Remaining space is large enough to fit a free list header.
                             // Divide the block.
-                            current->size -= min_size;
-                            return {.base = reinterpret_cast<std::byte *>(current) + current->size, .size = min_size};
+
+                            // we won't need coalescing because if it were possible it would have been done already.
+                            // we are just putting back the end of the block.
+                            // insert between current and the next one.
+                            Block_Header * new_header;
+                            if (current) // current may be nullptr if we allocated from the very first block without trimming the start
+                            {
+                                new_header = new (aligned_end) Block_Header{.next = current->next, .size = aligned_oversize};
+                                current->next = new_header;
+                            }
+                            else
+                            {
+                                new_header = new (aligned_end) Block_Header{.next = first, .size = aligned_oversize};
+                                first = new_header;
+                            }
+
+                            return block{.base = current_aligned, .size = static_cast<std::size_t>(aligned_end - current_aligned)};
                         }
                         else
                         {
                             // Can't leave a space smaller than sizeof(Block_Header).
                             // Extract the full block
-                            if (prev) prev->next = current->next;
-                            else first = current->next;
-                            
-                            auto r = current->get_memory_block();
-                            current->~Block_Header();
-                            return r;
+
+                            // not much to do because the block is already not in the freelist
+                            return block{.base = current_aligned, .size = aligned_size};
                         }
                     }
 
