@@ -68,7 +68,7 @@ namespace dd99::memory::block_allocator::metrics
         memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
             const auto start = std::chrono::steady_clock::now();
-            auto r = Sub_Alloc_T::allocate(requested_size);
+            auto r = Sub_Alloc_T::allocate(requested_size, requested_alignment);
             const auto end = std::chrono::steady_clock::now();
 
             const auto duration = end - start;
