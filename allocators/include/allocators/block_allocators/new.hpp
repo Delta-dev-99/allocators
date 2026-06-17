@@ -28,7 +28,9 @@ namespace dd99::memory
     requires std::is_unbounded_array_v<T>
     auto allocator_new(Allocator & allocator, std::size_t count)
     {
-        constexpr auto size = sizeof(std::remove_extent_t<T>);
+        // TODO: what to do for types that require padding in an array? is the padding included in `sizeof`?
+
+        constexpr auto size = sizeof(std::remove_extent_t<T>) * count;
         constexpr auto alignment = alignof(std::remove_extent_t<T>);
 
         new_result<T> result{allocator.allocate(size, alignment)};

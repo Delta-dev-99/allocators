@@ -265,7 +265,7 @@ namespace dd99::memory::block_allocator
         [[nodiscard]]
         memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
-            return m_free_list.pop_slice(requested_size);
+            return m_free_list.pop_slice(requested_size, requested_alignment);
         }
 
         void deallocate(const memory::block &memory)

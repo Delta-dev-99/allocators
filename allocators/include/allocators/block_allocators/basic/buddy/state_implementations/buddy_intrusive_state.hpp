@@ -56,6 +56,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
             block managed, state;
         };
 
+        // TODO:
         static constexpr
         split_block
         calculate_block_split(block blk)
