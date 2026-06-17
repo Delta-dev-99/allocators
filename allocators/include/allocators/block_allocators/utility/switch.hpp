@@ -11,7 +11,7 @@ namespace dd99::memory::block_allocator::utility
 {
 
     // Requirements:
-    //  - Sub allocators are "Allocators"
+    //  - Sub allocators are "Block Allocators"
     //  - Functor can be evaluated on requests
     //  - Functor returns an index into the list of allocators
     //  - Request type must provide member function `get_request()`
@@ -21,6 +21,8 @@ namespace dd99::memory::block_allocator::utility
     //    and a compile-time constant value
     // Ussage:
     // Switch my_switch(func, alloc1, alloc2, ...)
+    // 
+    // TODO: This needs restructuring because it is hard to read, and because now there are better ways.
     template <class Functor, class... Allocators>
     class Switch
     {

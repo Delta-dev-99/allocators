@@ -16,10 +16,10 @@ namespace dd99::memory::block_allocator::composite
 
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t requested_size)
+        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
             const auto size_step_ceiling = (requested_size - 1) + Step_Size - ((requested_size - 1) % Step_Size);
-            return Sub_Alloc_T::allocate(size_step_ceiling);
+            return Sub_Alloc_T::allocate(size_step_ceiling, requested_alignment);
         }
 
         void deallocate(const memory::block &memory) { return Sub_Alloc_T::deallocate(memory); }

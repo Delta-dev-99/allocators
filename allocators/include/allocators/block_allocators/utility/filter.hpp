@@ -12,6 +12,7 @@ namespace dd99::memory::block_allocator::utility
     //      *** memory size is still needed. It will be
     //      *** extracted via `get_size()` method from the request.
     //      *** Request type needs to provide `get_size()` member func
+    //      *** Request type needs to provide `get_alignment()` member func
     template <class Request, class Predicate, class Sub_Allocator>
     class Filter
     {
@@ -26,7 +27,7 @@ namespace dd99::memory::block_allocator::utility
         memory::block allocate(Request request)
         {
             if (m_predicate(request))
-                return m_sub_allocator.allocate(request.get_size());
+                return m_sub_allocator.allocate(request.get_size(), request.get_alignment());
             return {};
         }
 

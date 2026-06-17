@@ -17,9 +17,9 @@ namespace dd99::memory::block_allocator::composite
 
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t requested_size)
+        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
-            const auto r = Sub_Alloc_T::allocate(requested_size);
+            const auto r = Sub_Alloc_T::allocate(requested_size, requested_alignment);
             // TODO: Add exception description?
             if (!r) throw dd99::memory::failed_allocation_exception{};
             return r;

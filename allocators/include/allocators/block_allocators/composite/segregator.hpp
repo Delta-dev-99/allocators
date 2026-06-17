@@ -15,12 +15,12 @@ namespace dd99::memory::block_allocator::composite
 
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t requested_size)
+        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
             if (requested_size <= Threshold)
-                return m_alloc_le.allocate(requested_size);
+                return m_alloc_le.allocate(requested_size, requested_alignment);
             else
-                return m_alloc_g.allocate(requested_size);
+                return m_alloc_g.allocate(requested_size, requested_alignment);
         }
 
         void deallocate(const memory::block &memory)

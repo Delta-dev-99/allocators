@@ -22,10 +22,10 @@ namespace dd99::memory::block_allocator::composite
 
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t requested_size)
+        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
-            if (m_predicate(requested_size))
-                return m_sub_allocator.allocate(requested_size);
+            if (m_predicate(requested_size, requested_alignment))
+                return m_sub_allocator.allocate(requested_size, requested_alignment);
             return {};
         }
 

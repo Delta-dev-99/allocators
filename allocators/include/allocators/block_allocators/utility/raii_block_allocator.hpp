@@ -10,16 +10,17 @@ namespace dd99::memory::block_allocator::utility
     // returns Unique_Block on allocation.
     // Blocks are deallocated automatically on destruction.
     // NOTE: The sub allocator cannot be degenerate.
-    // TODO: Rename to: Autofree_Block_Allocator
+    // TODO: Add assignment operator definitions
     template <class Sub_Alloc_T>
-    class Unique_Block_Allocator
+    class raii_block_allocator
     {
     public:
 
         struct deallocator_type
         {
             // used ptr to allow assignment
-            Unique_Block_Allocator ** allocator = nullptr;
+            // used 2nd level ptr to allow moving
+            raii_block_allocator ** allocator = nullptr;
             
             constexpr void
             operator()(const memory::block & memory) const
@@ -32,29 +33,29 @@ namespace dd99::memory::block_allocator::utility
         using block_type = dd99::memory::raii_block<deallocator_type>;
 
     public:
-        ~Unique_Block_Allocator()
+        ~raii_block_allocator()
         {
             cleanup();
         }
 
-        Unique_Block_Allocator(Sub_Alloc_T && sub_allocator)
+        raii_block_allocator(Sub_Alloc_T && sub_allocator)
             : m_sub_alloc(std::move(sub_allocator))
             , m_self_ptr_block(m_sub_alloc.allocate(get_memory_overhead()))
         {
-            auto ptr = new (m_self_ptr_block.base) Unique_Block_Allocator *;
+            auto ptr = new (m_self_ptr_block.base) raii_block_allocator *;
             *ptr = this;
         }
 
-        Unique_Block_Allocator(Unique_Block_Allocator && other)
+        raii_block_allocator(raii_block_allocator && other)
             : m_sub_alloc(std::move(other.m_sub_alloc))
             , m_self_ptr_block(std::move(other.m_self_ptr_block))
         {
-            *reinterpret_cast<Unique_Block_Allocator **>(m_self_ptr_block.base) = this;
+            *reinterpret_cast<raii_block_allocator **>(m_self_ptr_block.base) = this;
             other.m_self_ptr_block = {};
         }
 
 
-        Unique_Block_Allocator & operator=(Unique_Block_Allocator && other)
+        raii_block_allocator & operator=(raii_block_allocator && other)
         {
             if (this != & other)
             {
@@ -63,7 +64,7 @@ namespace dd99::memory::block_allocator::utility
                 m_sub_alloc = std::move(other.m_sub_alloc);
                 m_self_ptr_block = std::move(other.m_self_ptr_block);
 
-                *reinterpret_cast<Unique_Block_Allocator **>(m_self_ptr_block.base) = this;
+                *reinterpret_cast<raii_block_allocator **>(m_self_ptr_block.base) = this;
                 other.m_self_ptr_block = {};
             }
             return *this;
@@ -72,7 +73,7 @@ namespace dd99::memory::block_allocator::utility
     public:
         static constexpr
         std::size_t get_memory_overhead()
-        { return sizeof(Unique_Block_Allocator *); }
+        { return sizeof(raii_block_allocator *); }
 
     public:
         [[nodiscard]]
@@ -80,7 +81,7 @@ namespace dd99::memory::block_allocator::utility
         allocate(std::size_t requested_size)
         {
             auto mem = m_sub_alloc.allocate(requested_size);
-            auto deallocator = deallocator_type{reinterpret_cast<Unique_Block_Allocator **>(m_self_ptr_block.base)};
+            auto deallocator = deallocator_type{reinterpret_cast<raii_block_allocator **>(m_self_ptr_block.base)};
             return block_type{std::move(mem), std::move(deallocator)};
         }
 
@@ -99,7 +100,7 @@ namespace dd99::memory::block_allocator::utility
     protected:
         void cleanup()
         {
-            auto self_ptr_ptr = reinterpret_cast<Unique_Block_Allocator **>(m_self_ptr_block.base);
+            auto self_ptr_ptr = reinterpret_cast<raii_block_allocator **>(m_self_ptr_block.base);
             if (self_ptr_ptr)
                 *self_ptr_ptr = nullptr;
             m_sub_alloc.deallocate(m_self_ptr_block);

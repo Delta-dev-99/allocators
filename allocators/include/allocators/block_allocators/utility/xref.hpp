@@ -10,6 +10,7 @@ namespace dd99::memory::block_allocator::utility
     // Requires an existing and persisting allocator instance.
     // This allows the use of the same allocator as an underlying
     // allocator of 2 or more composite allocators.
+    // NOTE: see the `Ref` composite allocator.
     template <class Sub_Alloc_T>
     class XRef
     {
