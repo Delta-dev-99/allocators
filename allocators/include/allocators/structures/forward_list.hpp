@@ -1,5 +1,7 @@
 #pragma once
 
+// FILE: "allocators/structures/forward_list.hpp"
+
 #include <allocators/library_configuration/cpp_config.hpp>
 #include <allocators/alignment.hpp>
 #include <cstddef>
@@ -60,6 +62,7 @@ namespace dd99::memory::structure
         push(std::byte * node_address)
         {
             DD99_ALLOCATORS_ASSERT_HARDENED("tried to push unaligned pointer", is_aligned(node_address, alignof(node)));
+            DD99_ALLOCATORS_ASSERT_HARDENED("node_address must not be null", node_address != nullptr);
 
             node * new_node_ptr = new (node_address) node{.m_next_ptr = m_first_ptr};
             m_first_ptr = new_node_ptr;
