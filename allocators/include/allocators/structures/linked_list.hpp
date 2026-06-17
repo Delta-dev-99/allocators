@@ -1,6 +1,7 @@
 #pragma once
 
 #include <allocators/library_configuration/cpp_config.hpp>
+#include <allocators/alignment.hpp>
 #include <cstddef>
 #include <new>
 
