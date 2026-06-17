@@ -1,4 +1,7 @@
 #pragma once
+
+// FILE: "allocators/library_configuration/assertions.hpp"
+
 #include <string_view>
 
 
@@ -37,7 +40,7 @@ namespace dd99::memory
 }
 
 
-#define DD99_ALLOCATORS_DO_ASSERT(LEVEL, MESSAGE, ...) if (!(__VA_ARGS__)) dd99::memory::allocators_assertion_failed({.expression = (#__VA_ARGS__), .file = __FILE__, .line = __LINE__, .level = LEVEL, .message = (MESSAGE)})
+#define DD99_ALLOCATORS_DO_ASSERT(LEVEL, MESSAGE, ...) do { if (!(__VA_ARGS__)) dd99::memory::allocators_assertion_failed({.expression = (#__VA_ARGS__), .file = __FILE__, .line = __LINE__, .level = LEVEL, .message = (MESSAGE)}) } while (false)
 
 
 #if DD99_ALLOCATORS_ASSERT_LEVEL < DD99_ALLOCATORS_ASSERT_LEVEL_CRITICAL
