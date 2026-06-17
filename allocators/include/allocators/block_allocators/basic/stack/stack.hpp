@@ -34,9 +34,9 @@ namespace dd99::memory::block_allocator
                        std::size_t requested_alignment = 1)
         {
             const auto aligned_current = align_up(m_current, requested_alignment); // add alignment padding
-            const auto used_size = std::size_t(aligned_current - m_memory.base); // used + alignment padding
-            const auto available_size = m_memory.size - used_size;
-            if (available_size >= requested_size)
+            const auto aligned_used_size = std::size_t(aligned_current - m_memory.base); // used + alignment padding
+            const auto available_aligned_size = m_memory.size - aligned_used_size;
+            if (available_aligned_size >= requested_size)
             {
                 block current{.base = m_current, .size = requested_size};
                 m_current += requested_size;
