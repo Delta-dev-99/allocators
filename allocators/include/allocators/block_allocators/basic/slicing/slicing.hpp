@@ -1,5 +1,7 @@
 #pragma once
 
+// FILE: "allocators/block_allocators/basic/slicing/slicing.hpp"
+
 #include <allocators/block_allocators/block_allocator.hpp>
 #include <allocators/structures/forward_list.hpp>
 #include <allocators/alignment.hpp>
@@ -18,19 +20,18 @@ namespace dd99::memory::block_allocator
         // TODO: review and test last changes
         class Slicing_Freelist
         {
-        protected:
+        private:
             // header for free blocks
             // the nodes of the list
             struct Block_Header
             {
                 Block_Header *next = nullptr;
-                std::size_t size;
+                std::size_t size; // uninitialized by default
 
                 // get corresponding memory block
-                memory::block get_memory_block()
-                { return {.base = reinterpret_cast<std::byte *>(this), .size = size}; }
+                memory::block get_memory_block() const
+                { return {.base = const_cast<std::byte *>(reinterpret_cast<const std::byte *>(this)), .size = size}; }
             };
-            static constexpr auto Block_Header_Alignment = alignof(Block_Header);
 
         public:
             ~Slicing_Freelist()
@@ -49,6 +50,8 @@ namespace dd99::memory::block_allocator
                 // we need to find a block: [header alignment padding | header | alignment padding | returned block ]
                 // we also need to ensure that a block header can be placed on the returned block (to allow deallocation)
 
+                DD99_ALLOCATORS_ASSERT_HARDENED("alignment must be power of 2", std::has_single_bit(requested_alignment));
+
                 // smaller allocations not allowed
                 if (requested_size < sizeof(Block_Header)) requested_size = sizeof(Block_Header);
                 // less alignment not allowed
@@ -64,10 +67,12 @@ namespace dd99::memory::block_allocator
                     // ensure any space left before the block is enough for a block header
                     if (current_aligned != current_block.base)
                     {
+                        // TODO: replace the while loop with a direct computation
                         while(static_cast<std::size_t>(current_aligned - current_block.base) < sizeof(Block_Header))
                         {
                             current_aligned = align_up(current_aligned + 1, requested_alignment);
                         }
+                        if (current_aligned >= current_block.get_end()) continue; // aligning got past the end of the block
                         // note: haven't decided whether the block is suitable yet, so we can't touch the headers.
                     }
                     
@@ -83,7 +88,7 @@ namespace dd99::memory::block_allocator
                         if (current_aligned != current_block.base)
                         {
                             // trimming the start. we just leave the header there and update the size
-                            current->size -= static_cast<std::size_t>(current_aligned - current_block.base);
+                            current->size = static_cast<std::size_t>(current_aligned - current_block.base);
 
                             // current now points to the block before the one we are allocating
                         }
@@ -151,6 +156,8 @@ namespace dd99::memory::block_allocator
             // sorted by base address
             void push(const memory::block& block)
             {
+                DD99_ALLOCATORS_ASSERT_HARDENED("block base must be aligned to the node alignment", is_aligned(block.base, alignof(Block_Header)));
+
                 // insert into list and get pointer to node previous to inserted one
                 // the pointer to the inserted node is do_insert(memory)->next
                 auto prev_ptr = do_insert(block);
@@ -159,6 +166,11 @@ namespace dd99::memory::block_allocator
                 // try merging with previous first
                 if (prev_ptr)
                 {
+                    // if the following assertion fails, the block (base or size) was probably modified after allocation
+                    DD99_ALLOCATORS_ASSERT_HARDENED("deallocation creates unrecoverable memory hole",
+                        block.base == prev_ptr->get_memory_block().get_end() ||
+                        static_cast<std::size_t>(block.base - align_up(prev_ptr->get_memory_block().get_end(), alignof(Block_Header))) >= sizeof(Block_Header));
+
                     if (!try_merge(prev_ptr))
                         prev_ptr = prev_ptr->next;
                 }
@@ -188,7 +200,7 @@ namespace dd99::memory::block_allocator
         
         private:
             // returns a pointer to the node before the inserted node
-            Block_Header *do_insert(const memory::block& memory)
+            Block_Header * do_insert(const memory::block& memory)
             {
                 //
                 // find position and link new node
@@ -229,6 +241,9 @@ namespace dd99::memory::block_allocator
             // merge a block with the next one if adjacent
             bool try_merge(Block_Header *prev_ptr)
             {
+                DD99_ALLOCATORS_ASSERT_DEBUG("prev_ptr must be a valid Block_Header", prev_ptr != nullptr);
+                DD99_ALLOCATORS_ASSERT_DEBUG("prev_ptr->next must be a valid Block_Header", prev_ptr->next != nullptr);
+
                 if (prev_ptr->get_memory_block().get_end() == reinterpret_cast<std::byte *>(prev_ptr->next))
                 {
                     auto to_merge_ptr = prev_ptr->next;
@@ -265,6 +280,8 @@ namespace dd99::memory::block_allocator
         [[nodiscard]]
         memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
+            DD99_ALLOCATORS_ASSERT_HARDENED("alignment must be power of 2", std::has_single_bit(requested_alignment));
+
             return m_free_list.pop_slice(requested_size, requested_alignment);
         }
 
