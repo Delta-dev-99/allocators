@@ -24,6 +24,8 @@ namespace dd99::memory::block_allocator::composite
         [[nodiscard]]
         memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
+            DD99_ALLOCATORS_ASSERT_HARDENED("alignment must be power of 2", std::has_single_bit(requested_alignment));
+            
             if (m_predicate(requested_size, requested_alignment))
                 return m_sub_allocator.allocate(requested_size, requested_alignment);
             return {};

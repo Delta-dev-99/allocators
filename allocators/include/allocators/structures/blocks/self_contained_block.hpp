@@ -12,6 +12,12 @@ namespace dd99::memory
     {
         static_assert(Size > 0);
 
+        constexpr self_contained_block() noexcept = default;
+        constexpr self_contained_block(const self_contained_block &) noexcept = default; // copy
+        constexpr self_contained_block(self_contained_block &&) noexcept = delete; // no move
+        constexpr self_contained_block & operator=(const self_contained_block &) noexcept = default; // copy
+        constexpr self_contained_block & operator=(self_contained_block &&) noexcept = delete; // no move
+
         constexpr const std::byte * get_base()  const noexcept { return m_data; }
         constexpr       std::byte * get_base()        noexcept { return m_data; }
         constexpr       std::size_t get_size()  const noexcept { return sizeof(m_data); }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <allocators/structures/blocks/memory_block.hpp>
+#include <concepts>
 
 
 
@@ -18,5 +19,8 @@ namespace dd99::memory
         { blk.empty() } -> std::convertible_to<bool>;
         static_cast<bool>(blk); // check empty block
     };
+
+    template <class T>
+    concept Movable_Block = Block_Concept<T> && std::movable<T>;
 
 }

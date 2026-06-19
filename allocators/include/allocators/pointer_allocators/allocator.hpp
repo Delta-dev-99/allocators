@@ -5,7 +5,7 @@
 namespace dd99::memory
 {
     template <class T>
-    concept Pointer_Allocator = requires(T t, std::size_t s, block B, const std::byte * b_ptr)
+    concept Pointer_Allocator = requires(T t, std::size_t s, block B, std::byte * b_ptr)
     {
         { t.allocate(s) } -> std::same_as<std::byte *>;
         { t.allocate(s, s) } -> std::same_as<std::byte *>; // aligned allocation

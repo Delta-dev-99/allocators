@@ -1,5 +1,6 @@
 #pragma once
 
+#include <allocators/structures/blocks/block_concept.hpp>
 #include <allocators/block_allocators/block_allocator.hpp>
 #include <allocators/alignment.hpp>
 #include <bit>
@@ -8,7 +9,7 @@
 namespace dd99::memory::block_allocator
 {
     // memory overhead on the controlled block: none
-    template <std::size_t Natural_Alignment = 4>
+    template <std::size_t Natural_Alignment = 4, Movable_Block Block_Type = block>
     class Stack
     {
         // end of allocations is always aligned to this alignment.
@@ -20,15 +21,17 @@ namespace dd99::memory::block_allocator
             "alignment must be a power of 2");
 
     public:
+        using block_type = Block_Type;
+
         struct mark_type
         {
             std::byte * m_current;
         };
 
     public:
-        Stack(const block &memory)
-            : m_memory(memory)
-            , m_current(memory.base)
+        Stack(block_type memory)
+            : m_memory(std::move(memory))
+            , m_current(m_memory.get_base())
         { }
 
         Stack(const Stack &) = delete;
@@ -44,8 +47,8 @@ namespace dd99::memory::block_allocator
                        std::size_t requested_alignment = 1)
         {
             const auto aligned_current = align_up(m_current, requested_alignment); // add alignment padding
-            const auto aligned_used_size = std::size_t(aligned_current - m_memory.base); // used + alignment padding
-            const auto available_aligned_size = m_memory.size - aligned_used_size;
+            const auto aligned_used_size = std::size_t(aligned_current - m_memory.get_base()); // used + alignment padding
+            const auto available_aligned_size = m_memory.get_size() - aligned_used_size;
             if (available_aligned_size >= requested_size)
             {
                 if constexpr (natural_alignment > 1)
@@ -64,7 +67,7 @@ namespace dd99::memory::block_allocator
         // Can only free the last allocated block
         void deallocate(const block &memory)
         {
-            if (memory.base < m_memory.base) return; // TODO: *** consider whether this check should be omitted. maybe this could be an assertion?
+            if (memory.base < m_memory.get_base()) return; // TODO: *** consider whether this check should be omitted. maybe this could be an assertion?
             if (memory.get_end() == m_current) // implies `owns()`
             {
                 m_current -= memory.size;
@@ -73,7 +76,7 @@ namespace dd99::memory::block_allocator
 
         void deallocate_all()
         {
-            m_current = m_memory.base;
+            m_current = m_memory.get_base();
         }
 
         bool owns(const std::byte * memory) const
@@ -99,7 +102,7 @@ namespace dd99::memory::block_allocator
         }
 
     private:
-        block m_memory;
+        block_type m_memory;
         std::byte * m_current;
     };
 

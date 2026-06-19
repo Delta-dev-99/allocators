@@ -1,6 +1,6 @@
 #pragma once
 
-#include <allocators/structures/blocks/memory_block.hpp>
+#include <allocators/block_allocators/block_allocator.hpp>
 
 namespace dd99::memory
 {
@@ -66,6 +66,15 @@ namespace dd99::memory
 
         Deallocator dealloc;
     };
+
+
+
+    template <Block_Allocator Allocator>
+    constexpr auto
+    allocate_raii_block(Allocator & allocator, std::size_t requested_size, std::size_t requested_alignment = 1) noexcept
+    {
+        return raii_block{allocator.allocate(requested_size, requested_alignment), [&](block blk){ allocator.deallocate(blk); }};
+    }
 
 }
 

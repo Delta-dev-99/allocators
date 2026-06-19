@@ -1,5 +1,6 @@
 #pragma once
 
+#include <allocators/library_configuration/cpp_config.hpp>
 #include <allocators/block_allocators/block_allocator.hpp>
 
 namespace dd99::memory::block_allocator::composite
@@ -54,9 +55,15 @@ namespace dd99::memory::block_allocator::composite
             // before deallocating it.
             // It should be OK to skip the check in higher-level allocators.
 
-            // if (Primary_T::owns(memory))
+            // TODO: we are changing the ownership check use practices
+            // ownership on deallocation should be an assertion
+            DD99_ALLOCATORS_ASSERT_HARDENED("block must be owned by this allocator", owns(memory));
+
+
+            if (m_primary.owns(memory))
                 m_primary.deallocate(memory);
-            // else if (Fallback_T::owns(memory))
+            // else if (m_fallback.owns(memory))
+            else
                 m_fallback.deallocate(memory);
         }
 

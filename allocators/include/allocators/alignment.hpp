@@ -20,9 +20,10 @@ namespace dd99::memory
         return reinterpret_cast<std::byte *>(aligned);
     }
 
+    template <class T>
     inline constexpr
     bool
-    is_aligned(std::byte * ptr, std::size_t alignment)
+    is_aligned(T * ptr, std::size_t alignment)
     {
         DD99_ALLOCATORS_ASSERT_HARDENED("alignment must be a power of 2", std::has_single_bit(alignment));
         
