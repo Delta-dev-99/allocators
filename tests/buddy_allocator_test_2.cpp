@@ -150,11 +150,15 @@ bool test_alignment() {
     assert(blk.size == 64);
     assert(is_aligned(blk.base, 512));
 
-    // Request alignment larger than max
-    auto blk2 = allocator.allocate(64, 4096);
-    assert(blk2.base == nullptr); // should fail
-    assert(blk2.empty());
-    allocator.deallocate(blk);
+    // only run the test if assertions won't catch the intentional misuse
+    if constexpr (DD99_ALLOCATORS_ASSERT_LEVEL < DD99_ALLOCATORS_ASSERT_LEVEL_HARDENED)
+    {
+        // Request alignment larger than max
+        auto blk2 = allocator.allocate(64, 4096);
+        assert(blk2.base == nullptr); // should fail
+        assert(blk2.empty());
+        allocator.deallocate(blk2);
+    }
     return true;
 }
 
