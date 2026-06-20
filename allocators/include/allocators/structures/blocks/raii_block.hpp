@@ -25,8 +25,7 @@ namespace dd99::memory
 
         ~raii_block()
         {
-            // NOTE: allocator checks block before deallocating
-            dealloc(*this);
+            if (!empty()) dealloc(get_block());
         }
 
         raii_block() = delete;
@@ -53,6 +52,7 @@ namespace dd99::memory
             return *this;
         }
 
+        [[nodiscard]]
         constexpr
         block
         get_block() const noexcept
@@ -61,6 +61,17 @@ namespace dd99::memory
                 .base = get_base(),
                 .size = get_size()
             };
+        }
+
+        constexpr
+        block
+        release() noexcept
+        {
+            auto blk = get_block();
+            // base = nullptr;
+            size = 0;
+            // TODO: add something like `clear()` to the block interface
+            return blk;
         }
 
 
