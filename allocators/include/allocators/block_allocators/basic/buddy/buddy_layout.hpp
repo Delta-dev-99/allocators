@@ -1,7 +1,7 @@
 #pragma once
 
 #include <allocators/library_configuration/cpp_config.hpp>
-#include <allocators/structures/blocks/memory_block.hpp>
+#include <allocators/structures/blocks/block_concept.hpp>
 #include <allocators/block_allocators/basic/buddy/buddy_block_address.hpp>
 #include <allocators/alignment.hpp>
 #include <array>
@@ -59,26 +59,33 @@ namespace dd99::memory::block_allocator::buddy_namespace
     // `Managed_Memory_Block_Type` is the type used for the block of memory to be managed by the allocator.
     // the user can pass a normal block, an auto-freeing block, or a custom type compliant with the interface.
     // 
-    // 
     template <class                             Block_Address_Type,
               std::size_t                       Block_Size,
               Block_Address_Type::level_type    Levels,
               std::size_t                       Last_Level_Alignment = Block_Size << (Levels-1),
               class                             Managed_Memory_Block_Type = block>
-    struct buddy_standard_layout
-    {
-        // static_assert(Layout_Concept<buddy_standard_layout>);
+    struct buddy_standard_layout;
 
-        using managed_memory_block_type = Managed_Memory_Block_Type;
+
+    
+    // traits class that can be used to query alignment requirements and perform static address computations
+    template <class                             Block_Address_Type,
+              std::size_t                       Block_Size,
+              Block_Address_Type::level_type    Levels,
+              std::size_t                       Last_Level_Alignment = Block_Size << (Levels-1)>
+    struct buddy_standard_layout_traits
+    {
         using block_address_type = Block_Address_Type;
         using level_type = block_address_type::level_type;
         using index_type = block_address_type::index_type;
-        
+
         static constexpr auto levels = Levels;
         static constexpr auto last_level = levels - 1;
         static constexpr auto block_size = Block_Size;
         static constexpr auto last_level_alignment = Last_Level_Alignment;
         static constexpr auto first_level_alignment = last_level_alignment >> (levels - 1);
+
+        static constexpr auto required_alignment = last_level_alignment; // alignment requirement on the managed block
 
         static_assert(last_level_alignment <= (block_size << last_level),
             "alignment larger than block size is impossible");
@@ -240,9 +247,51 @@ namespace dd99::memory::block_allocator::buddy_namespace
         }
 
 
+        // helper to deduce block type
+        template <Block_Concept managed_block_type>
+        static constexpr
+        buddy_standard_layout<block_address_type, block_size, levels, last_level_alignment, managed_block_type>
+        make_layout(managed_block_type blk)
+        {
+            return {std::move(blk)};
+        }
+    };
 
-        // *** instance functions ***
-        // ##########################
+    template <class                             Block_Address_Type,
+              std::size_t                       Block_Size,
+              Block_Address_Type::level_type    Levels,
+              std::size_t                       Last_Level_Alignment,
+              class                             Managed_Memory_Block_Type>
+    struct buddy_standard_layout : buddy_standard_layout_traits<Block_Address_Type, Block_Size, Levels, Last_Level_Alignment>
+    {
+        using block_address_type = Block_Address_Type;
+        using managed_memory_block_type = Managed_Memory_Block_Type;
+        static constexpr auto block_size = Block_Size;
+        static constexpr auto levels = Levels;
+        static constexpr auto last_level_alignment = Last_Level_Alignment;
+
+        using traits_type = buddy_standard_layout_traits<block_address_type, block_size, levels, last_level_alignment>;
+        using level_type = traits_type::level_type;
+        using index_type = traits_type::index_type;
+        static constexpr auto last_level = traits_type::last_level;
+
+        // expose static functions
+        using traits_type::get_level_alignment;
+        using traits_type::get_alignment_level;
+        using traits_type::get_level_block_size;
+        using traits_type::get_level_block_count;
+        using traits_type::get_total_joint_block_count;
+        using traits_type::get_total_block_count;
+        using traits_type::calculate_block_level;
+        using traits_type::get_block_level;
+        using traits_type::get_block_index;
+        using traits_type::get_block_address;
+        using traits_type::get_joint_block_address;
+        using traits_type::get_buddy_block_index;
+        using traits_type::get_buddy_block_address;
+        using traits_type::get_block;
+
+        // instance functions
 
         constexpr
         buddy_standard_layout(managed_memory_block_type mem_blk)

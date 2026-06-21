@@ -25,17 +25,20 @@ namespace dd99::memory
 
         ~raii_block()
         {
-            if (!empty()) dealloc(get_block());
+            if (!empty())
+            {
+                dealloc(get_block());
+            }
         }
 
         raii_block() = delete;
-        raii_block(block blk, Deallocator && deallocator)
+        raii_block(block blk, Deallocator && deallocator) noexcept
             : block(blk)
             , dealloc(std::move(deallocator))
         { }
 
         raii_block(const raii_block &) = delete;
-        raii_block(raii_block && other)
+        raii_block(raii_block && other) noexcept
             : block(std::move(other))
             , dealloc(std::move(other.dealloc))
         {
@@ -44,9 +47,9 @@ namespace dd99::memory
         }
 
         raii_block & operator=(const raii_block &) = delete;
-        raii_block & operator=(raii_block && other)
+        raii_block & operator=(raii_block && other) noexcept
         {
-            dealloc(*this);
+            if (!empty()) dealloc(get_block());
             dealloc = std::move(other.dealloc);
             block::operator=(std::move(other));
             return *this;

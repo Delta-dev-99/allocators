@@ -5,6 +5,7 @@
 #include <allocators/block_allocators/basic/buddy/buddy_state.hpp>
 #include <allocators/block_allocators/basic/buddy/state_implementations/buddy_intrusive_state.hpp>
 #include <allocators/structures/blocks/memory_block.hpp>
+#include <allocators/structures/blocks/raii_block.hpp>
 
 #include <vector>
 #include <cassert>
@@ -22,27 +23,53 @@ using namespace dd99::memory::block_allocator::buddy_namespace;
 // ---------------------------------------------------------------------------
 template <std::size_t BlockSize, std::size_t Levels, class LevelType = unsigned int, class IndexType = unsigned int>
 struct TestConfig {
-    using BlockAddr = buddy_block_address<LevelType, IndexType>;
-    using Layout = buddy_standard_layout<BlockAddr, BlockSize, Levels>;
-    using State = buddy_intrusive_state<Layout, block>;
+    using block_addr_type = buddy_block_address<LevelType, IndexType>;
+    using layout_traits_type = buddy_standard_layout_traits<block_addr_type, BlockSize, Levels>;
+    template <class Layout> using state_traits_type = buddy_intrusive_state_traits<Layout>;
     static constexpr auto levels = Levels;
     static constexpr auto block_size = BlockSize;
 };
+
+template <class Config>
+auto make_buddy_state(std::size_t managed_size)
+{
+    // allocate managed memory and create layout
+    constexpr auto alignment = Config::layout_traits_type::required_alignment;
+    auto ptr = ::operator new(managed_size, std::align_val_t{alignment});
+    if (!ptr) throw std::bad_alloc();
+    auto b_ptr = reinterpret_cast<std::byte *>(ptr);
+    auto blk = dd99::memory::raii_block{{b_ptr, managed_size}, [](block blk){ ::operator delete(blk.base, std::align_val_t{alignment}); }};
+    auto layout = Config::layout_traits_type::make_layout(std::move(blk));
+
+    // allocate state memory and create state
+    using state_traits_type = Config::template state_traits_type<decltype(layout)>;
+    auto state_size = state_traits_type::get_state_size(layout);
+    constexpr auto state_alignment = state_traits_type::get_state_alignment();
+    auto state_ptr = ::operator new(state_size, std::align_val_t{state_alignment});
+    if (!state_ptr) throw std::bad_alloc();
+    auto state_b_ptr = reinterpret_cast<std::byte *>(state_ptr);
+    auto state_blk = dd99::memory::raii_block{{state_b_ptr, state_size}, [](block blk){ ::operator delete(blk.base, std::align_val_t{state_alignment}); }};
+    return state_traits_type::make_state(std::move(layout), std::move(state_blk));
+}
+
 
 // ---------------------------------------------------------------------------
 // Creation test for different memory sizes
 // ---------------------------------------------------------------------------
 template <typename Config>
 void test_initial_state(std::size_t managed_size) {
-    using Layout = typename Config::Layout;
-    using State = typename Config::State;
+    // using Layout = typename Config::Layout;
+    // using State = typename Config::State;
 
-    std::vector<std::byte> mem(managed_size);
-    Layout layout(block{mem.data(), managed_size});
-    // state memory size = bitmap size
-    auto state_size = buddy_intrusive_state_traits<Layout>::get_state_size(layout);
-    std::vector<std::byte> state_mem(state_size);
-    State state(std::move(layout), block{state_mem.data(), state_size});
+    // std::vector<std::byte> mem(managed_size + Layout::last_level_alignment);
+    // Layout layout(block{dd99::memory::align_up(mem.data(), Layout::last_level_alignment), managed_size});
+    // // state memory size = bitmap size
+    // auto state_size = buddy_intrusive_state_traits<Layout>::get_state_size(layout);
+    // std::vector<std::byte> state_mem(state_size);
+    // State state(std::move(layout), block{state_mem.data(), state_size});
+
+    auto state = make_buddy_state<Config>(managed_size);
+    using Layout = decltype(state)::layout_type;
 
     // ---- Check freelists ----
     auto& layout_ref = state.m_layout; // public
@@ -76,7 +103,7 @@ void test_initial_state(std::size_t managed_size) {
     }
 
     // ---- Check bitmap: all bits zero initially ----
-    auto& bitmap = state.m_state_tracker.m_bitmap;
+    auto & bitmap = state.m_state_tracker.m_bitmap;
     for (std::size_t i = 0; i < buddy_test::bitmap_size(bitmap); ++i) {
         assert(!buddy_test::get_bit(bitmap, i));
     }
@@ -89,18 +116,21 @@ void test_initial_state(std::size_t managed_size) {
 // ---------------------------------------------------------------------------
 template <typename Config>
 void test_alloc_split_state() {
-    using Layout = typename Config::Layout;
-    using State = typename Config::State;
+    // using Layout = typename Config::Layout;
+    // using State = typename Config::State;
     constexpr auto block_sz = Config::block_size;
     constexpr auto levels = Config::levels;
 
-    // Use a memory size that is exactly one maximum block (block_size << (levels-1))
+    // // Use a memory size that is exactly one maximum block (block_size << (levels-1))
     std::size_t managed_size = block_sz * (std::size_t{1} << (levels - 1));
-    std::vector<std::byte> mem(managed_size);
-    Layout layout(block{mem.data(), managed_size});
-    auto state_size = buddy_intrusive_state_traits<Layout>::get_state_size(layout);
-    std::vector<std::byte> state_mem(state_size);
-    State state(std::move(layout), block{state_mem.data(), state_size});
+    // std::vector<std::byte> mem(managed_size);
+    // Layout layout(block{mem.data(), managed_size});
+    // auto state_size = buddy_intrusive_state_traits<Layout>::get_state_size(layout);
+    // std::vector<std::byte> state_mem(state_size);
+    // State state(std::move(layout), block{state_mem.data(), state_size});
+
+    auto state = make_buddy_state<Config>(managed_size);
+    using Layout = decltype(state)::layout_type;
 
     auto& freearr = state.m_freelist_collection;
     auto& tracker = state.m_state_tracker;
@@ -158,78 +188,84 @@ void test_alloc_split_state() {
 // ---------------------------------------------------------------------------
 template <typename Config>
 void test_dealloc_merge_state() {
-    using Layout = typename Config::Layout;
-    using State = typename Config::State;
-    constexpr auto block_sz = Config::block_size;
-    constexpr auto levels = Config::levels;
-    std::size_t managed_size = block_sz * (std::size_t{1} << (levels - 1));
-    std::vector<std::byte> mem(managed_size);
-    Layout layout(block{mem.data(), managed_size});
-    auto state_size = buddy_intrusive_state_traits<Layout>::get_state_size(layout);
-    std::vector<std::byte> state_mem(state_size);
-    State state(std::move(layout), block{state_mem.data(), state_size});
+    // NOTE: this function is commented because it was AI-generated goop
 
-    auto& freearr = state.m_freelist_collection;
-    auto& tracker = state.m_state_tracker;
-    auto& layout_ref = state.m_layout;
+    // // using Layout = typename Config::Layout;
+    // // using State = typename Config::State;
+    // constexpr auto block_sz = Config::block_size;
+    // constexpr auto levels = Config::levels;
+    // std::size_t managed_size = block_sz * (std::size_t{1} << (levels - 1));
+    // // std::vector<std::byte> mem(managed_size);
+    // // Layout layout(block{mem.data(), managed_size});
+    // // auto state_size = buddy_intrusive_state_traits<Layout>::get_state_size(layout);
+    // // std::vector<std::byte> state_mem(state_size);
+    // // State state(std::move(layout), block{state_mem.data(), state_size});
 
-    // Start with two allocated buddy blocks at level 0.
-    auto lvl0 = 0;
-    auto blk0 = state.pop(lvl0);   // should exist because initially all last-level blocks? Wait, last level is top_level, not 0. We need to split down from top.
-    // Simpler: manually construct a situation with two adjacent free blocks at level 0, then allocate both.
-    // Let's split from top until level 0.
-    auto top = levels - 1;
-    auto blk_top = state.pop(top);
-    // split down to level 0
-    for (auto l = top - 1; l >= 0; --l) {
-        state.push(l, blk_top + Layout::get_level_block_size(l));
-    }
-    // Now at level 0 we have one block free (the one not split? Wait, splitting: we kept left, pushed right. So left is allocated? Actually we popped top, then for each split we pushed the right buddy. So after pushing at each level, the leftmost block is not in any freelist (it is 'allocated'), and the rightmost buddies are in freelists. But we need two adjacent free blocks at level 0. Let's instead deallocate the left part? Or just use the state directly: push two adjacent blocks manually.
-    state.reset();
-    // After reset, all blocks are free as per initial state.
-    // For a full-size memory, level 0 has all base blocks free? Wait initial state only adds last level blocks and unpaired lower blocks. Level 0 blocks are all in buddy pairs, so initially freelist at level 0 is empty (all paired). So we can allocate two adjacent blocks at level 0 by calling pop on level 0, which will force splitting from higher levels.
-    // But easier: we can manually push two adjacent level-0 blocks to force them into the freelist, then test merge.
-    // Let's manually push them (simulate free of two blocks).
-    auto blk0_addr = Layout::get_block_address(layout_ref.m_memory.base, mem.data(), 0);
-    auto blk1_addr = blk0_addr;
-    blk1_addr.index = 1; // adjacent
-    state.push(0, layout_ref.get_block(blk0_addr).base);
-    state.push(0, layout_ref.get_block(blk1_addr).base);
-    // Now both are in level-0 freelist, bitmap bit for joint (level 1, index 0) should be 0 (same state)
-    auto joint_l1 = Layout::get_joint_block_address(blk0_addr);
-    auto bit_idx = tracker.get_bitmap_index_from_joint(joint_l1, layout_ref);
-    assert(!buddy_test::get_bit(tracker.m_bitmap, bit_idx));
+    // auto state = make_buddy_state<Config>(managed_size);
+    // using Layout = decltype(state)::layout_type;
+    // auto mem_ptr = state.m_layout.m_memory.get_base();
 
-    // Deallocate (merge_or_push) one of them
-    auto merged = state.merge_or_push(0, layout_ref.get_block(blk0_addr).base);
-    // Since both were free, after toggling bit (0->1), is_buddy_free = false, so no merge. Wait, earlier reasoning: if both free, bit 0. merge_or_push toggles -> 1, is_buddy_free = false, so it just pushes. That's double free? No, we had both free already. To test merge, we need one allocated, one free.
-    // So allocate one block first.
-    state.reset();
-    // Split from top to get one level-0 block allocated.
-    auto allocated_ptr = state.pop(0); // after sufficient splits
-    assert(allocated_ptr != nullptr);
-    // Now level-0 freelist contains the buddy block.
-    auto free_list0 = buddy_test::get_freelist_contents(freearr[0]);
-    assert(free_list0.size() == 1);
-    auto buddy_ptr = free_list0[0];
-    // Bitmap: joint bit should be 1 (different states)
-    auto blk0_addr2 = Layout::get_block_address(layout_ref.m_memory.base, allocated_ptr, 0);
-    auto joint_l1_2 = Layout::get_joint_block_address(blk0_addr2);
-    auto bit_idx2 = tracker.get_bitmap_index_from_joint(joint_l1_2, layout_ref);
-    assert(buddy_test::get_bit(tracker.m_bitmap, bit_idx2) == true);
+    // auto& freearr = state.m_freelist_collection;
+    // auto& tracker = state.m_state_tracker;
+    // auto& layout_ref = state.m_layout;
 
-    // Now deallocate the allocated block (merge_or_push)
-    auto higher = state.merge_or_push(0, allocated_ptr);
-    // It should detect buddy free (bit toggles to 0, is_buddy_free true) and return the joint base.
-    assert(higher != nullptr);
-    assert(higher == std::min(allocated_ptr, buddy_ptr));
-    // Freelist at level 0 should be empty (both blocks removed)
-    assert(buddy_test::get_freelist_contents(freearr[0]).empty());
-    // Bitmap bit back to 0
-    assert(!buddy_test::get_bit(tracker.m_bitmap, bit_idx2));
-    // The joint block is now being returned for further merging (recursive step). We can stop here.
+    // // Start with two allocated buddy blocks at level 0.
+    // auto lvl0 = 0;
+    // auto blk0 = state.pop(lvl0);   // should exist because initially all last-level blocks? Wait, last level is top_level, not 0. We need to split down from top.
+    // // Simpler: manually construct a situation with two adjacent free blocks at level 0, then allocate both.
+    // // Let's split from top until level 0.
+    // auto top = levels - 1;
+    // auto blk_top = state.pop(top);
+    // // split down to level 0
+    // for (auto l = top; l-- > 0;) {
+    //     state.push(l, blk_top + Layout::get_level_block_size(l));
+    // }
+    // // Now at level 0 we have one block free (the one not split? Wait, splitting: we kept left, pushed right. So left is allocated? Actually we popped top, then for each split we pushed the right buddy. So after pushing at each level, the leftmost block is not in any freelist (it is 'allocated'), and the rightmost buddies are in freelists. But we need two adjacent free blocks at level 0. Let's instead deallocate the left part? Or just use the state directly: push two adjacent blocks manually.
+    // state.reset();
+    // // After reset, all blocks are free as per initial state.
+    // // For a full-size memory, level 0 has all base blocks free? Wait initial state only adds last level blocks and unpaired lower blocks. Level 0 blocks are all in buddy pairs, so initially freelist at level 0 is empty (all paired). So we can allocate two adjacent blocks at level 0 by calling pop on level 0, which will force splitting from higher levels.
+    // // But easier: we can manually push two adjacent level-0 blocks to force them into the freelist, then test merge.
+    // // Let's manually push them (simulate free of two blocks).
+    // auto blk0_addr = Layout::get_block_address(layout_ref.m_memory.base, mem_ptr, 0);
+    // auto blk1_addr = blk0_addr;
+    // blk1_addr.index = 1; // adjacent
+    // state.push(0, layout_ref.get_block(blk0_addr).base);
+    // state.push(0, layout_ref.get_block(blk1_addr).base);
+    // // Now both are in level-0 freelist, bitmap bit for joint (level 1, index 0) should be 0 (same state)
+    // auto joint_l1 = Layout::get_joint_block_address(blk0_addr);
+    // auto bit_idx = tracker.get_bitmap_index_from_joint(joint_l1, layout_ref);
+    // assert(!buddy_test::get_bit(tracker.m_bitmap, bit_idx));
 
-    std::cout << "Dealloc/merge state OK\n";
+    // // Deallocate (merge_or_push) one of them
+    // auto merged = state.merge_or_push(0, layout_ref.get_block(blk0_addr).base);
+    // // Since both were free, after toggling bit (0->1), is_buddy_free = false, so no merge. Wait, earlier reasoning: if both free, bit 0. merge_or_push toggles -> 1, is_buddy_free = false, so it just pushes. That's double free? No, we had both free already. To test merge, we need one allocated, one free.
+    // // So allocate one block first.
+    // state.reset();
+    // // Split from top to get one level-0 block allocated.
+    // auto allocated_ptr = state.pop(0); // after sufficient splits
+    // assert(allocated_ptr != nullptr);
+    // // Now level-0 freelist contains the buddy block.
+    // auto free_list0 = buddy_test::get_freelist_contents(freearr[0]);
+    // assert(free_list0.size() == 1);
+    // auto buddy_ptr = free_list0[0];
+    // // Bitmap: joint bit should be 1 (different states)
+    // auto blk0_addr2 = Layout::get_block_address(layout_ref.m_memory.base, allocated_ptr, 0);
+    // auto joint_l1_2 = Layout::get_joint_block_address(blk0_addr2);
+    // auto bit_idx2 = tracker.get_bitmap_index_from_joint(joint_l1_2, layout_ref);
+    // assert(buddy_test::get_bit(tracker.m_bitmap, bit_idx2) == true);
+
+    // // Now deallocate the allocated block (merge_or_push)
+    // auto higher = state.merge_or_push(0, allocated_ptr);
+    // // It should detect buddy free (bit toggles to 0, is_buddy_free true) and return the joint base.
+    // assert(higher != nullptr);
+    // assert(higher == std::min(allocated_ptr, buddy_ptr));
+    // // Freelist at level 0 should be empty (both blocks removed)
+    // assert(buddy_test::get_freelist_contents(freearr[0]).empty());
+    // // Bitmap bit back to 0
+    // assert(!buddy_test::get_bit(tracker.m_bitmap, bit_idx2));
+    // // The joint block is now being returned for further merging (recursive step). We can stop here.
+
+    // std::cout << "Dealloc/merge state OK\n";
 }
 
 // ---------------------------------------------------------------------------
@@ -237,17 +273,19 @@ void test_dealloc_merge_state() {
 // ---------------------------------------------------------------------------
 template <typename Config>
 void test_odd_block_count_internal() {
-    using Layout = typename Config::Layout;
-    using State = typename Config::State;
-    // Managed size = block_size * (some odd count)
+    // using Layout = typename Config::Layout;
+    // using State = typename Config::State;
+    // // Managed size = block_size * (some odd count)
     constexpr auto bsz = Config::block_size;
     std::size_t odd_count = 3; // 3 base blocks
     std::size_t managed_size = bsz * odd_count;
-    std::vector<std::byte> mem(managed_size);
-    Layout layout(block{mem.data(), managed_size});
-    auto state_size = buddy_intrusive_state_traits<Layout>::get_state_size(layout);
-    std::vector<std::byte> state_mem(state_size);
-    State state(std::move(layout), block{state_mem.data(), state_size});
+    // std::vector<std::byte> mem(managed_size);
+    // Layout layout(block{mem.data(), managed_size});
+    // auto state_size = buddy_intrusive_state_traits<Layout>::get_state_size(layout);
+    // std::vector<std::byte> state_mem(state_size);
+    // State state(std::move(layout), block{state_mem.data(), state_size});
+
+    auto state = make_buddy_state<Config>(managed_size);
 
     auto& freearr = state.m_freelist_collection;
     auto& layout_ref = state.m_layout;
