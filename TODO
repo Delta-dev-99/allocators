@@ -17,7 +17,7 @@ Add allocator types for multithreading
 
 Add fragmentation and ussage stats computation functions for allocators.
 
-Add hash specialization for memory Block structure
+Add hash specialization for memory block structures
 
 Add NEW CLASS of allocators that actively allocate and deallocate auxiliary memory. I would cal them "dynamic allocators". While they all do dynamic allocation, this allocators would also be dynamic themselves.
 This enables the use of variable-size memory structures in allocators.

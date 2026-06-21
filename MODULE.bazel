@@ -1,0 +1,37 @@
+# This module provides a dependency-free header-only C++ library: dd99_allocators.
+# This library implements common and specialized allocation algorithms over memory ranges, and provides an allocator composition mechanism.
+# Some allocators in this library are suitable for situations where the allocator is not allowed to access its managed memory.
+# NOTE: This library does depend on the C++ standard library for type definitions and language support
+# NOTE: This library does not perform any memory allocations from the OS; the user must provide the memory ranges
+
+module(
+    name = "dd99_allocators",
+    version = "1.2.1",
+)
+
+bazel_dep(name = "rules_cc",    version = "0.2.17")
+
+# Python rules for Bazel 9+ compatibility
+# Used by hedron_compile_commands for py_binary rule
+bazel_dep(name = "rules_python", version = "1.9.0", dev_dependency = True)
+
+# Hedron's Compile Commands Extractor for Bazel
+# https://github.com/hedronvision/bazel-compile-commands-extractor
+bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
+git_override(
+    module_name = "hedron_compile_commands",
+    # remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
+    remote = "file:///home/dd99/Documents/programming/_repo_cache_/bazel-compile-commands-extractor",
+    commit = "abb61a688167623088f8768cc9264798df6a9d10",
+    # Replace the commit hash (above) with the latest (https://github.com/hedronvision/bazel-compile-commands-extractor/commits/main).
+    # Even better, set up Renovate and let it do the work for you (see "Suggestion: Updates" in the README).
+    patches = [
+        "//:.patches/hedron_compile_commands_bazel_9_fix.patch",
+    ],
+    patch_strip = 1,
+)
+
+# This registers the system python to avoid downloading a python interpreter.
+# However, this breaks hermeticity, and is intended for development only.
+# This affects other targets on the current module and its dependencies.
+register_toolchains("@rules_python//python/runtime_env_toolchains:all", dev_dependency=True)

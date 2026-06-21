@@ -25,3 +25,27 @@ target_compile_features(buddy_allocator_algorithms_2 PRIVATE cxx_std_26)
 add_executable(basic_buddy_allocator_test basic_buddy_allocator_test.cpp)
 target_link_libraries(basic_buddy_allocator_test allocators)
 # target_compile_features(basic_buddy_allocator_test PRIVATE cxx_std_26)
+
+add_executable(any_block_allocator_test any_block_allocator_test.cpp)
+target_link_libraries(any_block_allocator_test allocators)
+# target_compile_features(any_block_allocator_test PRIVATE cxx_std_26)
+
+add_executable(test_assert test_assert.cpp)
+target_link_libraries(test_assert allocators)
+target_compile_features(test_assert PRIVATE cxx_std_26)
+
+add_executable(buddy_allocator_test_2 buddy_allocator_test_2.cpp)
+target_link_libraries(buddy_allocator_test_2 allocators)
+target_compile_features(buddy_allocator_test_2 PRIVATE cxx_std_26)
+
+add_executable(buddy_internal_state_test buddy_internal_state_test.cpp)
+target_link_libraries(buddy_internal_state_test allocators)
+target_compile_features(buddy_internal_state_test PRIVATE cxx_std_26)
+
+# add_executable(buddy_internal_state_test_2 buddy_internal_state_test_2.cpp)
+# target_link_libraries(buddy_internal_state_test_2 allocators)
+# target_compile_features(buddy_internal_state_test_2 PRIVATE cxx_std_26)
+
+add_executable(compile_array_alignment_static_assertions compile_array_alignment_static_assertions.cpp)
+target_link_libraries(compile_array_alignment_static_assertions allocators)
+target_compile_features(compile_array_alignment_static_assertions PRIVATE cxx_std_26)

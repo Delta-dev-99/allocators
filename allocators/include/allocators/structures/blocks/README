@@ -1,0 +1,21 @@
+memory blocks are the basic unit used through the library to represent memory.
+a block is a contiguous range of memory addresses.
+
+some specialized block types offer raii and other features.
+
+the main block types are:
+- `block`: a simple pair of pointer and size. treat it as you would a `byte *`.
+- `raii_block`: a move-only deallocate-on-destruction block. treat it as you would a `std::unique_ptr`.
+
+the purpose of specialized block types is to allow the user to customize ownership and lifetime responsibilities on class templates that hold memory blocks internally.
+
+most interfaces expect the type `block`.
+
+
+
+
+
+for representing memory we have the following architecture:
+
+- `block` type: basic type used throughout the library.
+- system for customizing lifetime (block concept, specialized block types). specialized blocks offer the same interface as the normal block, but are generally not implicitly convertible to `block`. they are convertible to `block` via a dedicated function (`get_block()` or something like that, not standardized yet).

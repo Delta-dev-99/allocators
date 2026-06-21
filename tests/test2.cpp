@@ -23,7 +23,7 @@
 //     namespace allocs = dd99::memory::block_allocator;
 
 //     // Slicing allocator over 1024b memory block located on the stack
-//     dd99::memory::Self_Contained_Block<1024> memory_block;
+//     dd99::memory::self_contained_block<1024> memory_block;
 //     auto slicing = allocs::Slicing(memory_block);
     
 //     // Two more allocators that relay allocation to slicing
@@ -73,7 +73,7 @@
 // {
 //     namespace allocs = dd99::memory::block_allocator;
 
-//     dd99::memory::Self_Contained_Block<1024> my_memory;
+//     dd99::memory::self_contained_block<1024> my_memory;
 
 //     allocs::Bitmap<256> bmp_alloc(my_memory);
 
@@ -93,7 +93,7 @@
 // {
 //     namespace allocs = dd99::memory::block_allocator;
 
-//     dd99::memory::Self_Contained_Block<1024> my_memory;
+//     dd99::memory::self_contained_block<1024> my_memory;
 
 //     allocs::Buddy<16, 3> buddy_alloc(my_memory);
 
@@ -115,14 +115,15 @@
 
 void test4()
 {
-    dd99::memory::Self_Contained_Block<1024> mem;
-    dd99::memory::block_allocator::Buddy<32, 3> alloc(mem);
+    // TODO:
+    // dd99::memory::self_contained_block<1024> mem;
+    // dd99::memory::block_allocator::buddy<32, 3> alloc(mem);
 
-    auto x1 = alloc.allocate(5);
-    auto x2 = alloc.allocate(32);
-    auto x3 = alloc.allocate(33);
-    auto x4 = alloc.allocate(128);
-    auto x5 = alloc.allocate(129);
+    // auto x1 = alloc.allocate(5);
+    // auto x2 = alloc.allocate(32);
+    // auto x3 = alloc.allocate(33);
+    // auto x4 = alloc.allocate(128);
+    // auto x5 = alloc.allocate(129);
 }
 
 // void test5()
@@ -137,8 +138,8 @@ void test4()
 //     const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
 
 
-    // mem::Self_Contained_Block<mem_size> memory;
-    // mem::Self_Contained_Block<aux_mem_size> aux_memory;
+    // mem::self_contained_block<mem_size> memory;
+    // mem::self_contained_block<aux_mem_size> aux_memory;
     // aux_allocator_type aux_allocator(aux_memory);
     // allocator_type allocator(memory, aux_allocator);
 
@@ -181,7 +182,7 @@ void test4()
 
 //         // Setup memory block collections
 
-//         std::vector<mem::Block> block_collection;
+//         std::vector<mem::block> block_collection;
 //         block_collection.reserve(10000);
 
 
@@ -272,8 +273,8 @@ void test4()
 //         const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
 
 
-//         // mem::Self_Contained_Block<mem_size> memory;
-//         // mem::Self_Contained_Block<aux_mem_size> aux_memory;
+//         // mem::self_contained_block<mem_size> memory;
+//         // mem::self_contained_block<aux_mem_size> aux_memory;
 //         // aux_allocator_type aux_allocator(aux_memory);
 //         // allocator_type allocator(memory, aux_allocator);
 
@@ -290,8 +291,8 @@ void test4()
 //     //     const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
 
 
-//     //     mem::Self_Contained_Block<mem_size> memory;
-//     //     mem::Self_Contained_Block<aux_mem_size> aux_memory;
+//     //     mem::self_contained_block<mem_size> memory;
+//     //     mem::self_contained_block<aux_mem_size> aux_memory;
 //     //     aux_allocator_type aux_allocator(aux_memory);
 //     //     allocator_type allocator(memory, aux_allocator);
 
@@ -308,8 +309,8 @@ void test4()
 //     //     const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
 
 
-//     //     mem::Self_Contained_Block<mem_size> memory;
-//     //     mem::Self_Contained_Block<aux_mem_size> aux_memory;
+//     //     mem::self_contained_block<mem_size> memory;
+//     //     mem::self_contained_block<aux_mem_size> aux_memory;
 //     //     aux_allocator_type aux_allocator(aux_memory);
 //     //     allocator_type allocator(memory, aux_allocator);
 
@@ -326,8 +327,8 @@ void test4()
 //     //     const auto aux_mem_size = allocator_type::calculate_aux_allocation(mem_size);
 
 
-//     //     mem::Self_Contained_Block<mem_size> memory;
-//     //     mem::Self_Contained_Block<aux_mem_size> aux_memory;
+//     //     mem::self_contained_block<mem_size> memory;
+//     //     mem::self_contained_block<aux_mem_size> aux_memory;
 //     //     aux_allocator_type aux_allocator(aux_memory);
 //     //     allocator_type allocator(memory, aux_allocator);
 
@@ -344,7 +345,7 @@ void test4()
 //     //     const std::size_t mem_size = 1024 * 1024; // 1Mb
 
 
-//     //     mem::Self_Contained_Block<mem_size> memory;
+//     //     mem::self_contained_block<mem_size> memory;
 //     //     allocator_type allocator(memory);
 
 //     //     allocation_timing(allocator);
@@ -358,7 +359,7 @@ void test4()
 //     //     const std::size_t mem_size = 1024 * 1024; // 1Mb
 
 
-//     //     mem::Self_Contained_Block<mem_size> memory;
+//     //     mem::self_contained_block<mem_size> memory;
 //     //     allocator_type allocator(memory);
 
 //     //     allocation_timing(allocator);
@@ -372,7 +373,7 @@ void test4()
 //     //     const std::size_t mem_size = 1024 * 1024; // 1Mb
 
 
-//     //     mem::Self_Contained_Block<mem_size> memory;
+//     //     mem::self_contained_block<mem_size> memory;
 //     //     allocator_type allocator(memory);
 
 //     //     allocation_timing(allocator);
@@ -383,55 +384,55 @@ void test4()
 
 void instantiation_compilation_test1()
 {
-    constexpr auto mem_size = 1024;
-    dd99::memory::Self_Contained_Block<mem_size> my_memory, my_memory2;
+    // constexpr auto mem_size = 1024;
+    // dd99::memory::self_contained_block<mem_size> my_memory, my_memory2;
 
-    using aux_alloc_t = dd99::memory::block_allocator::Stack;
-    using alloc_t = dd99::memory::block_allocator::borrowing::Buddy<32, 6, aux_alloc_t>;
+    // using aux_alloc_t = dd99::memory::block_allocator::Stack;
+    // using alloc_t = dd99::memory::block_allocator::borrowing::Buddy<32, 6, aux_alloc_t>;
 
-    constexpr auto aux_mem_size = alloc_t::calculate_aux_mem_size(mem_size);
-    dd99::memory::Self_Contained_Block<aux_mem_size> aux_memory, aux_memory2;
+    // constexpr auto aux_mem_size = alloc_t::calculate_aux_mem_size(mem_size);
+    // dd99::memory::self_contained_block<aux_mem_size> aux_memory, aux_memory2;
 
-    {
-        alloc_t my_alloc(my_memory, aux_memory);
-        // auto copy_constructed = my_alloc;
-        auto move_constructed = std::move(my_alloc);
-    }
+    // {
+    //     alloc_t my_alloc(my_memory, aux_memory);
+    //     // auto copy_constructed = my_alloc;
+    //     auto move_constructed = std::move(my_alloc);
+    // }
 
-    {
-        alloc_t my_alloc(my_memory, aux_memory);
-        // alloc_t copied_to(my_memory2, aux_memory2);
-        // copied_to = my_alloc;
-    }
+    // {
+    //     alloc_t my_alloc(my_memory, aux_memory);
+    //     // alloc_t copied_to(my_memory2, aux_memory2);
+    //     // copied_to = my_alloc;
+    // }
 
-    {
-        alloc_t my_alloc(my_memory, aux_memory);
-        alloc_t moved_to(my_memory2, aux_memory2);
-        moved_to = std::move(my_alloc);
+    // {
+    //     alloc_t my_alloc(my_memory, aux_memory);
+    //     alloc_t moved_to(my_memory2, aux_memory2);
+    //     moved_to = std::move(my_alloc);
 
-        // auto x = my_alloc.allocate(30);
-        // auto y = moved_to.allocate(30);
-        // my_alloc.deallocate(x);
-        // moved_to.deallocate(y);
-    }
+    //     // auto x = my_alloc.allocate(30);
+    //     // auto y = moved_to.allocate(30);
+    //     // my_alloc.deallocate(x);
+    //     // moved_to.deallocate(y);
+    // }
 }
 
 
 void instantiation_compilation_test2()
 {
-    constexpr auto mem_size = 256;
-    dd99::memory::Self_Contained_Block<mem_size> my_memory, aux_memory;
+    // constexpr auto mem_size = 256;
+    // dd99::memory::self_contained_block<mem_size> my_memory, aux_memory;
     
-    {
-        using aux_alloc_t = dd99::memory::block_allocator::Stack;
-        dd99::memory::block_allocator::borrowing::Buddy<32, 12, aux_alloc_t> my_alloc(my_memory, aux_memory);
-    }
+    // {
+    //     using aux_alloc_t = dd99::memory::block_allocator::Stack;
+    //     dd99::memory::block_allocator::borrowing::Buddy<32, 12, aux_alloc_t> my_alloc(my_memory, aux_memory);
+    // }
 
-    {
-        dd99::memory::block_allocator::Stack aux_alloc(aux_memory);
-        using aux_alloc_t = dd99::memory::block_allocator::composite::Ref<dd99::memory::block_allocator::Stack>;
-        dd99::memory::block_allocator::borrowing::Buddy<32, 12, aux_alloc_t> my_alloc(my_memory, aux_alloc);
-    }
+    // {
+    //     dd99::memory::block_allocator::Stack aux_alloc(aux_memory);
+    //     using aux_alloc_t = dd99::memory::block_allocator::composite::Ref<dd99::memory::block_allocator::Stack>;
+    //     dd99::memory::block_allocator::borrowing::Buddy<32, 12, aux_alloc_t> my_alloc(my_memory, aux_alloc);
+    // }
 }
 
 

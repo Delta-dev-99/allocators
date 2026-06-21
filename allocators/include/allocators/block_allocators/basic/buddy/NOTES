@@ -1,0 +1,17 @@
+
+The buddy allocator is defined as an allocator that stores information about whether 2 adjacent blocks (buddies) are in the same state (either allocated or free), and is capable of coalescing buddies when a larger block is needed.
+
+Internally, the buddy allocator operates on 2 data structures: a bucketed freelist and a bitmap (boolean buddy state storage).
+Those 2 data structures may be implemented in multiple ways, from intrusive freelists that store nodes on the free blocks and a plain bitmap, to a fused implementation which stores the freelist nodes and buddy state on the same structure.
+A user may want to use a specific data structure implementation while keeping the same core logic buddy allocator logic.
+To enable such customization, we use buddy policies, which expose a consistent API for the buddy allocator to use the data structures while allowing different implementations.
+
+
+
+TODO:
+
+The current design isolates actual memory addresses from the buddy policy. The buddy policy then addresses blocks by their {level, index} pair. This means that freelists now just store indices (the level is implicit for a given freelist).
+The old buddy implementation stored actual memory addresses on the freelists, which may save a conversion step (from buddy-scheme block address to actual memory address).
+We need to consider whether this new design results in worse performance (maybe the cost of conversion is saved by avoiding some other operation somewhere else, or by some other effect).
+
+When creating a buddy policy object, the user is expected to pass as arguments the memory blocks to be used for the bookkeeping data structures. This is problematic for the intrusive policy, because it stores freelists directly on the managed blocks. This means that the intrusive policy needs to have access to the same memory block as the allocator. The problem here is that either the user has to pass the same memory block to both the policy and the allocator (which seems odd, redundant, and stores the same data - the memory block - on 2 places), or the policy needs some way to get that information from the allocator (which reverses the dependency - creates circular dependency). The intrusive policy also needs to be aware of the block layout of the managed memory, which means that it either needs to access the allocator's functions, or be given template parameters for Block_Size, etc. and also keep the layout-dependent logic synchronized with that on the buddy allocator (which is a bad coding practice). In case we give a Block_Size parameter to the policy, we also have no way to assert that the Block_Size used by the policy and the one used by the allocator match (at least not without specializing the allocator to be aware of the intrusive policy and its particularities).

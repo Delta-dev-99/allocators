@@ -1,31 +1,28 @@
 #pragma once
 
-#include <allocators/acquire_memory/self_contained_block.hpp>
-#include <allocators/basic/bitmap.hpp>
-#include <allocators/basic/buddy.hpp>
-#include <allocators/basic/pool.hpp>
-#include <allocators/basic/slicing.hpp>
-#include <allocators/basic/stack.hpp>
-#include <allocators/borrowing/bitmap.hpp>
-#include <allocators/borrowing/buddy.hpp>
-#include <allocators/composite/fallback.hpp>
-#include <allocators/composite/filter.hpp>
-#include <allocators/composite/quantizer.hpp>
-#include <allocators/composite/ref.hpp>
-#include <allocators/composite/segregator.hpp>
-#include <allocators/composite/throwing.hpp>
-#include <allocators/degenerate/boolean.hpp>
-#include <allocators/degenerate/constant.hpp>
-#include <allocators/degenerate/null.hpp>
-#include <allocators/internal/bases/buddy.hpp>
-#include <allocators/metrics/stats.hpp>
-// #include <allocators/metrics/timing.hpp> // disabled (freestanding)
-#include <allocators/pointer/basic.hpp>
-#include <allocators/pointer/checked.hpp>
-#include <allocators/utility/filter.hpp>
-#include <allocators/utility/owner.hpp>
-// #include <allocators/utility/switch.hpp> // disabled temporarily (requires <tuple>)
-#include <allocators/utility/unique_block.hpp>
+#include <allocators/structures/blocks/self_contained_block.hpp>
+#include <allocators/block_allocators/basic/bitmap/bitmap.hpp>
+#include <allocators/block_allocators/basic/buddy/buddy.hpp>
+// #include <allocators/block_allocators/basic/pool.hpp>
+// #include <allocators/block_allocators/basic/slicing.hpp>
+// #include <allocators/block_allocators/basic/stack.hpp>
+#include <allocators/block_allocators/composite/fallback.hpp>
+#include <allocators/block_allocators/composite/filter.hpp>
+#include <allocators/block_allocators/composite/quantizer.hpp>
+#include <allocators/block_allocators/composite/ref.hpp>
+#include <allocators/block_allocators/composite/segregator.hpp>
+// #include <allocators/block_allocators/composite/throwing.hpp> // disabled (freestanding)
+#include <allocators/block_allocators/degenerate/boolean.hpp>
+#include <allocators/block_allocators/degenerate/constant.hpp>
+#include <allocators/block_allocators/degenerate/null.hpp>
+#include <allocators/block_allocators/metrics/stats.hpp>
+// #include <allocators/block_allocators/metrics/timing.hpp> // disabled (freestanding)
+#include <allocators/pointer_allocators/basic.hpp>
+#include <allocators/pointer_allocators/checked.hpp>
+#include <allocators/block_allocators/utility/filter.hpp>
+#include <allocators/block_allocators/utility/owner.hpp>
+// #include <allocators/block_allocators/utility/switch.hpp> // disabled temporarily (requires <tuple>)
+#include <allocators/block_allocators/utility/raii_block_allocator.hpp>
 #include <allocators/exception.hpp>
 
 
