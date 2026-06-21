@@ -15,7 +15,6 @@ using namespace dd99::memory;
 using namespace dd99::memory::block_allocator;
 
 // utility: aligned memory buffer
-// alignas(std::max_align_t) static std::byte buffer[64 * 1024];
 alignas(32 * 1024) static std::byte buffer[64 * 1024]; // alignment required by buddy with 64-byte blocks and up to 5 levels (max block size 2048 bytes) - ensures the entire buffer can be used without alignment issues
 
 // simple test harness

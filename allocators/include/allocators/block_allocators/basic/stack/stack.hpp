@@ -43,7 +43,6 @@ namespace dd99::memory::block_allocator
     public:
         [[nodiscard]]
         block allocate(std::size_t requested_size,
-                    //    std::size_t requested_alignment = alignof(std::max_align_t))
                        std::size_t requested_alignment = 1)
         {
             const auto aligned_current = align_up(m_current, requested_alignment); // add alignment padding
