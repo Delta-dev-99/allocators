@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.22.0)
-project(allocators VERSION 0.3.3)
+cmake_minimum_required(VERSION 3.30.0)
+project(allocators VERSION 0.4.0)
 
 include(cmake/CompilerWarnings.cmake)
 
