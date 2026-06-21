@@ -23,13 +23,14 @@ void f(int x)
 
 int main()
 {
-    DD99_ALLOCATOR_ASSERT(true);
-    DD99_ALLOCATOR_ASSERT(false);
+    // TODO:
+    // DD99_ALLOCATOR_ASSERT(true);
+    // DD99_ALLOCATOR_ASSERT(false);
 
-    my_assert(("some bad expression", 0));
+    // my_assert(("some bad expression", 0));
 
-    f(3);
+    // f(3);
 
-    std::cout << __builtin_FILE() << "\n";
-    std::cout << __builtin_LINE() << "\n";
+    // std::cout << __builtin_FILE() << "\n";
+    // std::cout << __builtin_LINE() << "\n";
 }

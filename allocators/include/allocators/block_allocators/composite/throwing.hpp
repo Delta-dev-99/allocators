@@ -1,6 +1,6 @@
 #pragma once
 
-#include <allocators/structures/memory_block.hpp>
+#include <allocators/structures/blocks/memory_block.hpp>
 #include <allocators/exception.hpp>
 
 
@@ -17,15 +17,15 @@ namespace dd99::memory::block_allocator::composite
 
     public:
         [[nodiscard]]
-        memory::Block allocate(std::size_t requested_size)
+        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
-            const auto r = Sub_Alloc_T::allocate(requested_size);
+            const auto r = Sub_Alloc_T::allocate(requested_size, requested_alignment);
             // TODO: Add exception description?
             if (!r) throw dd99::memory::failed_allocation_exception{};
             return r;
         }
 
-        void deallocate(const memory::Block &memory) 
+        void deallocate(const memory::block &memory) 
         {
             if (!owns(memory))
             {
@@ -40,7 +40,7 @@ namespace dd99::memory::block_allocator::composite
 
         bool owns(const std::byte * memory) const { return Sub_Alloc_T::owns(memory); }
 
-        bool owns(const memory::Block &memory) const { return Sub_Alloc_T::owns(memory); }
+        bool owns(const memory::block &memory) const { return Sub_Alloc_T::owns(memory); }
     };
 
 }

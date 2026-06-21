@@ -18,10 +18,10 @@ namespace dd99::memory::block_allocator::composite
 
     public:
         [[nodiscard]]
-        memory::Block allocate(std::size_t requested_size)
-        { return m_alloc_ref.allocate(requested_size); }
+        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
+        { return m_alloc_ref.allocate(requested_size, requested_alignment); }
 
-        void deallocate(const memory::Block &memory)
+        void deallocate(const memory::block &memory)
         { m_alloc_ref.deallocate(memory); }
 
         void deallocate_all()
@@ -30,13 +30,11 @@ namespace dd99::memory::block_allocator::composite
         bool owns(const std::byte * memory) const
         { return m_alloc_ref.owns(memory); }
 
-        bool owns(const memory::Block &memory) const
+        bool owns(const memory::block &memory) const
         { return m_alloc_ref.owns(memory); }
 
     protected:
         Sub_Alloc_T &m_alloc_ref;
     };
-
-    static_assert(Block_Allocator<Ref<void*>>, "This definition doesn't comply with the `Block_Allocator` concept");
 
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <allocators/library_configuration/cpp_config.hpp>
 #include <allocators/block_allocators/block_allocator.hpp>
 
 namespace dd99::memory::block_allocator::composite
@@ -39,7 +40,7 @@ namespace dd99::memory::block_allocator::composite
 
     public:
         [[nodiscard]]
-        memory::Block allocate(std::size_t requested_size,
+        memory::block allocate(std::size_t requested_size,
                                std::size_t requested_alignment = 1)
         {
             auto r = m_primary.allocate(requested_size, requested_alignment);
@@ -48,15 +49,21 @@ namespace dd99::memory::block_allocator::composite
             return r;
         }
 
-        void deallocate(const memory::Block &memory)
+        void deallocate(const memory::block &memory)
         {
             // TODO: Allocators should check if they own the memory
             // before deallocating it.
             // It should be OK to skip the check in higher-level allocators.
 
-            // if (Primary_T::owns(memory))
+            // TODO: we are changing the ownership check use practices
+            // ownership on deallocation should be an assertion
+            DD99_ALLOCATORS_ASSERT_HARDENED("block must be owned by this allocator", owns(memory));
+
+
+            if (m_primary.owns(memory))
                 m_primary.deallocate(memory);
-            // else if (Fallback_T::owns(memory))
+            // else if (m_fallback.owns(memory))
+            else
                 m_fallback.deallocate(memory);
         }
 
@@ -71,7 +78,7 @@ namespace dd99::memory::block_allocator::composite
             return m_primary.owns(memory) || m_fallback.owns(memory);
         }
 
-        bool owns(const memory::Block &memory) const
+        bool owns(const memory::block &memory) const
         {
             return m_primary.owns(memory) || m_fallback.owns(memory);
         }

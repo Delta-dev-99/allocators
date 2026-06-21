@@ -1,14 +1,11 @@
 #pragma once
 
-#include <allocators/acquire_memory/self_contained_block.hpp>
-#include <allocators/block_allocators/basic/bitmap.hpp>
-#include <allocators/block_allocators/basic/bitmap.hpp>
-#include <allocators/block_allocators/basic/buddy.hpp>
-#include <allocators/block_allocators/basic/pool.hpp>
-#include <allocators/block_allocators/basic/slicing.hpp>
-#include <allocators/block_allocators/basic/stack.hpp>
-#include <allocators/block_allocators/borrowing/bitmap.hpp>
-#include <allocators/block_allocators/borrowing/buddy.hpp>
+#include <allocators/structures/blocks/self_contained_block.hpp>
+#include <allocators/block_allocators/basic/bitmap/bitmap.hpp>
+#include <allocators/block_allocators/basic/buddy/buddy.hpp>
+// #include <allocators/block_allocators/basic/pool.hpp>
+// #include <allocators/block_allocators/basic/slicing.hpp>
+// #include <allocators/block_allocators/basic/stack.hpp>
 #include <allocators/block_allocators/composite/fallback.hpp>
 #include <allocators/block_allocators/composite/filter.hpp>
 #include <allocators/block_allocators/composite/quantizer.hpp>
@@ -18,7 +15,6 @@
 #include <allocators/block_allocators/degenerate/boolean.hpp>
 #include <allocators/block_allocators/degenerate/constant.hpp>
 #include <allocators/block_allocators/degenerate/null.hpp>
-#include <allocators/block_allocators/internal/bases/buddy.hpp>
 #include <allocators/block_allocators/metrics/stats.hpp>
 // #include <allocators/block_allocators/metrics/timing.hpp> // disabled (freestanding)
 #include <allocators/pointer_allocators/basic.hpp>
@@ -26,7 +22,7 @@
 #include <allocators/block_allocators/utility/filter.hpp>
 #include <allocators/block_allocators/utility/owner.hpp>
 // #include <allocators/block_allocators/utility/switch.hpp> // disabled temporarily (requires <tuple>)
-#include <allocators/block_allocators/utility/unique_block.hpp>
+#include <allocators/block_allocators/utility/raii_block_allocator.hpp>
 #include <allocators/exception.hpp>
 
 

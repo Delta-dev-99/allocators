@@ -14,29 +14,29 @@ namespace dd99::memory::block_allocator::degenerate
     {
     public:
         constexpr
-        Constant(const memory::Block & memory)
+        Constant(const memory::block & memory)
             : m_memory(memory)
         { }
 
     public:
         constexpr
-        memory::Block
-        allocate(std::size_t /* requested_size */) const
+        memory::block
+        allocate(std::size_t /* requested_size */, std::size_t /* requested_alignment */ = 1) const
         { return m_memory; }
         
         constexpr
-        memory::Block
-        allocate(std::size_t /* requested_size */)
+        memory::block
+        allocate(std::size_t /* requested_size */, std::size_t /* requested_alignment */ = 1)
         { return m_memory; }
 
 
         constexpr
         void
-        deallocate(const memory::Block &/* memory */) const { }
+        deallocate(const memory::block &/* memory */) const { }
 
         constexpr
         void
-        deallocate(const memory::Block &/* memory */) { }
+        deallocate(const memory::block &/* memory */) { }
 
 
         constexpr
@@ -55,11 +55,11 @@ namespace dd99::memory::block_allocator::degenerate
 
         constexpr
         bool
-        owns(const memory::Block & memory) const
+        owns(const memory::block & memory) const
         { return m_memory.contains(memory); }
 
     private:
-        memory::Block m_memory;
+        memory::block m_memory;
     };
 
     static_assert(Block_Allocator<Constant>, "This definition doesn't comply with the `Block_Allocator` concept");
