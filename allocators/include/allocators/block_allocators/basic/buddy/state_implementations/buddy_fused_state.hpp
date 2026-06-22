@@ -226,12 +226,13 @@ namespace dd99::memory::block_allocator::buddy_namespace
         buddy_fused_state(layout_type layout, state_memory_block_type state_memory)
             : m_layout      {std::move(layout)}
             , m_state_memory{std::move(state_memory)}
-            , m_slots       {reinterpret_cast<block_slot *>(m_state_memory.get_base()),
-                             static_cast<std::size_t>(m_layout.m_block_count)}
+            // , m_slots       {reinterpret_cast<block_slot *>(m_state_memory.get_base()),
+            //                  static_cast<std::size_t>(m_layout.m_block_count)}
         {
             // The state memory is raw uninitialised bytes; construct all slots
             // in place before we start using them.
-            std::uninitialized_fill(m_slots.begin(), m_slots.end(), block_slot{});
+            auto slots = get_slots();
+            std::uninitialized_fill(slots.begin(), slots.end(), block_slot{});
 
             // All free-list heads start empty.
             m_heads.fill(block_slot::NONE);
@@ -249,7 +250,8 @@ namespace dd99::memory::block_allocator::buddy_namespace
         push(level_type level, std::byte * block_base)
         {
             index_type  idx  = to_base_index(block_base);
-            block_slot & slot = m_slots[idx];
+            auto slots = get_slots();
+            block_slot & slot = slots[idx];
 
             // Populate the representative slot.
             slot.level   = level;
@@ -261,7 +263,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
             slot.prev = block_slot::NONE;      // new head has no predecessor
 
             if (old_head != block_slot::NONE)
-                m_slots[old_head].prev = idx;  // back-link the former head
+                slots[old_head].prev = idx;  // back-link the former head
 
             m_heads[level] = idx;
         }
@@ -328,7 +330,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
             index_type idx       = to_base_index(block_base);
             index_type buddy_idx = idx ^ (static_cast<index_type>(std::size_t{1} << level));
 
-            const block_slot & buddy = m_slots[buddy_idx];
+            const block_slot & buddy = get_slots()[buddy_idx];
 
             if (buddy.is_free && buddy.level == level)
             {
@@ -349,7 +351,8 @@ namespace dd99::memory::block_allocator::buddy_namespace
         reset()
         {
             // Objects are already constructed here, so plain assignment is fine.
-            std::fill(m_slots.begin(), m_slots.end(), block_slot{});
+            auto slots = get_slots();
+            std::fill(slots.begin(), slots.end(), block_slot{});
             m_heads.fill(block_slot::NONE);
             init_freelists();
         }
@@ -378,23 +381,23 @@ namespace dd99::memory::block_allocator::buddy_namespace
 
         // Remove slot `idx` from whatever free list it currently belongs to,
         // and mark it as allocated.
-        // Precondition: m_slots[idx].is_free == true.
+        // Precondition: get_slots()[idx].is_free == true.
         constexpr
         void
         unlink(index_type idx)
         {
-            block_slot & slot = m_slots[idx];
+            block_slot & slot = get_slots()[idx];
 
             // Patch the predecessor's forward link (or the list head if we
             // are the head, i.e. prev == NONE).
             if (slot.prev != block_slot::NONE)
-                m_slots[slot.prev].next = slot.next;
+                get_slots()[slot.prev].next = slot.next;
             else
                 m_heads[slot.level] = slot.next;
 
             // Patch the successor's backward link (if any).
             if (slot.next != block_slot::NONE)
-                m_slots[slot.next].prev = slot.prev;
+                get_slots()[slot.next].prev = slot.prev;
 
             // Clear the slot so stale data cannot mislead a future lookup
             // of this slot as a buddy.
@@ -451,7 +454,12 @@ namespace dd99::memory::block_allocator::buddy_namespace
 
         // Non-owning view of the slot array that lives inside m_state_memory,
         // indexed by base-level block index.
-        std::span<block_slot>    m_slots;
+        // std::span<block_slot>    m_slots;
+        constexpr std::span<block_slot> get_slots() const
+        {
+            return {std::launder(reinterpret_cast<block_slot *>(m_state_memory.get_base())),
+                    static_cast<std::size_t>(m_layout.m_block_count)};
+        }
 
         // Per-level free-list heads: m_heads[L] is the base-level index of the
         // first free block at level L, or block_slot::NONE if that list is

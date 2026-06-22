@@ -40,11 +40,11 @@ namespace dd99::memory::block_allocator
             , m_allocator_ptr{& allocator}
         { }
 
-        block   allocate        (std::size_t size, std::size_t alignment = alignof(std::max_align_t))   { return m_vptr->allocate(m_allocator_ptr, size, alignment);    }
-        void    deallocate      (const block & blk)                                                     { return m_vptr->deallocate(m_allocator_ptr, blk);              }
-        void    deallocate_all  ()                                                                      { return m_vptr->deallocate_all(m_allocator_ptr);               }
-        bool    owns            (const block & blk)                                                     { return m_vptr->owns_block(m_allocator_ptr, blk);              }
-        bool    owns            (const std::byte * blk_ptr)                                             { return m_vptr->owns_pointer(m_allocator_ptr, blk_ptr);        }
+        block   allocate        (std::size_t size, std::size_t alignment = 1)   { return m_vptr->allocate(m_allocator_ptr, size, alignment);    }
+        void    deallocate      (const block & blk)                             { return m_vptr->deallocate(m_allocator_ptr, blk);              }
+        void    deallocate_all  ()                                              { return m_vptr->deallocate_all(m_allocator_ptr);               }
+        bool    owns            (const block & blk)                             { return m_vptr->owns_block(m_allocator_ptr, blk);              }
+        bool    owns            (const std::byte * blk_ptr)                     { return m_vptr->owns_pointer(m_allocator_ptr, blk_ptr);        }
     };
 
     static_assert(Block_Allocator<any_block_allocator_ref>);
