@@ -250,7 +250,8 @@ namespace dd99::memory::block_allocator::buddy_namespace
         push(level_type level, std::byte * block_base)
         {
             index_type  idx  = to_base_index(block_base);
-            block_slot & slot = get_slots()[idx];
+            auto slots = get_slots();
+            block_slot & slot = slots[idx];
 
             // Populate the representative slot.
             slot.level   = level;
@@ -262,7 +263,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
             slot.prev = block_slot::NONE;      // new head has no predecessor
 
             if (old_head != block_slot::NONE)
-                get_slots()[old_head].prev = idx;  // back-link the former head
+                slots[old_head].prev = idx;  // back-link the former head
 
             m_heads[level] = idx;
         }
@@ -456,7 +457,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
         // std::span<block_slot>    m_slots;
         constexpr std::span<block_slot> get_slots() const
         {
-            return {reinterpret_cast<block_slot *>(m_state_memory.get_base()),
+            return {std::launder(reinterpret_cast<block_slot *>(m_state_memory.get_base())),
                     static_cast<std::size_t>(m_layout.m_block_count)};
         }
 
