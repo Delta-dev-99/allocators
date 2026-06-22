@@ -3,6 +3,7 @@
 #include <allocators/structures/blocks/block_concept.hpp>
 #include <allocators/block_allocators/block_allocator.hpp>
 #include <allocators/alignment.hpp>
+#include <algorithm>
 #include <bit>
 
 
