@@ -1,15 +1,19 @@
 
-add_library(allocators INTERFACE)
-add_library(dd99::allocators ALIAS allocators)
-target_compile_features(allocators INTERFACE cxx_std_26)
-target_include_directories(allocators INTERFACE include)
-# set_target_warnings(allocators WARNINGS_AS_ERRORS PRIVATE)
+add_library(dd99_allocators_freestanding INTERFACE)
+add_library(dd99::allocators_freestanding ALIAS dd99_allocators_freestanding)
+target_compile_features(dd99_allocators_freestanding INTERFACE cxx_std_26)
+target_include_directories(dd99_allocators_freestanding INTERFACE include)
+# set_target_warnings(dd99_allocators_freestanding WARNINGS_AS_ERRORS PRIVATE)
 
 # target_sources(allocators PRIVATE
 #     src/allocators.cpp
 # )
 
-target_sources(allocators INTERFACE
+add_library(dd99_allocators INTERFACE)
+add_library(dd99::allocators ALIAS dd99_allocators)
+target_link_libraries(dd99_allocators INTERFACE dd99::allocators_freestanding)
+
+target_sources(dd99_allocators INTERFACE
     src/assertions.cpp
 
     # include/allocators/allocator.hpp
