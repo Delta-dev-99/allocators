@@ -1,6 +1,8 @@
 #pragma once
 
+#include <allocators/library_configuration/cpp_config.hpp>
 #include <allocators/block_allocators/block_allocator.hpp>
+#include <bit>
 
 namespace dd99::memory::block_allocator::composite
 {

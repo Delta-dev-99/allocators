@@ -1,5 +1,6 @@
 #pragma once
 
+#include <allocators/library_configuration/cpp_config.hpp>
 #include <cstdint>
 #include <utility>
 #include <cstddef>

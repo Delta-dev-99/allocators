@@ -1,10 +1,6 @@
 #pragma once
 
-// NOTE: This is not the main inlcude header of the library.
-// This header just defines a base class for all allocators to provide runtime polimorphysm
-// via virtual functions.
-
-
+#include <allocators/library_configuration/cpp_config.hpp>
 #include <allocators/structures/blocks/memory_block.hpp>
 #include <concepts>
 
