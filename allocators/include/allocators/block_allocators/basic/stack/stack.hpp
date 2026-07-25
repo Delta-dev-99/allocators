@@ -39,7 +39,7 @@ namespace dd99_allocators_namespace::block_allocator
         Stack(Stack &&) = default;
 
         Stack & operator=(const Stack &) = delete;
-        Stack & operator=(Stack &&) = default;
+        Stack & operator=(Stack &&) = delete;
         
     public:
         [[nodiscard]]

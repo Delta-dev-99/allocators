@@ -17,10 +17,10 @@ namespace dd99_allocators_namespace::pointer_allocator
 
     public:
         Basic(sub_allocator_type sub_allocator)
-            : m_sub_alloc(std::move(sub_allocator))
+            : m_sub_alloc(std::forward<sub_allocator_type>(sub_allocator))
         { }
 
-    private:
+    public:
         sub_allocator_type m_sub_alloc;
     
     public:

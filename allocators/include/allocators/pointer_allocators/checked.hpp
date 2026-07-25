@@ -16,11 +16,11 @@ namespace dd99_allocators_namespace::pointer_allocator
     class Pointer_Checked
     {
     public:
-        Pointer_Checked(Sub_Alloc_T&& sub_allocator)
-            : m_sub_alloc(std::move(sub_allocator))
+        Pointer_Checked(Sub_Alloc_T sub_allocator)
+            : m_sub_alloc(std::forward<Sub_Alloc_T>(sub_allocator))
         { }
 
-    protected:
+    public:
         Sub_Alloc_T m_sub_alloc;
 
     private:

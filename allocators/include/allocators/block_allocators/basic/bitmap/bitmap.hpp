@@ -84,7 +84,7 @@ namespace dd99_allocators_namespace::block_allocator
         constexpr bitmap & operator=(const bitmap &) = delete;
         
         constexpr bitmap(bitmap &&) = default;
-        constexpr bitmap & operator=(bitmap &&) = default;
+        constexpr bitmap & operator=(bitmap &&) = delete;
 
     public:
         [[nodiscard]]

@@ -10,18 +10,42 @@ namespace dd99_allocators_namespace::block_allocator::composite
     // And so on...
     template <class Primary_T, class Fallback_T, class... More_Fallbacks_T>
     class Fallback
-        : public Fallback<Fallback<Primary_T, Fallback_T>, More_Fallbacks_T...>
     {
         using Base = Fallback<Fallback<Primary_T, Fallback_T>, More_Fallbacks_T...>;
 
     public:
-        Fallback(Primary_T &&primary, Fallback_T &&fallback, More_Fallbacks_T &&... more_fallbacks)
-            : Base(
+        Fallback(Primary_T primary, Fallback_T fallback, More_Fallbacks_T... more_fallbacks)
+            : m_base(
                 Fallback<Primary_T, Fallback_T>(
-                    std::move(primary),
-                    std::move(fallback)),
-                std::move(more_fallbacks)...)
+                    std::forward<Primary_T>(primary),
+                    std::forward<Fallback_T>(fallback)),
+                std::forward<More_Fallbacks_T>(more_fallbacks)...)
         { }
+
+        Fallback(const Fallback&) = delete;
+        Fallback(Fallback&&) = default;
+        Fallback & operator=(const Fallback &) = delete;
+        Fallback & operator=(Fallback &&) = delete;
+
+    public:
+        [[nodiscard]]
+        block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
+        { return m_base.allocate(requested_size, requested_alignment); }
+
+        void deallocate(const block &memory)
+        { m_base.deallocate(memory); }
+
+        void deallocate_all()
+        { m_base.deallocate_all(); }
+
+        bool owns(const std::byte * memory) const
+        { return m_base.owns(memory); }
+
+        bool owns(const block &memory) const
+        { return m_base.owns(memory); }
+
+    public:
+        Base m_base;
     };
 
 
@@ -91,5 +115,6 @@ namespace dd99_allocators_namespace::block_allocator::composite
     };
 
     static_assert(Block_Allocator<Fallback<void*, void*>>, "This definition doesn't comply with the `Block_Allocator` concept");
+    static_assert(Block_Allocator<Fallback<void*, void*, void*>>, "This definition doesn't comply with the `Block_Allocator` concept");
     
 }
