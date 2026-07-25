@@ -154,13 +154,13 @@ namespace dd99_allocators_namespace::block_allocator
             }
 
             // sorted by base address
-            void push(const block& block)
+            void push(block blk)
             {
-                DD99_ALLOCATORS_ASSERT_HARDENED("block base must be aligned to the node alignment", is_aligned(block.base, alignof(Block_Header)));
+                DD99_ALLOCATORS_ASSERT_HARDENED("block base must be aligned to the node alignment", is_aligned(blk.base, alignof(Block_Header)));
 
                 // insert into list and get pointer to node previous to inserted one
                 // the pointer to the inserted node is do_insert(memory)->next
-                auto prev_ptr = do_insert(block);
+                auto prev_ptr = do_insert(blk);
 
                 // Merge adjacent free blocks
                 // try merging with previous first
@@ -168,8 +168,8 @@ namespace dd99_allocators_namespace::block_allocator
                 {
                     // if the following assertion fails, the block (base or size) was probably modified after allocation
                     DD99_ALLOCATORS_ASSERT_HARDENED("deallocation creates unrecoverable memory hole",
-                        block.base == prev_ptr->get_memory_block().get_end() ||
-                        static_cast<std::size_t>(block.base - align_up(prev_ptr->get_memory_block().get_end(), alignof(Block_Header))) >= sizeof(Block_Header));
+                        blk.base == prev_ptr->get_memory_block().get_end() ||
+                        static_cast<std::size_t>(blk.base - align_up(prev_ptr->get_memory_block().get_end(), alignof(Block_Header))) >= sizeof(Block_Header));
 
                     if (!try_merge(prev_ptr))
                         prev_ptr = prev_ptr->next;
@@ -242,10 +242,11 @@ namespace dd99_allocators_namespace::block_allocator
             bool try_merge(Block_Header *prev_ptr)
             {
                 DD99_ALLOCATORS_ASSERT_DEBUG("prev_ptr must be a valid Block_Header", prev_ptr != nullptr);
-                DD99_ALLOCATORS_ASSERT_DEBUG("prev_ptr->next must be a valid Block_Header", prev_ptr->next != nullptr);
 
                 if (prev_ptr->get_memory_block().get_end() == reinterpret_cast<std::byte *>(prev_ptr->next))
                 {
+                    DD99_ALLOCATORS_ASSERT_DEBUG("prev_ptr->next must be a valid Block_Header", prev_ptr->next != nullptr);
+                    
                     auto to_merge_ptr = prev_ptr->next;
                     prev_ptr->size += to_merge_ptr->size;
                     prev_ptr->next = to_merge_ptr->next;
