@@ -11,7 +11,7 @@
 
 
 
-namespace dd99::memory::block_allocator::buddy_namespace
+namespace dd99_allocators_namespace::block_allocator::buddy_namespace
 {
 
     // A type that describes the layout of the managed memory
@@ -21,7 +21,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
     concept Layout_Concept = requires
     {
         typename T::block_address_type;
-    } && requires(T & layout, std::byte * memory_base, memory::block blk, T::block_address_type blk_address)
+    } && requires(T & layout, std::byte * memory_base, block blk, T::block_address_type blk_address)
     {
         typename T::level_type;
         typename T::index_type;

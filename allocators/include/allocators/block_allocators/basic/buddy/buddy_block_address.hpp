@@ -5,7 +5,7 @@
 
 
 
-namespace dd99::memory::block_allocator::buddy_namespace
+namespace dd99_allocators_namespace::block_allocator::buddy_namespace
 {
 
     // This structure encodes how a block is addressed in the buddy allocator

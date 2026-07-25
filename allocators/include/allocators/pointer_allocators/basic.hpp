@@ -3,7 +3,7 @@
 #include <allocators/pointer_allocators/allocator.hpp>
 #include <new>
 
-namespace dd99::memory::pointer_allocator
+namespace dd99_allocators_namespace::pointer_allocator
 {
     // Allows the allocation and deallocation of memory using pointers
     // This allocator is the bridge between this library and standard c++ allocation

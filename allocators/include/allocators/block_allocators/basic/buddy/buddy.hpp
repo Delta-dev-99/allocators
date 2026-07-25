@@ -6,7 +6,7 @@
 // #include <cassert>
 
 
-namespace dd99::memory::block_allocator
+namespace dd99_allocators_namespace::block_allocator
 {
 
     template <buddy_namespace::State_Concept State_Type>
@@ -52,7 +52,7 @@ namespace dd99::memory::block_allocator
     public: // allocator interface implementation
         [[nodiscard]]
         constexpr
-        memory::block
+        block
         allocate_level(level_type requested_level)
         {
             auto base = allocate_impl(requested_level);
@@ -62,7 +62,7 @@ namespace dd99::memory::block_allocator
 
         [[nodiscard]]
         constexpr
-        memory::block
+        block
         allocate(std::size_t requested_size, std::size_t requested_alignment)
         {
             // NOTE: for alignment larger than requested size we allocate from a higher level and split the block.
@@ -89,7 +89,7 @@ namespace dd99::memory::block_allocator
 
         [[nodiscard]]
         constexpr
-        memory::block
+        block
         allocate(std::size_t requested_size)
         {
             if (requested_size == 0) return {};

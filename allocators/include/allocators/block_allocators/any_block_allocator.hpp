@@ -5,7 +5,7 @@
 #include <cstddef>
 
 
-namespace dd99::memory::block_allocator
+namespace dd99_allocators_namespace::block_allocator
 {
     namespace detail
     {

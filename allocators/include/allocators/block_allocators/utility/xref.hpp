@@ -4,7 +4,7 @@
 
 
 
-namespace dd99::memory::block_allocator::utility
+namespace dd99_allocators_namespace::block_allocator::utility
 {
     // Wraps a reference to an allocator.
     // Requires an existing and persisting allocator instance.
@@ -19,13 +19,18 @@ namespace dd99::memory::block_allocator::utility
             : m_alloc_ref(underlying_allocator)
         { }
 
+        XRef(const XRef&) = default;
+        XRef(XRef&&) = default;
+        XRef & operator=(const XRef &) = delete;
+        XRef & operator=(XRef &&) = delete;
+
     public:
         template <class Request>
         [[nodiscard]]
-        memory::block allocate(Request request)
+        block allocate(Request request)
         { return m_alloc_ref.allocate(request); }
 
-        void deallocate(const memory::block &memory)
+        void deallocate(const block &memory)
         { m_alloc_ref.deallocate(memory); }
 
         void deallocate_all()
@@ -34,10 +39,10 @@ namespace dd99::memory::block_allocator::utility
         bool owns(const std::byte * memory) const
         { return m_alloc_ref.owns(memory); }
 
-        bool owns(const memory::block &memory) const
+        bool owns(const block &memory) const
         { return m_alloc_ref.owns(memory); }
 
-    protected:
-        Sub_Alloc_T &m_alloc_ref;
+    public:
+        Sub_Alloc_T & m_alloc_ref;
     };
 }

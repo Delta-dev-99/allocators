@@ -4,7 +4,7 @@
 
 
 
-namespace dd99::memory::block_allocator::degenerate
+namespace dd99_allocators_namespace::block_allocator::degenerate
 {
     // TODO: Find better name
     // A Constant allocator has a constant state.
@@ -14,29 +14,34 @@ namespace dd99::memory::block_allocator::degenerate
     {
     public:
         constexpr
-        Constant(const memory::block & memory)
+        Constant(const block & memory)
             : m_memory(memory)
         { }
 
+        constexpr Constant(const Constant&) = delete;
+        constexpr Constant(Constant&&) = default;
+        constexpr Constant & operator=(const Constant &) = delete;
+        constexpr Constant & operator=(Constant &&) = delete;
+
     public:
         constexpr
-        memory::block
+        block
         allocate(std::size_t /* requested_size */, std::size_t /* requested_alignment */ = 1) const
         { return m_memory; }
         
         constexpr
-        memory::block
+        block
         allocate(std::size_t /* requested_size */, std::size_t /* requested_alignment */ = 1)
         { return m_memory; }
 
 
         constexpr
         void
-        deallocate(const memory::block &/* memory */) const { }
+        deallocate(const block &/* memory */) const { }
 
         constexpr
         void
-        deallocate(const memory::block &/* memory */) { }
+        deallocate(const block &/* memory */) { }
 
 
         constexpr
@@ -55,11 +60,11 @@ namespace dd99::memory::block_allocator::degenerate
 
         constexpr
         bool
-        owns(const memory::block & memory) const
+        owns(const block & memory) const
         { return m_memory.contains(memory); }
 
     private:
-        memory::block m_memory;
+        block m_memory;
     };
 
     static_assert(Block_Allocator<Constant>, "This definition doesn't comply with the `Block_Allocator` concept");

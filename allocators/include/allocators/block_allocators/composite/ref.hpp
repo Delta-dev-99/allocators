@@ -2,7 +2,7 @@
 
 #include <allocators/block_allocators/block_allocator.hpp>
 
-namespace dd99::memory::block_allocator::composite
+namespace dd99_allocators_namespace::block_allocator::composite
 {
     // An allocator that wraps a reference to another allocator.
     // Requires an existing and persisting allocator instance.
@@ -12,16 +12,21 @@ namespace dd99::memory::block_allocator::composite
     class Ref
     {
     public:
-        Ref(Sub_Alloc_T &underlying_allocator)
+        Ref(Sub_Alloc_T & underlying_allocator)
             : m_alloc_ref(underlying_allocator)
         { }
 
+        Ref(const Ref&) = default;
+        Ref(Ref&&) = default;
+        Ref & operator=(const Ref &) = delete;
+        Ref & operator=(Ref &&) = delete;
+
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
+        block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         { return m_alloc_ref.allocate(requested_size, requested_alignment); }
 
-        void deallocate(const memory::block &memory)
+        void deallocate(const block &memory)
         { m_alloc_ref.deallocate(memory); }
 
         void deallocate_all()
@@ -30,11 +35,11 @@ namespace dd99::memory::block_allocator::composite
         bool owns(const std::byte * memory) const
         { return m_alloc_ref.owns(memory); }
 
-        bool owns(const memory::block &memory) const
+        bool owns(const block &memory) const
         { return m_alloc_ref.owns(memory); }
 
-    protected:
-        Sub_Alloc_T &m_alloc_ref;
+    public:
+        Sub_Alloc_T & m_alloc_ref;
     };
 
 }

@@ -4,7 +4,7 @@
 #include <chrono>
 
 
-namespace dd99::memory::block_allocator::metrics
+namespace dd99_allocators_namespace::block_allocator::metrics
 {
     namespace detail
     {
@@ -50,25 +50,30 @@ namespace dd99::memory::block_allocator::metrics
     //     Stats<Timing<Sub_Alloc_T>>
     // Otherwise you will time the allocation along with the stats computation
     template <class Sub_Alloc_T, bool Keep_Last_Time_Points = true, bool Keep_Last_Durations = true, bool Keep_Total_Durations = true>
-    class Timing : public Sub_Alloc_T
+    class Timing
     {
     public:
         using Timed_Operation = detail::Timed_Operation;
 
     public:
-        Timing(Sub_Alloc_T &&sub_allocator)
-            : Sub_Alloc_T(std::move(sub_allocator))
+        Timing(Sub_Alloc_T sub_allocator)
+            : m_sub_allocator{std::forward<Sub_Alloc_T>(sub_allocator)}
         { }
+
+        Timing(const Timing&) = delete;
+        Timing(Timing&&) = default;
+        Timing & operator=(const Timing &) = delete;
+        Timing & operator=(Timing &&) = delete;
 
     public:
         using Timing_Data = detail::Timing_Data<Keep_Last_Time_Points, Keep_Last_Durations, Keep_Total_Durations>;
 
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
+        block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
             const auto start = std::chrono::steady_clock::now();
-            auto r = Sub_Alloc_T::allocate(requested_size, requested_alignment);
+            auto r = m_sub_allocator.allocate(requested_size, requested_alignment);
             const auto end = std::chrono::steady_clock::now();
 
             const auto duration = end - start;
@@ -81,10 +86,10 @@ namespace dd99::memory::block_allocator::metrics
             return r;
         }
 
-        void deallocate(const memory::block &memory)
+        void deallocate(const block &memory)
         {
             const auto start = std::chrono::steady_clock::now();
-            Sub_Alloc_T::deallocate(memory);
+            m_sub_allocator.deallocate(memory);
             const auto end = std::chrono::steady_clock::now();
 
             const auto duration = end - start;
@@ -98,7 +103,7 @@ namespace dd99::memory::block_allocator::metrics
         void deallocate_all()
         {
             const auto start = std::chrono::steady_clock::now();
-            Sub_Alloc_T::deallocate_all();
+            m_sub_allocator.deallocate_all();
             const auto end = std::chrono::steady_clock::now();
 
             const auto duration = end - start;
@@ -106,8 +111,8 @@ namespace dd99::memory::block_allocator::metrics
             update_operation_timings(Timed_Operation::Full_Deallocation, start, duration);
         }
 
-        bool owns(const std::byte * memory) const { return Sub_Alloc_T::owns(memory); }
-        bool owns(const memory::block &memory) const { return Sub_Alloc_T::owns(memory); }
+        bool owns(const std::byte * memory) const { return m_sub_allocator.owns(memory); }
+        bool owns(const block &memory) const { return m_sub_allocator.owns(memory); }
 
     private:
         Timing_Data m_timing_data;
@@ -138,6 +143,8 @@ namespace dd99::memory::block_allocator::metrics
             if (operation != Timed_Operation::Any)
                 update_operation_timings(Timed_Operation::Any, time_point, duration);
         }
-        
+
+    public:
+        Sub_Alloc_T m_sub_allocator;
     };
 }

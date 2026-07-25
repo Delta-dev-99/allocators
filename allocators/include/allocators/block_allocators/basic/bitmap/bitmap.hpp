@@ -8,7 +8,7 @@
 
 
 
-namespace dd99::memory::block_allocator
+namespace dd99_allocators_namespace::block_allocator
 {
 
     // allocates fixed-size blocks,
@@ -35,7 +35,7 @@ namespace dd99::memory::block_allocator
     class bitmap
     {
         using bmp_element_type = Bitmap_Element_Type;
-        using bmp_type = dd99::memory::structure::Bitmap<bmp_element_type>;
+        using bmp_type = dd99_allocators_namespace::structure::Bitmap<bmp_element_type>;
         
         using managed_memory_block_type = Managed_Memory_Block_Type;
         using state_memory_block_type = State_Memory_Block_Type;

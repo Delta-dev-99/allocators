@@ -5,7 +5,7 @@
 
 
 
-namespace dd99::memory
+namespace dd99_allocators_namespace
 {
     // NOTE: this is provided as a weak symbol.
     // the user may want to provide a custom implementation.

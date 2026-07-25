@@ -11,9 +11,9 @@
 #include <iostream>
 #include <algorithm>
 
-using namespace dd99::memory;
-using namespace dd99::memory::block_allocator;
-using namespace dd99::memory::block_allocator::buddy_namespace;
+using namespace dd99_allocators_namespace;
+using namespace dd99_allocators_namespace::block_allocator;
+using namespace dd99_allocators_namespace::block_allocator::buddy_namespace;
 
 // ---------------------------------------------------------------------------
 // Configuration for the tests – adjust as needed

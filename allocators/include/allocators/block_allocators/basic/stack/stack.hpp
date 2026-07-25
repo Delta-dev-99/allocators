@@ -7,7 +7,7 @@
 #include <bit>
 
 
-namespace dd99::memory::block_allocator
+namespace dd99_allocators_namespace::block_allocator
 {
     // memory overhead on the controlled block: none
     template <std::size_t Natural_Alignment = 4, Movable_Block Block_Type = block>
@@ -94,11 +94,11 @@ namespace dd99::memory::block_allocator
         constexpr void reset(mark_type mark) noexcept { m_current = mark.m_current; }
 
         // consumes the stack until the base is aligned. Returns the consumed block (which may be empty).
-        constexpr memory::block align(std::size_t alignment)
+        constexpr block align(std::size_t alignment)
         {
             auto old = m_current;
             m_current = align_up(m_current, alignment);
-            return memory::block{.base = old, .size = static_cast<std::size_t>(m_current - old)};
+            return block{.base = old, .size = static_cast<std::size_t>(m_current - old)};
         }
 
     private:

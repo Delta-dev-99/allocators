@@ -6,7 +6,7 @@
 #include <bit>
 
 
-namespace dd99::memory
+namespace dd99_allocators_namespace
 {
     
     inline constexpr

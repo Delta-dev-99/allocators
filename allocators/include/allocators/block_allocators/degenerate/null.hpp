@@ -4,7 +4,7 @@
 
 
 
-namespace dd99::memory::block_allocator::degenerate
+namespace dd99_allocators_namespace::block_allocator::degenerate
 {
     // TODO: Find better name
     // A Null allocator ALWAYS fails.
@@ -17,28 +17,33 @@ namespace dd99::memory::block_allocator::degenerate
         constexpr Null() noexcept {}
 
         constexpr
-        Null(const memory::block &) noexcept
+        Null(const block &) noexcept
         { }
+
+        constexpr Null(const Null&) = delete;
+        constexpr Null(Null&&) = default;
+        constexpr Null & operator=(const Null &) = delete;
+        constexpr Null & operator=(Null &&) = delete;
 
     public:
         constexpr
-        memory::block
+        block
         allocate(std::size_t, std::size_t = 1) const noexcept
         { return {}; }
         
         constexpr
-        memory::block
+        block
         allocate(std::size_t) noexcept
         { return {}; }
 
 
         constexpr
         void
-        deallocate(const memory::block &) const noexcept { }
+        deallocate(const block &) const noexcept { }
 
         constexpr
         void
-        deallocate(const memory::block &) noexcept { }
+        deallocate(const block &) noexcept { }
 
 
         constexpr
@@ -57,7 +62,7 @@ namespace dd99::memory::block_allocator::degenerate
 
         constexpr
         bool
-        owns(const memory::block &) const noexcept
+        owns(const block &) const noexcept
         { return false; }
 
     };

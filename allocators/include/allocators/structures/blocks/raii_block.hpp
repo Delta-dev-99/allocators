@@ -2,7 +2,7 @@
 
 #include <allocators/block_allocators/block_allocator.hpp>
 
-namespace dd99::memory
+namespace dd99_allocators_namespace
 {
 
     // TODO: Find better name.

@@ -9,7 +9,7 @@
 
 
 
-namespace dd99::memory::block_allocator::buddy_namespace
+namespace dd99_allocators_namespace::block_allocator::buddy_namespace
 {
     // fw-decl
     template <Layout_Concept Layout,
@@ -23,7 +23,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
     {
         using layout_type = Layout;
         using bitmap_element_type = Bitmap_Element_Type;
-        using bitmap_type = dd99::memory::structure::Bitmap<bitmap_element_type>;
+        using bitmap_type = dd99_allocators_namespace::structure::Bitmap<bitmap_element_type>;
 
         static constexpr
         std::size_t
@@ -107,7 +107,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
     // This parameter determines the number of linked lists to create and the number of buddy states to manage for a given number of lowest-level blocks.
     // 
     // The `Block_Address_Type` template parameter:
-    // The type used to represent the address of a block in the buddy system. Can be customized to balance required bookkeeping memory vs representable memory range for a given block_size used in the buddy allocator. This type is expected to encode both the level and index of the block within the buddy system's hierarchy. The default type is `dd99::memory::block_allocator::buddy_policy::block_address<>`, which uses unsigned integers for both level and index. This type is used by the policy to identify blocks when performing operations such as pushing, popping, and merging blocks in the buddy system. The user can provide a custom type that satisfies the expected interface if they want to use a different encoding for block addresses.
+    // The type used to represent the address of a block in the buddy system. Can be customized to balance required bookkeeping memory vs representable memory range for a given block_size used in the buddy allocator. This type is expected to encode both the level and index of the block within the buddy system's hierarchy. The default type is `dd99_allocators_namespace::block_allocator::buddy_policy::block_address<>`, which uses unsigned integers for both level and index. This type is used by the policy to identify blocks when performing operations such as pushing, popping, and merging blocks in the buddy system. The user can provide a custom type that satisfies the expected interface if they want to use a different encoding for block addresses.
     // 
     // The `State_Block_Type` template parameter:
     // The type of the memory block provided by the user to store the buddy state and free list information. Intended to be deduced via factory function. This block is expected to be large enough to hold the necessary data structures for managing the buddy system's state across all levels. The policy will use this block to maintain the state of which blocks are free and which are allocated, as well as to manage the linked lists of free blocks at each level. The user is responsible for providing a suitable memory block for this purpose, and the policy will handle the organization and management of this block internally.
@@ -135,8 +135,8 @@ namespace dd99::memory::block_allocator::buddy_namespace
 
         static constexpr auto last_level = levels - 1;
 
-        using freelist_type = dd99::memory::structure::basic_linked_list;
-        using bitmap_type = dd99::memory::structure::Bitmap<Bitmap_Element_Type>;
+        using freelist_type = dd99_allocators_namespace::structure::basic_linked_list;
+        using bitmap_type = dd99_allocators_namespace::structure::Bitmap<Bitmap_Element_Type>;
 
         static_assert(sizeof(freelist_type::node) <= block_size,
             "block_size is too small to hold a freelist node.");

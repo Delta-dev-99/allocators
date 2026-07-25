@@ -4,43 +4,51 @@
 #include <allocators/exception.hpp>
 
 
-namespace dd99::memory::block_allocator::composite
+namespace dd99_allocators_namespace::block_allocator::composite
 {
     // An allocator adaptor that throws when allocation fails
     template <class Sub_Alloc_T, bool Throwing_Deallocation = false>
-    class Throwing : public Sub_Alloc_T
+    class Throwing
     {
     public:
-        Throwing(Sub_Alloc_T &&sub_allocator)
-            : Sub_Alloc_T(std::move(sub_allocator))
+        Throwing(Sub_Alloc_T sub_allocator)
+            : m_sub_allocator{std::forward<Sub_Alloc_T>(sub_allocator)}
         { }
+
+        Throwing(const Throwing&) = delete;
+        Throwing(Throwing&&) = default;
+        Throwing & operator=(const Throwing &) = delete;
+        Throwing & operator=(Throwing &&) = delete;
 
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
+        block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
-            const auto r = Sub_Alloc_T::allocate(requested_size, requested_alignment);
+            const auto r = m_sub_allocator.allocate(requested_size, requested_alignment);
             // TODO: Add exception description?
-            if (!r) throw dd99::memory::failed_allocation_exception{};
+            if (!r) throw failed_allocation_exception{};
             return r;
         }
 
-        void deallocate(const memory::block &memory) 
+        void deallocate(const block &memory) 
         {
             if (!owns(memory))
             {
                 if constexpr (Throwing_Deallocation)
-                    throw dd99::memory::memory_not_owned_exception{};
+                    throw memory_not_owned_exception{};
                 else return;
             }
-            return Sub_Alloc_T::deallocate(memory);
+            return m_sub_allocator.deallocate(memory);
         }
 
-        void deallocate_all() { Sub_Alloc_T::deallocate_all(); }
+        void deallocate_all() { m_sub_allocator.deallocate_all(); }
 
-        bool owns(const std::byte * memory) const { return Sub_Alloc_T::owns(memory); }
+        bool owns(const std::byte * memory) const { return m_sub_allocator.owns(memory); }
 
-        bool owns(const memory::block &memory) const { return Sub_Alloc_T::owns(memory); }
+        bool owns(const block &memory) const { return m_sub_allocator.owns(memory); }
+
+    public:
+        Sub_Alloc_T m_sub_allocator;
     };
 
 }

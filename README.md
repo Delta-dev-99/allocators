@@ -1,4 +1,4 @@
-# dd99::memory — composable, policy-free C++26 allocators
+# dd99::allocators — composable, policy-free C++26 allocators
 
 A header-only C++26 library for building exactly the memory allocator you need, one
 composable piece at a time — from user-space object pools to freestanding kernel arenas.
@@ -35,7 +35,7 @@ including its own bookkeeping memory — and nothing more.
 ## Why this library
 
 Most allocator libraries pick a lane: general-purpose (`malloc`), STL-integrated
-(`std::pmr`), or embedded/kernel-only (write-your-own). `dd99::memory` works across all
+(`std::pmr`), or embedded/kernel-only (write-your-own). `dd99::allocators` works across all
 three, by refusing to assume anything about the environment it runs in:
 
 - **You always control the memory.** The allocators built into this library never call
@@ -67,8 +67,8 @@ three, by refusing to assume anything about the environment it runs in:
 
 int main()
 {
-    dd99::memory::self_contained_block<4096> memory;   // 4 KiB, lives wherever this variable lives
-    dd99::memory::block_allocator::Stack stack{memory.get_block()};
+    dd99::allocators::self_contained_block<4096> memory;   // 4 KiB, lives wherever this variable lives
+    dd99::allocators::block_allocator::Stack stack{memory.get_block()};
 
     auto blk = stack.allocate(128, alignof(std::max_align_t));
     // ... use blk.base, blk.size ...
@@ -207,7 +207,7 @@ independently toggleable, and a single user-overridable `[[noreturn]]` handler:
 
 ```cpp
 // override the default abort-and-print handler, e.g. to call your kernel's panic():
-namespace dd99::memory
+namespace dd99::allocators
 {
     void allocators_assertion_failed(const assertion_info & info) noexcept
     {
@@ -246,7 +246,7 @@ statistics bolted on, with no code changes to either piece:
 #include <allocators/allocators.hpp>
 #include <allocators/block_allocators/basic/slicing/slicing.hpp>
 
-namespace mem   = dd99::memory;
+namespace mem   = dd99::allocators;
 namespace alloc = mem::block_allocator;
 
 int main()
@@ -270,7 +270,7 @@ stats, exposed through a checked pointer API:
 #include <allocators/allocators.hpp>
 #include <allocators/block_allocators/basic/slicing/slicing.hpp>
 
-namespace mem       = dd99::memory;
+namespace mem       = dd99::allocators;
 namespace alloc     = mem::block_allocator;
 namespace ptr_alloc = mem::pointer_allocator;
 
@@ -296,7 +296,7 @@ that memory is never allocated behind your back, you compute and provide it:
 #include <allocators/structures/blocks/self_contained_block.hpp>
 #include <vector>
 
-using namespace dd99::memory;
+using namespace dd99::allocators;
 
 int main()
 {
@@ -331,13 +331,13 @@ struct Widget { explicit Widget(int id) : id(id) {} int id; };
 
 int main()
 {
-    dd99::memory::self_contained_block<256> memory;
-    auto stack = dd99::memory::block_allocator::Stack{memory.get_block()};
+    dd99::allocators::self_contained_block<256> memory;
+    auto stack = dd99::allocators::block_allocator::Stack{memory.get_block()};
 
-    auto widget = dd99::memory::allocator_new<Widget>(stack, /* id = */ 42);
+    auto widget = dd99::allocators::allocator_new<Widget>(stack, /* id = */ 42);
     // widget->id == 42
 
-    dd99::memory::allocator_delete(stack, widget);
+    dd99::allocators::allocator_delete(stack, widget);
 }
 ```
 
@@ -354,7 +354,7 @@ non-owning, manually-vtabled wrapper that still satisfies `Block_Allocator`:
 ```cpp
 #include <allocators/block_allocators/any_block_allocator.hpp>
 
-void fill(dd99::memory::block_allocator::any_block_allocator_ref allocator)
+void fill(dd99::allocators::block_allocator::any_block_allocator_ref allocator)
 {
     auto blk = allocator.allocate(64);
     // ...
@@ -388,7 +388,7 @@ Since construction is explicit, a small factory function is the natural way to u
 #include <allocators/structures/blocks/raii_block.hpp>
 #include <new>
 
-namespace mem      = dd99::memory;
+namespace mem      = dd99::allocators;
 namespace alloc    = mem::block_allocator;
 namespace buddy_ns = alloc::buddy_namespace;
 
@@ -458,7 +458,22 @@ extend it:
 - **Explicit storage provisioning, always.** No allocator silently partitions memory it
   wasn't given; static helpers (`calculate_block_count`, `get_state_size`, ...) let you
   compute exactly how much storage a configuration needs, alignment padding included.
-- **Customizable ownership.** When forming a composite allocator, it typically takes ownership of the underlying components, but you can either explicitly pass a reference type as template parameter (we call `forward()` under the hood), or wrap the sub-objects with `composite::Ref` to override this behavior. This forwarding with explicit reference pattern is more of a general guideline and is followed by some things beyond allocator composition, but there are exceptions (mostly for internal types) where taking a reference (which implies potentially sharing the object) is pointless.
+- **Composition doesn't dictate ownership — you decide, per use-site.** A composing
+  type stores each dependency as exactly whatever its template parameter names,
+  forwarded in at construction, so the same `Fallback` works whether you want it to own
+  both allocators outright (`Fallback<Alloc1, Alloc2>`) or share one with code
+  elsewhere (`Fallback<Alloc1, Alloc2 &>`) — nothing about `Fallback` itself changes to
+  support either case. `composite::Ref` exists purely as a convenience on top of this:
+  it lets you write `Stats(Ref(allocator))` and get reference composition without
+  spelling out template arguments explicitly.
+- **Allocators are construct-once; assignment is deliberately not supported.** Every
+  allocator and composing type is move-constructible but never assignable, by design —
+  not an oversight to be filled in later. Same-type assignment would either mutate
+  through a reference member (silently corrupting whatever it points at, since a
+  reference can't be rebound) or need a representation change just to make "rebind" and
+  "mutate in place" distinguishable, for a capability that's already better served by
+  `any_block_allocator_ref` when you actually need to swap one allocator strategy for
+  another at runtime.
 - **Policy via concept, not virtual dispatch.** `Block_Allocator` and `State_Concept`
   are structural concepts, not base classes; the assertion system is a compile-time
   configurable macro layer rather than a runtime-polymorphic logger.
@@ -543,7 +558,7 @@ target so it gets a standalone compilation check for free.
 
 ## Support this project
 
-If `dd99::memory` is useful to you, sponsorship helps justify the time spent
+If `dd99::allocators` is useful to you, sponsorship helps justify the time spent
 maintaining and extending it.
 
 - **GitHub Sponsors:** _coming soon_

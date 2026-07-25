@@ -2,7 +2,7 @@
 
 #include <allocators/structures/blocks/memory_block.hpp>
 
-namespace dd99::memory
+namespace dd99_allocators_namespace
 {
     // The result of an allocator-new call
     template <class T>

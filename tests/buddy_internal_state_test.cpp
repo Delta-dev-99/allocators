@@ -14,9 +14,9 @@
 
 #include "buddy_internal_test_helpers.hpp" // the helpers above
 
-using namespace dd99::memory;
-using namespace dd99::memory::block_allocator;
-using namespace dd99::memory::block_allocator::buddy_namespace;
+using namespace dd99_allocators_namespace;
+using namespace dd99_allocators_namespace::block_allocator;
+using namespace dd99_allocators_namespace::block_allocator::buddy_namespace;
 
 // ---------------------------------------------------------------------------
 // Test parameters
@@ -38,7 +38,7 @@ auto make_buddy_state(std::size_t managed_size)
     auto ptr = ::operator new(managed_size, std::align_val_t{alignment});
     if (!ptr) throw std::bad_alloc();
     auto b_ptr = reinterpret_cast<std::byte *>(ptr);
-    auto blk = dd99::memory::raii_block{{b_ptr, managed_size}, [](block blk){ ::operator delete(blk.base, std::align_val_t{alignment}); }};
+    auto blk = dd99_allocators_namespace::raii_block{{b_ptr, managed_size}, [](block blk){ ::operator delete(blk.base, std::align_val_t{alignment}); }};
     auto layout = Config::layout_traits_type::make_layout(std::move(blk));
 
     // allocate state memory and create state
@@ -48,7 +48,7 @@ auto make_buddy_state(std::size_t managed_size)
     auto state_ptr = ::operator new(state_size, std::align_val_t{state_alignment});
     if (!state_ptr) throw std::bad_alloc();
     auto state_b_ptr = reinterpret_cast<std::byte *>(state_ptr);
-    auto state_blk = dd99::memory::raii_block{{state_b_ptr, state_size}, [](block blk){ ::operator delete(blk.base, std::align_val_t{state_alignment}); }};
+    auto state_blk = dd99_allocators_namespace::raii_block{{state_b_ptr, state_size}, [](block blk){ ::operator delete(blk.base, std::align_val_t{state_alignment}); }};
     return state_traits_type::make_state(std::move(layout), std::move(state_blk));
 }
 
@@ -62,7 +62,7 @@ void test_initial_state(std::size_t managed_size) {
     // using State = typename Config::State;
 
     // std::vector<std::byte> mem(managed_size + Layout::last_level_alignment);
-    // Layout layout(block{dd99::memory::align_up(mem.data(), Layout::last_level_alignment), managed_size});
+    // Layout layout(block{dd99_allocators_namespace::align_up(mem.data(), Layout::last_level_alignment), managed_size});
     // // state memory size = bitmap size
     // auto state_size = buddy_intrusive_state_traits<Layout>::get_state_size(layout);
     // std::vector<std::byte> state_mem(state_size);

@@ -8,7 +8,7 @@
 #include <bit>
 
 
-namespace dd99::memory::structure
+namespace dd99_allocators_namespace::structure
 {
     
     // A bitmap type that doesn't own the underlying storage

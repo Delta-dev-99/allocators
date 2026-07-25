@@ -2,7 +2,7 @@
 
 #include <allocators/structures/blocks/raii_block.hpp>
 
-namespace dd99::memory::block_allocator::utility
+namespace dd99_allocators_namespace::block_allocator::utility
 {
 
     // NOTE: This class does NOT inherit from Allocator base class.
@@ -23,14 +23,14 @@ namespace dd99::memory::block_allocator::utility
             raii_block_allocator ** allocator = nullptr;
             
             constexpr void
-            operator()(const memory::block & memory) const
+            operator()(const block & memory) const
             {
                 if (allocator && *allocator)
                     (*allocator)->deallocate(memory);
             }
         };
 
-        using block_type = dd99::memory::raii_block<deallocator_type>;
+        using block_type = dd99_allocators_namespace::raii_block<deallocator_type>;
 
     public:
         ~raii_block_allocator()
@@ -38,8 +38,8 @@ namespace dd99::memory::block_allocator::utility
             cleanup();
         }
 
-        raii_block_allocator(Sub_Alloc_T && sub_allocator)
-            : m_sub_alloc(std::move(sub_allocator))
+        raii_block_allocator(Sub_Alloc_T sub_allocator)
+            : m_sub_alloc(std::forward<Sub_Alloc_T>(sub_allocator))
             , m_self_ptr_block(m_sub_alloc.allocate(get_memory_overhead()))
         {
             auto ptr = new (m_self_ptr_block.base) raii_block_allocator *;
@@ -47,28 +47,31 @@ namespace dd99::memory::block_allocator::utility
         }
 
         raii_block_allocator(raii_block_allocator && other)
-            : m_sub_alloc(std::move(other.m_sub_alloc))
+            : m_sub_alloc(std::forward<Sub_Alloc_T>(other.m_sub_alloc))
             , m_self_ptr_block(std::move(other.m_self_ptr_block))
         {
             *reinterpret_cast<raii_block_allocator **>(m_self_ptr_block.base) = this;
             other.m_self_ptr_block = {};
         }
 
+        raii_block_allocator(const raii_block_allocator&) = delete;
 
-        raii_block_allocator & operator=(raii_block_allocator && other)
-        {
-            if (this != & other)
-            {
-                cleanup();
+        raii_block_allocator & operator=(raii_block_allocator && other) = delete;
+        // {
+        //     if (this != & other)
+        //     {
+        //         cleanup();
 
-                m_sub_alloc = std::move(other.m_sub_alloc);
-                m_self_ptr_block = std::move(other.m_self_ptr_block);
+        //         m_sub_alloc = std::forward<Sub_Alloc_T>(other.m_sub_alloc);
+        //         m_self_ptr_block = std::move(other.m_self_ptr_block);
 
-                *reinterpret_cast<raii_block_allocator **>(m_self_ptr_block.base) = this;
-                other.m_self_ptr_block = {};
-            }
-            return *this;
-        }
+        //         *reinterpret_cast<raii_block_allocator **>(m_self_ptr_block.base) = this;
+        //         other.m_self_ptr_block = {};
+        //     }
+        //     return *this;
+        // }
+
+        raii_block_allocator & operator=(const raii_block_allocator &) = delete;
 
     public:
         static constexpr
@@ -85,7 +88,7 @@ namespace dd99::memory::block_allocator::utility
             return block_type{std::move(mem), std::move(deallocator)};
         }
 
-        void deallocate(const memory::block &memory)
+        void deallocate(const block &memory)
         {
             if (!owns(memory)) return;
             return m_sub_alloc.deallocate(memory);
@@ -95,7 +98,7 @@ namespace dd99::memory::block_allocator::utility
 
         bool owns(const std::byte * memory) const { return m_sub_alloc.owns(memory); }
 
-        bool owns(const memory::block &memory) const { return m_sub_alloc.owns(memory); }
+        bool owns(const block &memory) const { return m_sub_alloc.owns(memory); }
 
     protected:
         void cleanup()
@@ -106,9 +109,11 @@ namespace dd99::memory::block_allocator::utility
             m_sub_alloc.deallocate(m_self_ptr_block);
         }
     
-    private:
+    public:
         Sub_Alloc_T m_sub_alloc;
-        memory::block m_self_ptr_block;
+
+    private:
+        block m_self_ptr_block;
     };
 
 }

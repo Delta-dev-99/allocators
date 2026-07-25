@@ -7,7 +7,7 @@
 #include <allocators/alignment.hpp>
 #include <type_traits>
 
-namespace dd99::memory
+namespace dd99_allocators_namespace
 {
 
     namespace detail
@@ -147,7 +147,7 @@ namespace dd99::memory
 
 
     // template <class T, class Allocator>
-    // void allocator_delete(Allocator & allocator, dd99::memory::new_result<T> mem)
+    // void allocator_delete(Allocator & allocator, dd99_allocators_namespace::new_result<T> mem)
     // {
     //     // TODO: destroy objects
     //     allocator.deallocate(mem.get_block());

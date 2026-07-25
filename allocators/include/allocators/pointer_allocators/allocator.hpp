@@ -2,7 +2,7 @@
 
 #include <allocators/structures/blocks/memory_block.hpp>
 
-namespace dd99::memory
+namespace dd99_allocators_namespace
 {
     template <class T>
     concept Pointer_Allocator = requires(T t, std::size_t s, block B, std::byte * b_ptr)
@@ -16,7 +16,7 @@ namespace dd99::memory
     };
 }
 
-namespace dd99::memory::pointer_allocator
+namespace dd99_allocators_namespace::pointer_allocator
 {
     // Abstract base class
     // Base class for all allocators that return/take pointers

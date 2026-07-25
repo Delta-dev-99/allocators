@@ -3,7 +3,7 @@
 #include <allocators/library_configuration/cpp_config.hpp>
 #include <allocators/block_allocators/block_allocator.hpp>
 
-namespace dd99::memory::block_allocator::composite
+namespace dd99_allocators_namespace::block_allocator::composite
 {
     // Tries to allocate from the primary allocator.
     // Tries to allocate from a fallback allocator if primary fails.
@@ -30,17 +30,19 @@ namespace dd99::memory::block_allocator::composite
     class Fallback<Primary_T, Fallback_T>
     {
     public:
-        Fallback(Primary_T &&primary, Fallback_T &&fallback)
-            : m_primary(std::move(primary))
-            , m_fallback(std::move(fallback))
+        Fallback(Primary_T primary, Fallback_T fallback)
+            : m_primary(std::forward<Primary_T>(primary))
+            , m_fallback(std::forward<Fallback_T>(fallback))
         { }
 
         Fallback(const Fallback&) = delete;
         Fallback(Fallback&&) = default;
+        Fallback & operator=(const Fallback &) = delete;
+        Fallback & operator=(Fallback &&) = delete;
 
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t requested_size,
+        block allocate(std::size_t requested_size,
                                std::size_t requested_alignment = 1)
         {
             auto r = m_primary.allocate(requested_size, requested_alignment);
@@ -49,7 +51,7 @@ namespace dd99::memory::block_allocator::composite
             return r;
         }
 
-        void deallocate(const memory::block &memory)
+        void deallocate(const block &memory)
         {
             // TODO: Allocators should check if they own the memory
             // before deallocating it.
@@ -78,12 +80,12 @@ namespace dd99::memory::block_allocator::composite
             return m_primary.owns(memory) || m_fallback.owns(memory);
         }
 
-        bool owns(const memory::block &memory) const
+        bool owns(const block &memory) const
         {
             return m_primary.owns(memory) || m_fallback.owns(memory);
         }
     
-    private:
+    public:
         Primary_T m_primary;
         Fallback_T m_fallback;
     };

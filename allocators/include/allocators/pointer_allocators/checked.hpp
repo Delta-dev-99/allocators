@@ -4,7 +4,7 @@
 #include <allocators/exception.hpp>
 #include <bit>
 
-namespace dd99::memory::pointer_allocator
+namespace dd99_allocators_namespace::pointer_allocator
 {
     // A variant that adds a small check to avoid errors with pointers
     // Allocated block layout:
@@ -53,7 +53,7 @@ namespace dd99::memory::pointer_allocator
                 auto check = compute_check(allocated_block);
                 if ((check != *get_start_check_ptr(allocated_block)) || (check != *get_end_check_ptr(allocated_block)))
                 {
-                    throw dd99::memory::memory_corrupted{};
+                    throw dd99_allocators_namespace::memory_corrupted{};
                 }
 
                 // probably not necesary to make a copy

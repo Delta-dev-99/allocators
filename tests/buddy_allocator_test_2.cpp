@@ -23,17 +23,17 @@
 template <std::size_t BlockSize, std::size_t Levels, class LevelType = unsigned int, class IndexType = unsigned int>
 auto make_buddy_alloc2(std::size_t managed_size)
 {
-    using blk_addr_type = dd99::memory::block_allocator::buddy_namespace::buddy_block_address<LevelType, IndexType>;
-    using raii_block_type = dd99::memory::raii_block<>;
-    using layout_type = dd99::memory::block_allocator::buddy_namespace::buddy_standard_layout<blk_addr_type, BlockSize, Levels, BlockSize << (Levels-1), raii_block_type>;
-    using traits_type = dd99::memory::block_allocator::buddy_namespace::buddy_intrusive_state_traits<layout_type>;
-    using state_type = dd99::memory::block_allocator::buddy_namespace::buddy_intrusive_state<layout_type, raii_block_type>;
+    using blk_addr_type = dd99_allocators_namespace::block_allocator::buddy_namespace::buddy_block_address<LevelType, IndexType>;
+    using raii_block_type = dd99_allocators_namespace::raii_block<>;
+    using layout_type = dd99_allocators_namespace::block_allocator::buddy_namespace::buddy_standard_layout<blk_addr_type, BlockSize, Levels, BlockSize << (Levels-1), raii_block_type>;
+    using traits_type = dd99_allocators_namespace::block_allocator::buddy_namespace::buddy_intrusive_state_traits<layout_type>;
+    using state_type = dd99_allocators_namespace::block_allocator::buddy_namespace::buddy_intrusive_state<layout_type, raii_block_type>;
 
     constexpr std::size_t managed_alignment = layout_type::last_level_alignment;
     std::byte * managed_ptr = reinterpret_cast<std::byte *>(::operator new(managed_size, std::align_val_t{managed_alignment}));
     raii_block_type managed_block{
-        dd99::memory::block{.base = managed_ptr, .size = managed_size},
-        [](dd99::memory::block blk){ if(blk.base != nullptr) ::operator delete(blk.base, std::align_val_t{managed_alignment}); }
+        dd99_allocators_namespace::block{.base = managed_ptr, .size = managed_size},
+        [](dd99_allocators_namespace::block blk){ if(blk.base != nullptr) ::operator delete(blk.base, std::align_val_t{managed_alignment}); }
     };
 
     layout_type layout{std::move(managed_block)};
@@ -42,29 +42,29 @@ auto make_buddy_alloc2(std::size_t managed_size)
     constexpr auto state_alignment = traits_type::get_state_alignment();
     std::byte * state_ptr = reinterpret_cast<std::byte *>(::operator new(state_size, std::align_val_t{state_alignment}));
     raii_block_type state_block{
-        dd99::memory::block{.base = state_ptr, .size = state_size},
-        [](dd99::memory::block blk){ if(blk.base != nullptr) ::operator delete(blk.base, std::align_val_t{state_alignment}); }
+        dd99_allocators_namespace::block{.base = state_ptr, .size = state_size},
+        [](dd99_allocators_namespace::block blk){ if(blk.base != nullptr) ::operator delete(blk.base, std::align_val_t{state_alignment}); }
     };
 
     auto state = traits_type::make_state(std::move(layout), std::move(state_block));
 
-    return dd99::memory::block_allocator::buddy{std::move(state)};
+    return dd99_allocators_namespace::block_allocator::buddy{std::move(state)};
 }
 
 template <std::size_t BlockSize, std::size_t Levels, class LevelType = unsigned int, class IndexType = unsigned int>
 auto make_buddy_alloc(std::size_t managed_size)
 {
-    using blk_addr_type = dd99::memory::block_allocator::buddy_namespace::buddy_block_address<LevelType, IndexType>;
-    using raii_block_type = dd99::memory::raii_block<>;
-    using layout_type = dd99::memory::block_allocator::buddy_namespace::buddy_standard_layout<blk_addr_type, BlockSize, Levels, BlockSize << (Levels-1), raii_block_type>;
-    using traits_type = dd99::memory::block_allocator::buddy_namespace::buddy_fused_state_traits<layout_type>;
-    using state_type = dd99::memory::block_allocator::buddy_namespace::buddy_fused_state<layout_type, raii_block_type>;
+    using blk_addr_type = dd99_allocators_namespace::block_allocator::buddy_namespace::buddy_block_address<LevelType, IndexType>;
+    using raii_block_type = dd99_allocators_namespace::raii_block<>;
+    using layout_type = dd99_allocators_namespace::block_allocator::buddy_namespace::buddy_standard_layout<blk_addr_type, BlockSize, Levels, BlockSize << (Levels-1), raii_block_type>;
+    using traits_type = dd99_allocators_namespace::block_allocator::buddy_namespace::buddy_fused_state_traits<layout_type>;
+    using state_type = dd99_allocators_namespace::block_allocator::buddy_namespace::buddy_fused_state<layout_type, raii_block_type>;
 
     constexpr std::size_t managed_alignment = layout_type::last_level_alignment;
     std::byte * managed_ptr = reinterpret_cast<std::byte *>(::operator new(managed_size, std::align_val_t{managed_alignment}));
     raii_block_type managed_block{
-        dd99::memory::block{.base = managed_ptr, .size = managed_size},
-        [](dd99::memory::block blk){ if(blk.base != nullptr) ::operator delete(blk.base, std::align_val_t{managed_alignment}); }
+        dd99_allocators_namespace::block{.base = managed_ptr, .size = managed_size},
+        [](dd99_allocators_namespace::block blk){ if(blk.base != nullptr) ::operator delete(blk.base, std::align_val_t{managed_alignment}); }
     };
 
     layout_type layout{std::move(managed_block)};
@@ -73,13 +73,13 @@ auto make_buddy_alloc(std::size_t managed_size)
     constexpr auto state_alignment = traits_type::get_state_alignment();
     std::byte * state_ptr = reinterpret_cast<std::byte *>(::operator new(state_size, std::align_val_t{state_alignment}));
     raii_block_type state_block{
-        dd99::memory::block{.base = state_ptr, .size = state_size},
-        [](dd99::memory::block blk){ if(blk.base != nullptr) ::operator delete(blk.base, std::align_val_t{state_alignment}); }
+        dd99_allocators_namespace::block{.base = state_ptr, .size = state_size},
+        [](dd99_allocators_namespace::block blk){ if(blk.base != nullptr) ::operator delete(blk.base, std::align_val_t{state_alignment}); }
     };
 
     auto state = traits_type::make_state(std::move(layout), std::move(state_block));
 
-    return dd99::memory::block_allocator::buddy{std::move(state)};
+    return dd99_allocators_namespace::block_allocator::buddy{std::move(state)};
 }
 
 // Overload that computes managed_size as largest block times some count
@@ -287,7 +287,7 @@ bool test_deallocate_wrong_size() {
     // auto allocator = make_buddy_alloc<64, 4>(64 * 8);
     // auto a = allocator.allocate(64);
     // // Manually modify block size to something wrong
-    // dd99::memory::block bad_blk{a.base, 128};
+    // dd99_allocators_namespace::block bad_blk{a.base, 128};
     // allocator.deallocate(bad_blk); // uses size to compute level; level 1 instead of 0
     // // This could corrupt internal state; we just check we don't crash.
     // auto b = allocator.allocate(64);
@@ -313,7 +313,7 @@ bool test_state_insufficient_memory() {
 // -----------------------------------------------------------------------------
 bool test_fragmentation() {
     auto allocator = make_buddy_alloc<32, 5>(32 * 16); // 512 bytes
-    std::vector<dd99::memory::block> blocks;
+    std::vector<dd99_allocators_namespace::block> blocks;
     for (int i = 0; i < 8; ++i) {
         auto blk = allocator.allocate(32);
         assert(blk.base);

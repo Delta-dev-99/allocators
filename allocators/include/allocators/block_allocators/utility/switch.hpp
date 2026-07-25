@@ -7,7 +7,7 @@
 #include <type_traits>
 
 
-namespace dd99::memory::block_allocator::utility
+namespace dd99_allocators_namespace::block_allocator::utility
 {
 
     // Requirements:
@@ -31,14 +31,19 @@ namespace dd99::memory::block_allocator::utility
         using index_sequence = std::make_index_sequence<allocator_count>;
 
     public:
-        Switch(Functor functor, Allocators && ... allocators)
-            : m_allocators(std::make_tuple(std::move(allocators)...))
+        Switch(Functor functor, Allocators ... allocators)
+            : m_allocators(std::forward_as_tuple<Allocators...>(allocators...))
             , m_functor(std::move(functor))
         { }
 
+        Switch(const Switch&) = delete;
+        Switch(Switch&&) = default;
+        Switch & operator=(const Switch &) = delete;
+        Switch & operator=(Switch &&) = delete;
+
     private: // implementation details
         template <class Request, std::size_t... Indices>
-        memory::block allocate(Request request, std::index_sequence<Indices...>)
+        block allocate(Request request, std::index_sequence<Indices...>)
         {
             using ret_type = std::common_type_t<
                 decltype(std::get<Indices>(m_allocators).allocate(request.get_request()))...>;
@@ -53,7 +58,7 @@ namespace dd99::memory::block_allocator::utility
         }
 
         template <std::size_t... Indices>
-        void deallocate(const memory::block & memory, std::index_sequence<Indices...>)
+        void deallocate(const block & memory, std::index_sequence<Indices...>)
         {
             bool k = (... || (std::get<Indices>(m_allocators).owns(memory)
                 ? (std::get<Indices>(m_allocators).deallocate(memory), true)
@@ -77,12 +82,12 @@ namespace dd99::memory::block_allocator::utility
     public:
         template <class Request>
         [[nodiscard]]
-        memory::block allocate(Request request)
+        block allocate(Request request)
         {
             return allocate(request, index_sequence{});
         }
 
-        void deallocate(const memory::block &memory)
+        void deallocate(const block &memory)
         {
             return deallocate(memory, index_sequence{});
         }
@@ -97,13 +102,15 @@ namespace dd99::memory::block_allocator::utility
             return owns(memory, index_sequence{});
         }
 
-        bool owns(const memory::block &memory) const
+        bool owns(const block &memory) const
         {
             return owns(memory, index_sequence{});
         }
 
-    private:
+    public:
         std::tuple<Allocators...> m_allocators;
+
+    private:
         Functor m_functor;
     };
 

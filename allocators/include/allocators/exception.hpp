@@ -2,7 +2,7 @@
 
 #include <exception>
 
-namespace dd99::memory
+namespace dd99_allocators_namespace
 {
     // Base for all exceptions thrown in the library
     struct allocator_exception : std::exception
@@ -13,7 +13,7 @@ namespace dd99::memory
         // TODO: Consider putting literals on shared lib
         virtual const char *
         what() const noexcept
-        { return "dd99::memory::allocator_exception"; }
+        { return "dd99_allocators_namespace::allocator_exception"; }
     };
 
     // Base for all allocation failure exceptions
@@ -25,7 +25,7 @@ namespace dd99::memory
         // TODO: Consider putting literals on shared lib
         virtual const char *
         what() const noexcept
-        { return "dd99::memory::failed_allocation_exception"; }
+        { return "dd99_allocators_namespace::failed_allocation_exception"; }
     };
 
     // Base for all deallocation failure exceptions
@@ -37,7 +37,7 @@ namespace dd99::memory
         // TODO: Consider putting literals on shared lib
         virtual const char *
         what() const noexcept
-        { return "dd99::memory::failed_deallocation_exception"; }
+        { return "dd99_allocators_namespace::failed_deallocation_exception"; }
     };
 
     // Deallocation failed because memory is not owned by the allocator
@@ -50,7 +50,7 @@ namespace dd99::memory
         virtual const char *
         what() const noexcept
         {
-            return "dd99::memory::memory_not_owned_exception";
+            return "dd99_allocators_namespace::memory_not_owned_exception";
         }
     };
 
@@ -65,7 +65,7 @@ namespace dd99::memory
         virtual const char *
         what() const noexcept
         {
-            return "dd99::memory::invalid_block_size";
+            return "dd99_allocators_namespace::invalid_block_size";
         }
     };
 
@@ -79,7 +79,7 @@ namespace dd99::memory
         virtual const char *
         what() const noexcept
         {
-            return "dd99::memory::memory_corrupted";
+            return "dd99_allocators_namespace::memory_corrupted";
         }
     };
 

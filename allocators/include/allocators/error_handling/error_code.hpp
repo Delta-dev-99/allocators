@@ -2,7 +2,7 @@
 
 
 
-namespace dd99::memory
+namespace dd99_allocators_namespace
 {
 
     struct error_code;

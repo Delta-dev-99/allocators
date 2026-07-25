@@ -6,7 +6,7 @@
 
 
 
-namespace dd99::memory::block_allocator::buddy_namespace
+namespace dd99_allocators_namespace::block_allocator::buddy_namespace
 {
 
     // the buddy state implements the underlying data structure access and manipulation functions used by the buddy allocator. this separation allows for different strategies for managing the buddy system's internal state, such as using a bitmap and linked list, a fused structure for both, or other data structure architectures, without reimplementing the same core logic.

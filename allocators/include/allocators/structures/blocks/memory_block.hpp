@@ -6,7 +6,7 @@
 #include <cstddef>
 
 
-namespace dd99::memory
+namespace dd99_allocators_namespace
 {
 
     // A block of memory.

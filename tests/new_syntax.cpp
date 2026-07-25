@@ -19,7 +19,7 @@ int main()
 {
     // TODO: enable
 
-    namespace mem = dd99::memory;
+    namespace mem = dd99_allocators_namespace;
     namespace blk_alloc = mem::block_allocator;
     namespace ptr_alloc = mem::pointer_allocator;
 

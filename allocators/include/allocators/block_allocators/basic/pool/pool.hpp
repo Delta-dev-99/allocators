@@ -5,7 +5,7 @@
 #include <allocators/structures/forward_list.hpp>
 
 
-namespace dd99::memory::block_allocator
+namespace dd99_allocators_namespace::block_allocator
 {
     // Allocate fixed-size blocks
     // Uses a free list (forward list with nodes in unused blocks)
@@ -14,7 +14,7 @@ namespace dd99::memory::block_allocator
               std::size_t Block_Alignment = Block_Size>
     class Pool
     {
-        using freelist_type = memory::structure::basic_forward_list;
+        using freelist_type = structure::basic_forward_list;
 
         static constexpr auto block_size = Block_Size;
         static constexpr auto block_alignment = Block_Alignment;
@@ -34,7 +34,7 @@ namespace dd99::memory::block_allocator
 
     public:
         // Expects: provided memory to be aligned to at least Block_Alignment
-        Pool(const memory::block &memory)
+        Pool(const block &memory)
             : m_memory(memory)
         {
             DD99_ALLOCATORS_ASSERT_HARDENED("managed memory must be aligned to Block_Alignment", is_aligned(m_memory.get_base(), block_alignment));
@@ -44,7 +44,7 @@ namespace dd99::memory::block_allocator
 
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = block_alignment)
+        block allocate(std::size_t requested_size, std::size_t requested_alignment = block_alignment)
         {
             static_cast<void>(requested_alignment); // all blocks are aligned, so parameter is unused
             DD99_ALLOCATORS_ASSERT_HARDENED("alignment must be a power of 2", std::has_single_bit(requested_alignment));
@@ -57,7 +57,7 @@ namespace dd99::memory::block_allocator
             return block{.base = m_freelist.pop(), .size = block_size};
         }
 
-        void deallocate(const memory::block &memory)
+        void deallocate(const block &memory)
         {
             if (owns(memory))
                 m_freelist.push(memory.base);
@@ -74,7 +74,7 @@ namespace dd99::memory::block_allocator
             return m_memory.contains(memory);
         }
 
-        bool owns(const memory::block& memory) const
+        bool owns(const block& memory) const
         {
             return m_memory.contains(memory);
         }
@@ -82,7 +82,7 @@ namespace dd99::memory::block_allocator
     private:
         void build_free_list()
         {
-            memory::block current{.base = m_memory.base, .size = block_size};
+            block current{.base = m_memory.base, .size = block_size};
             while(current.get_end() <= m_memory.get_end())
             {
                 m_freelist.push(current.base);
@@ -92,7 +92,7 @@ namespace dd99::memory::block_allocator
         }
 
     private:
-        memory::block m_memory;
+        block m_memory;
         freelist_type m_freelist;
     };
 

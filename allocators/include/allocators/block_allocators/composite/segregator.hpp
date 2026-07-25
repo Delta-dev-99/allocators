@@ -2,20 +2,25 @@
 
 #include <allocators/block_allocators/block_allocator.hpp>
 
-namespace dd99::memory::block_allocator::composite
+namespace dd99_allocators_namespace::block_allocator::composite
 {
     template <std::size_t Threshold, class Allocator_LE, class Allocator_G>
     class Segregator
     {
     public:
-        Segregator(Allocator_LE &&allocator_le, Allocator_G &&allocator_g)
-            : m_alloc_le(std::move(allocator_le))
-            , m_alloc_g(std::move(allocator_g))
+        Segregator(Allocator_LE allocator_le, Allocator_G allocator_g)
+            : m_alloc_le(std::forward<Allocator_LE>(allocator_le))
+            , m_alloc_g(std::forward<Allocator_G>(allocator_g))
         { }
+
+        Segregator(const Segregator&) = delete;
+        Segregator(Segregator&&) = default;
+        Segregator & operator=(const Segregator &) = delete;
+        Segregator & operator=(Segregator &&) = delete;
 
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
+        block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
             if (requested_size <= Threshold)
                 return m_alloc_le.allocate(requested_size, requested_alignment);
@@ -23,7 +28,7 @@ namespace dd99::memory::block_allocator::composite
                 return m_alloc_g.allocate(requested_size, requested_alignment);
         }
 
-        void deallocate(const memory::block &memory)
+        void deallocate(const block &memory)
         {
             if (memory.size <= Threshold)
                 m_alloc_le.deallocate(memory);
@@ -43,12 +48,12 @@ namespace dd99::memory::block_allocator::composite
             return m_alloc_le.owns(memory) || m_alloc_g.owns(memory);
         }
 
-        bool owns(const memory::block &memory) const
+        bool owns(const block &memory) const
         {
             return (memory.size <= Threshold) ? m_alloc_le.owns(memory) : m_alloc_g.owns(memory);
         }
 
-    private:
+    public:
         Allocator_LE m_alloc_le;
         Allocator_G m_alloc_g;
     };

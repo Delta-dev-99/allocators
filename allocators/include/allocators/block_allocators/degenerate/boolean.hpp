@@ -4,7 +4,7 @@
 
 
 
-namespace dd99::memory::block_allocator::degenerate
+namespace dd99_allocators_namespace::block_allocator::degenerate
 {
     // TOOD: Find better name
     // An allocator that manages a single full block.
@@ -13,13 +13,18 @@ namespace dd99::memory::block_allocator::degenerate
     class Boolean
     {
     public:
-        Boolean(const memory::block & memory)
+        Boolean(const block & memory)
             : m_memory(memory)
         { }
 
+        Boolean(const Boolean&) = delete;
+        Boolean(Boolean&&) = default;
+        Boolean & operator=(const Boolean &) = delete;
+        Boolean & operator=(Boolean &&) = delete;
+
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t /* requested_size */, std::size_t /* requested_alignment */ = 1)
+        block allocate(std::size_t /* requested_size */, std::size_t /* requested_alignment */ = 1)
         {
             if (m_allocated) return {};
 
@@ -27,7 +32,7 @@ namespace dd99::memory::block_allocator::degenerate
             return m_memory;
         }
 
-        void deallocate(const memory::block &memory)
+        void deallocate(const block &memory)
         {
             if (owns(memory))
                 m_allocated = false;
@@ -39,12 +44,12 @@ namespace dd99::memory::block_allocator::degenerate
         bool owns(const std::byte * memory) const
         { return m_memory.contains(memory); }
 
-        bool owns(const memory::block& memory) const
+        bool owns(const block& memory) const
         { return m_memory.contains(memory); }
 
     private:
         bool m_allocated = false;
-        memory::block m_memory;
+        block m_memory;
     };
 
     static_assert(Block_Allocator<Boolean>, "This definition doesn't comply with the `Block_Allocator` concept");

@@ -3,7 +3,7 @@
 #include <allocators/structures/blocks/memory_block.hpp>
 
 
-namespace dd99::memory::block_allocator::composite
+namespace dd99_allocators_namespace::block_allocator::composite
 {
     // An allocator that owns the memory it controls.
     // Ussage: Wrap one of the basic allocators and an auto-aquired memory class.
@@ -20,12 +20,17 @@ namespace dd99::memory::block_allocator::composite
             , Sub_Allocator_T(*this) // initializes the allocator by passing this as a memory block
         { }
 
+        Owner(const Owner&) = delete;
+        Owner(Owner&&) = default;
+        Owner & operator=(const Owner &) = delete;
+        Owner & operator=(Owner &&) = delete;
+
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
+        block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         { return Sub_Allocator_T::allocate(requested_size, requested_alignment); }
 
-        void deallocate(const memory::block &memory)
+        void deallocate(const block &memory)
         { Sub_Allocator_T::deallocate(memory); }
 
         void deallocate_all()
@@ -34,7 +39,7 @@ namespace dd99::memory::block_allocator::composite
         bool owns(const std::byte * memory) const
         { return Sub_Allocator_T::owns(memory); }
 
-        bool owns(const memory::block &memory) const
+        bool owns(const block &memory) const
         { return Sub_Allocator_T::owns(memory); }
     };
 }

@@ -4,30 +4,38 @@
 #include <cstddef>
 
 
-namespace dd99::memory::block_allocator::composite
+namespace dd99_allocators_namespace::block_allocator::composite
 {
     template <std::size_t Step_Size, class Sub_Alloc_T>
-    class Quantizer : public Sub_Alloc_T
+    class Quantizer
     {
     public:
-        Quantizer(Sub_Alloc_T &&sub_allocator)
-            : Sub_Alloc_T(std::move(sub_allocator))
+        Quantizer(Sub_Alloc_T sub_allocator)
+            : m_sub_allocator{std::forward<Sub_Alloc_T>(sub_allocator)}
         { }
+
+        Quantizer(const Quantizer&) = delete;
+        Quantizer(Quantizer&&) = default;
+        Quantizer & operator=(const Quantizer &) = delete;
+        Quantizer & operator=(Quantizer &&) = delete;
 
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
+        block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
             const auto size_step_ceiling = (requested_size - 1) + Step_Size - ((requested_size - 1) % Step_Size);
-            return Sub_Alloc_T::allocate(size_step_ceiling, requested_alignment);
+            return m_sub_allocator.allocate(size_step_ceiling, requested_alignment);
         }
 
-        void deallocate(const memory::block &memory) { return Sub_Alloc_T::deallocate(memory); }
+        void deallocate(const block &memory) { return m_sub_allocator.deallocate(memory); }
 
-        void deallocate_all() { Sub_Alloc_T::deallocate_all(); }
+        void deallocate_all() { m_sub_allocator.deallocate_all(); }
 
-        bool owns(const std::byte * memory) const { return Sub_Alloc_T::owns(memory); }
+        bool owns(const std::byte * memory) const { return m_sub_allocator.owns(memory); }
 
-        bool owns(const memory::block &memory) const { return Sub_Alloc_T::owns(memory); }
+        bool owns(const block &memory) const { return m_sub_allocator.owns(memory); }
+
+    public:
+        Sub_Alloc_T m_sub_allocator;
     };
 }

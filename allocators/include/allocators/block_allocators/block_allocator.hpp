@@ -5,7 +5,7 @@
 #include <concepts>
 
 
-namespace dd99::memory
+namespace dd99_allocators_namespace
 {
     template <class Alloc>
     concept Block_Allocator = requires(Alloc alloc, std::size_t size, std::size_t alignment, const block & blk, const std::byte * b_ptr)
@@ -19,7 +19,7 @@ namespace dd99::memory
     };
 }
 
-// namespace dd99::memory::block_allocator
+// namespace dd99_allocators_namespace::block_allocator
 // {
 //     // abstract base class
 //     // Base class for all allocators that return/take memory blocks

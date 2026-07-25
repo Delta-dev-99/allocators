@@ -24,7 +24,7 @@ std::size_t mem_req_switch_func(Memory_Request mem_req)
 }
 
 
-void print_mem(dd99::memory::block mem)
+void print_mem(dd99_allocators_namespace::block mem)
 {
     std::cout << std::setw(20) << std::hex << mem.base << " :   "
               << std::setw(10) << std::dec << mem.size << "\n";
@@ -33,14 +33,14 @@ void print_mem(dd99::memory::block mem)
 
 int main()
 {
-    auto memories = new dd99::memory::self_contained_block<1024>[3];
-    // dd99::memory::Heap_Block<1024> memories[3];
+    auto memories = new dd99_allocators_namespace::self_contained_block<1024>[3];
+    // dd99_allocators_namespace::Heap_Block<1024> memories[3];
 
     // TODO: enable following comments
-    // dd99::memory::block_allocator::utility::Switch my_switch(mem_req_switch_func,
-    //     dd99::memory::block_allocator::Slicing{memories[0]},
-    //     dd99::memory::block_allocator::Stack{memories[1]},
-    //     dd99::memory::block_allocator::Slicing{memories[2]}
+    // dd99_allocators_namespace::block_allocator::utility::Switch my_switch(mem_req_switch_func,
+    //     dd99_allocators_namespace::block_allocator::Slicing{memories[0]},
+    //     dd99_allocators_namespace::block_allocator::Stack{memories[1]},
+    //     dd99_allocators_namespace::block_allocator::Slicing{memories[2]}
     // );
 
     // auto x = my_switch.allocate(Memory_Request{.priority = 0, .size = 1024});

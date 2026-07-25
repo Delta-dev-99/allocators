@@ -2,7 +2,7 @@
 
 #include <allocators/structures/blocks/block_concept.hpp>
 
-namespace dd99::memory
+namespace dd99_allocators_namespace
 {
     // Contains the memory it describes.
     // Use case: create instance on the stack to acquire stack memory.
@@ -69,4 +69,4 @@ namespace dd99::memory
 
     static_assert(Block_Concept<self_contained_block<1>>);
 
-} // namespace dd99::memory
+} // namespace dd99_allocators_namespace

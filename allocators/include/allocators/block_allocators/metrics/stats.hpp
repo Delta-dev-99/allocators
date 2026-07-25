@@ -2,15 +2,20 @@
 
 #include <allocators/structures/blocks/memory_block.hpp>
 
-namespace dd99::memory::block_allocator::metrics
+namespace dd99_allocators_namespace::block_allocator::metrics
 {
     template <class Sub_Alloc_T>
-    class Stats : public Sub_Alloc_T
+    class Stats
     {
     public:
-        Stats(Sub_Alloc_T &&sub_allocator)
-            : Sub_Alloc_T(std::move(sub_allocator))
+        Stats(Sub_Alloc_T sub_allocator)
+            : m_sub_allocator{std::forward<Sub_Alloc_T>(sub_allocator)}
         { }
+
+        Stats(const Stats&) = delete;
+        Stats(Stats&&) = default;
+        Stats & operator=(const Stats &) = delete;
+        Stats & operator=(Stats &&) = delete;
 
     public:
         struct Stats_Data
@@ -37,14 +42,14 @@ namespace dd99::memory::block_allocator::metrics
 
     public:
         [[nodiscard]]
-        memory::block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
+        block allocate(std::size_t requested_size, std::size_t requested_alignment = 1)
         {
             const auto total_previous_requested_size = m_stats_data.mean_allocation_request_size * double(m_stats_data.total[Stats_Data::Allocation]);
             m_stats_data.mean_allocation_request_size = (total_previous_requested_size + double(requested_size)) / double(m_stats_data.total[Stats_Data::Allocation] + 1);
 
             ++m_stats_data.total[Stats_Data::Allocation];
 
-            auto r = Sub_Alloc_T::allocate(requested_size, requested_alignment);
+            auto r = m_sub_allocator.allocate(requested_size, requested_alignment);
 
             if (r)
                 m_stats_data.total[Stats_Data::Allocated_Size] += r.size;
@@ -54,17 +59,17 @@ namespace dd99::memory::block_allocator::metrics
             return r;
         }
 
-        void deallocate(const memory::block &memory)
+        void deallocate(const block &memory)
         {
             ++m_stats_data.total[Stats_Data::Deallocation];
 
-            if (!Sub_Alloc_T::owns(memory))
+            if (!m_sub_allocator.owns(memory))
             {
                 ++m_stats_data.total[Stats_Data::Deallocation_Miss];
                 return;
             }
 
-            Sub_Alloc_T::deallocate(memory);
+            m_sub_allocator.deallocate(memory);
 
             m_stats_data.total[Stats_Data::Deallocated_Size] += memory.size;            
         }
@@ -73,14 +78,14 @@ namespace dd99::memory::block_allocator::metrics
         {
             const auto currently_allocated_size = m_stats_data.total[Stats_Data::Allocated_Size] - m_stats_data.total[Stats_Data::Deallocated_Size];
 
-            Sub_Alloc_T::deallocate_all();
+            m_sub_allocator.deallocate_all();
 
             m_stats_data.total[Stats_Data::Deallocated_Size] += currently_allocated_size;
             ++m_stats_data.total[Stats_Data::Full_Deallocation];
         }
 
-        bool owns(const std::byte * memory) const { return Sub_Alloc_T::owns(memory); }
-        bool owns(const memory::block &memory) const { return Sub_Alloc_T::owns(memory); }
+        bool owns(const std::byte * memory) const { return m_sub_allocator.owns(memory); }
+        bool owns(const block &memory) const { return m_sub_allocator.owns(memory); }
 
     private:
         Stats_Data m_stats_data;
@@ -102,5 +107,8 @@ namespace dd99::memory::block_allocator::metrics
 
         // auto get_allocation_failure_percentage() const
         // { return static_cast<double>(get_number_of_failed_allocations()) / m_number_of_allocations; }
+
+    public:
+        Sub_Alloc_T m_sub_allocator;
     };
 }

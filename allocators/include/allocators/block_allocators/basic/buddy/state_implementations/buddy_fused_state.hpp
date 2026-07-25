@@ -108,7 +108,7 @@
 #include <span>
 
 
-namespace dd99::memory::block_allocator::buddy_namespace
+namespace dd99_allocators_namespace::block_allocator::buddy_namespace
 {
 
     // Forward declaration so the traits factory function can name the state type.
@@ -468,7 +468,7 @@ namespace dd99::memory::block_allocator::buddy_namespace
         std::array<index_type, levels> m_heads;
     };
 
-} // namespace dd99::memory::block_allocator::buddy_namespace
+} // namespace dd99_allocators_namespace::block_allocator::buddy_namespace
 
 
 // =============================================================================

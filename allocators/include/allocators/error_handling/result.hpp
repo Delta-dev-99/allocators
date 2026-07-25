@@ -5,11 +5,11 @@
 
 
 
-namespace dd99::memory
+namespace dd99_allocators_namespace
 {
 
     template <class T>
-    using result = std::expected<T, dd99::memory::error_code>;
+    using result = std::expected<T, dd99_allocators_namespace::error_code>;
 
 
     template <class T>
