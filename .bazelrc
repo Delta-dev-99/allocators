@@ -7,9 +7,11 @@ common --enable_bzlmod
 # common --check_direct_dependencies=off
 
 # C++ configuration
-build --cxxopt=-std=c++26
+build --cxxopt=-std=c++23
 build --cxxopt=-Wall
 build --cxxopt=-Wextra
+build --cxxopt=-Wpedantic
+build --cxxopt=-Werror
 # build --cxxopt=-fno-strict-aliasing
 
 # Optimization levels

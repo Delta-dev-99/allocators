@@ -4,6 +4,8 @@
 # NOTE: This library does depend on the C++ standard library for type definitions and language support
 # NOTE: This library does not perform any memory allocations from the OS; the user must provide the memory ranges
 
+# NOTE: Designed for use with Bazel 9
+
 module(
     name = "dd99_allocators",
     version = "0.4.0",
@@ -18,13 +20,13 @@ bazel_dep(name = "rules_python", version = "1.9.0", dev_dependency = True)
 # Hedron's Compile Commands Extractor for Bazel
 # https://github.com/hedronvision/bazel-compile-commands-extractor
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
-git_override(
+archive_override(
     module_name = "hedron_compile_commands",
-    # remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
-    remote = "file:///home/dd99/Documents/programming/_repo_cache_/bazel-compile-commands-extractor",
-    commit = "abb61a688167623088f8768cc9264798df6a9d10",
-    # Replace the commit hash (above) with the latest (https://github.com/hedronvision/bazel-compile-commands-extractor/commits/main).
-    # Even better, set up Renovate and let it do the work for you (see "Suggestion: Updates" in the README).
+    urls = [
+        "https://github.com/hedronvision/bazel-compile-commands-extractor/archive/abb61a688167623088f8768cc9264798df6a9d10.tar.gz"
+    ],
+    strip_prefix = "bazel-compile-commands-extractor-abb61a688167623088f8768cc9264798df6a9d10",
+    integrity = "sha256-Gwir/7++ifbb7mpbM3U3kugAT2o283wPchFb7IbmhyQ=",
     patches = [
         "//:.patches/hedron_compile_commands_bazel_9_fix.patch",
     ],

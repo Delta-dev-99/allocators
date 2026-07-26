@@ -1,0 +1,64 @@
+name: CI
+
+"on":
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+# Cancel superseded runs on the same branch/PR instead of piling them up.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least-privilege default; neither job needs write access to anything.
+permissions:
+  contents: read
+
+jobs:
+  cmake:
+    name: CMake (GCC 14, C++26)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install GCC 14
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-14
+
+      # The project requires CMake >= 3.30; Ubuntu 24.04's own apt package
+      # (3.28.x) is below that, so it's fetched explicitly here rather than
+      # relying on whatever happens to be preinstalled on the runner.
+      - name: Install CMake >= 3.30
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~3.30.0"
+
+      - name: Configure
+        run: >
+          cmake -B build
+          -DCMAKE_CXX_COMPILER=g++-14
+          -DCMAKE_C_COMPILER=gcc-14
+
+      - name: Build
+        run: cmake --build build -j
+
+      - name: Test
+        working-directory: build
+        run: ctest --output-on-failure
+
+  bazel:
+    name: Bazel
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: bazel build //...
+
+      # Includes the per-header standalone-compilation test suite
+      # (cc_header_compilation_suite), which is the mechanism referenced in
+      # the README's "Testing & quality" section.
+      - name: Test
+        run: bazel test //...

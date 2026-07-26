@@ -5,5 +5,6 @@ include(cmake/CompilerWarnings.cmake)
 
 add_subdirectory(allocators)
 if (PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
+    enable_testing()
     add_subdirectory(tests)
 endif ()
