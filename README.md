@@ -1,9 +1,9 @@
-# dd99::allocators — composable, policy-free C++26 allocators
+# dd99::allocators — composable, policy-free C++23 allocators
 
-A header-only C++26 library for building exactly the memory allocator you need, one
+A header-only C++23 library for building exactly the memory allocator you need, one
 composable piece at a time — from user-space object pools to freestanding kernel arenas.
 
-![C++26](https://img.shields.io/badge/C%2B%2B-26-blue.svg)
+![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)
 ![Header Only](https://img.shields.io/badge/header--only-yes-brightgreen.svg)
 ![Status](https://img.shields.io/badge/status-pre--1.0-orange.svg)
 
@@ -141,7 +141,7 @@ Note that the umbrella header is intentionally *not* exhaustive — see
 
 ### Requirements
 
-- A compiler with C++26 support and `-std=c++26`. Developed and tested with **GCC 14+**;
+- A compiler with C++23 support and `-std=c++23`. Developed and tested with **GCC 14+**;
   other compilers are currently untested.
 - CMake ≥ 3.30, or Bazel with bzlmod enabled, if you're not vendoring headers directly.
 
