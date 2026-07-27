@@ -27,13 +27,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y g++-13
 
-      # The project requires CMake >= 3.30; Ubuntu 24.04's own apt package
-      # (3.28.x) is below that, so it's fetched explicitly here rather than
-      # relying on whatever happens to be preinstalled on the runner.
-      - name: Install CMake >= 3.30
+      # Ubuntu 24.04's own apt package (3.28.x) already satisfies the
+      # project's CMake >= 3.21 requirement, so this step isn't working
+      # around an insufficient default -- it pins the exact documented
+      # minimum deliberately, so a green run here actually verifies that
+      # floor rather than whatever newer version happens to be preinstalled.
+      - name: Install CMake >= 3.21
         uses: lukka/get-cmake@latest
         with:
-          cmakeVersion: "~3.30.0"
+          cmakeVersion: "~3.21.0"
 
       - name: Configure
         run: >
