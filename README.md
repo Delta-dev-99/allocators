@@ -141,7 +141,7 @@ Note that the umbrella header is intentionally *not* exhaustive — see
 
 ### Requirements
 
-- A compiler with C++23 support and `-std=c++23`. Developed and tested with **GCC 14+**;
+- A compiler with C++23 support and `-std=c++23`. Developed and tested with **GCC 13+**;
   other compilers are currently untested.
 - CMake ≥ 3.30, or Bazel with bzlmod enabled, if you're not vendoring headers directly.
 

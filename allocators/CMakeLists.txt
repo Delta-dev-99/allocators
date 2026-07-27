@@ -1,7 +1,7 @@
 
 add_library(dd99_allocators_freestanding INTERFACE)
 add_library(dd99::allocators_freestanding ALIAS dd99_allocators_freestanding)
-target_compile_features(dd99_allocators_freestanding INTERFACE cxx_std_26)
+target_compile_features(dd99_allocators_freestanding INTERFACE cxx_std_23)
 target_include_directories(dd99_allocators_freestanding INTERFACE include)
 # set_target_warnings(dd99_allocators_freestanding WARNINGS_AS_ERRORS PRIVATE)
 

@@ -17,15 +17,15 @@ permissions:
 
 jobs:
   cmake:
-    name: CMake (GCC 14, C++23)
+    name: CMake (GCC 13, C++23)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
 
-      - name: Install GCC 14
+      - name: Install GCC 13
         run: |
           sudo apt-get update
-          sudo apt-get install -y g++-14
+          sudo apt-get install -y g++-13
 
       # The project requires CMake >= 3.30; Ubuntu 24.04's own apt package
       # (3.28.x) is below that, so it's fetched explicitly here rather than
@@ -38,8 +38,8 @@ jobs:
       - name: Configure
         run: >
           cmake -B build
-          -DCMAKE_CXX_COMPILER=g++-14
-          -DCMAKE_C_COMPILER=gcc-14
+          -DCMAKE_CXX_COMPILER=g++-13
+          -DCMAKE_C_COMPILER=gcc-13
 
       - name: Build
         run: cmake --build build -j
