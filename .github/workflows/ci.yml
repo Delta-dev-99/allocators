@@ -17,8 +17,18 @@ permissions:
 
 jobs:
   cmake:
-    name: CMake (GCC 13, C++23)
+    name: CMake ${{ matrix.cmake-version }} (GCC 13, C++23)
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # Floor (the documented minimum), latest 3.x, and latest overall.
+        # Compiler is held fixed at the documented floor (GCC 13) across all
+        # three -- compiler-version and build-system-version compatibility
+        # are largely independent concerns here, and crossing every CMake
+        # version with every GCC version would be combinatorial cost for
+        # very little extra signal.
+        cmake-version: [ "~3.21.0", "~3.31.0", "latest" ]
     steps:
       - uses: actions/checkout@v5
 
@@ -29,13 +39,14 @@ jobs:
 
       # Ubuntu 24.04's own apt package (3.28.x) already satisfies the
       # project's CMake >= 3.21 requirement, so this step isn't working
-      # around an insufficient default -- it pins the exact documented
-      # minimum deliberately, so a green run here actually verifies that
-      # floor rather than whatever newer version happens to be preinstalled.
-      - name: Install CMake >= 3.21
+      # around an insufficient default -- it pins each matrix version
+      # deliberately, so these runs actually verify the documented floor
+      # and the current releases rather than whatever happens to be
+      # preinstalled on the runner.
+      - name: Install CMake (${{ matrix.cmake-version }})
         uses: lukka/get-cmake@latest
         with:
-          cmakeVersion: "~3.21.0"
+          cmakeVersion: ${{ matrix.cmake-version }}
 
       - name: Configure
         run: >
